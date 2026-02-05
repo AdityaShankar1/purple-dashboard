@@ -116,7 +116,9 @@ export default function DashboardAdminCourses() {
       setShowCreateForm(false);
       fetchCourses();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Error creating course");
+      console.error("Create course error:", err);
+      const message = err.response?.data?.message || err.message || "Error creating course";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -520,7 +522,7 @@ export default function DashboardAdminCourses() {
               <BookOpen className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">
-              {searchTerm || selectedCategory !== "All Categories" 
+              {searchTerm || selectedCategory !== "All Categories"
                 ? "No courses match your filters"
                 : "No courses yet"
               }
