@@ -51,6 +51,7 @@ import {
   fetchAgentList,
   fetchSecurityAlerts,
   fetchMitreAlerts,
+  fetchAlertsCount,
 } from "../controllers/wazuhController.js";
 import { requireAuth } from "../middleware/auth.js"
 import { rbac } from "../middleware/auth.js"
@@ -76,6 +77,9 @@ router.get("/agent/:name", fetchAgentDetails);
 router.get("/agent-health", fetchAgentHealth);
 router.get("/active-agents", fetchActiveAgents);
 router.get("/agents", fetchAgentList);
+
+// Specific routes first
+router.get("/alerts/count", fetchAlertsCount);
 router.get("/alerts/:agent", fetchSecurityAlerts);
 router.get("/alerts", fetchMitreAlerts);
 

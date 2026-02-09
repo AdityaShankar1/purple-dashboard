@@ -1,3 +1,13 @@
 
 node_modules/
 .env
+
+# logs
+server/logs/
+
+# build output
+client_fixed/build/
+
+# uploads & generated files
+server/uploads/
+*.pdf

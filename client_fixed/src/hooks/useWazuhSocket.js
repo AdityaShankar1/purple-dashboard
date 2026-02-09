@@ -226,7 +226,7 @@ export const useWazuhSocket = (maxAlerts = 100) => {
 
   useEffect(() => {
     // Connect to backend Socket.IO server
-    const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5001", {
+    const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
       transports: ["websocket"], // force websocket for stability
     });
 
@@ -253,7 +253,7 @@ export const useWazuhSocket = (maxAlerts = 100) => {
     const fetchTotalCount = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/alerts/count`,
+          `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/wazuh/alerts/count`,
           { credentials: "include" } // include cookies if requireAuth is enabled
         );
         const data = await res.json();

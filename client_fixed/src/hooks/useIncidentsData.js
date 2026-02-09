@@ -8,7 +8,7 @@ export const useIncidentsData = () => {
     const fetchIncidents = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/incidents`
+          `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/wazuh/incidents`
         );
         const json = await res.json();
         // Defensive: ensure always an array

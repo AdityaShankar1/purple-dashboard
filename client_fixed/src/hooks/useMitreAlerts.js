@@ -8,7 +8,7 @@ export const useMitreAlerts = (technique) => {
     const fetchAlerts = async () => {
       try {
         const baseUrl =
-          process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+          process.env.REACT_APP_API_URL || "http://localhost:5000/api";
         const res = await fetch(`${baseUrl}/wazuh/alerts${technique !== "all" ? `?technique=${technique}` : ""}`);
         const json = await res.json();
         setAlerts(json.alerts || []);
