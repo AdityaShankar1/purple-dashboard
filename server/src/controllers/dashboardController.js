@@ -11,44 +11,44 @@ export const userDashboard = async (req, res, next) => {
     const userId = req.user.id;
 
     const [ongoing, completed, certs, progress] = await Promise.all([
-      Enrollment.find({ user: userId, status: "ongoing" })
-        .populate("course", "title")
+      Enrollment.find({ userId: userId, status: "active" })
+        .populate("courseId", "title")
         .lean(),
 
-      Enrollment.find({ user: userId, status: "completed" })
-        .populate("course", "title completedAt")
+      Enrollment.find({ userId: userId, status: "completed" })
+        .populate("courseId", "title completedAt")
         .lean(),
 
-      Certificate.find({ user: userId })
-        .populate("course", "title issuedAt")
+      Certificate.find({ userId: userId })
+        .populate("courseId", "title issuedAt")
         .lean(),
 
-      Progress.find({ user: userId })
-        .select("course percentage")
+      Progress.find({ userId: userId })
+        .select("courseId percentage")
         .lean(),
     ]);
 
     const progressMap = new Map(
-      progress.map(p => [p.course?.toString(), p.percentage])
+      progress.map(p => [p.courseId?.toString(), p.percentage])
     );
 
     res.json({
       ongoing: ongoing.map(e => ({
         id: e._id,
-        course: e.course?.title || "Untitled",
-        percentage: progressMap.get(e.course?._id?.toString()) || 0,
+        course: e.courseId?.title || "Untitled",
+        percentage: progressMap.get(e.courseId?._id?.toString()) || 0,
       })),
 
       completed: completed.map(e => ({
         id: e._id,
-        course: e.course?.title || "Untitled",
+        course: e.courseId?.title || "Untitled",
         completedAt: e.completedAt || null,
       })),
 
       certificates: certs.map(c => ({
         id: c._id,
         certId: c.certId,
-        course: c.course?.title || "Untitled",
+        course: c.courseId?.title || "Untitled",
         issuedAt: c.issuedAt || null,
       })),
     });

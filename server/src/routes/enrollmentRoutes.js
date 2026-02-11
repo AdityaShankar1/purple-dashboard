@@ -113,7 +113,12 @@ import { enrollInCourse, getOngoingEnrollments, getCompletedEnrollments } from "
 
 const router = Router()
 
+// Enroll using body payload (preferred)
+router.post("/enroll", protect, enrollInCourse)
+
+// Legacy support: enroll by courseId in URL
 router.post("/:courseId", protect, enrollInCourse)
+
 router.get("/ongoing", protect, getOngoingEnrollments)
 router.get("/completed", protect, getCompletedEnrollments)
 

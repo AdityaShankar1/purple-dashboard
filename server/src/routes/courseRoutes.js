@@ -316,15 +316,16 @@
 
 
 import { Router } from "express"
-import { protect, adminOnly } from "../middleware/authMiddleware.js"
-import { getPublicCourses, createCourse, updateCourse, deleteCourse ,
+import { protect, adminOnly, optionalProtect } from "../middleware/authMiddleware.js"
+import {
+  getPublicCourses, createCourse, updateCourse, deleteCourse,
   getAdminCourses,
 } from "../controllers/courseController.js"
 
 const router = Router()
 
-// Public
-router.get("/", getPublicCourses)
+// Public (with optional auth for enrollment status)
+router.get("/", optionalProtect, getPublicCourses)
 
 // Admin
 router.post("/", protect, adminOnly, createCourse)

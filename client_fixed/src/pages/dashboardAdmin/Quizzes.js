@@ -568,6 +568,17 @@ export default function AdminQuizzes() {
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString()
       if (payload.dueAt) payload.dueAt = new Date(payload.dueAt).toISOString()
 
+      // Transform questions to match backend schema
+      payload.questions = payload.questions.map(q => ({
+        ...q,
+        type: q.type === "single" ? "mcq" : q.type === "fill" ? "fillup" : q.type,
+        options: Array.isArray(q.options) ? q.options.map(o => o.text || "") : [],
+        points: Number(q.points) || 1
+      }))
+
+      // Ensure courseId is set (backend expects courseId or maps course -> courseId)
+      payload.courseId = payload.course;
+
       if (editing) {
         await quizApi.updateQuiz(editing, payload)
       } else {
@@ -579,6 +590,7 @@ export default function AdminQuizzes() {
       setEditing(null)
       load()
     } catch (e) {
+      console.error("Save error:", e)
       const errorMessage = e?.response?.data?.message || e.message || "Failed to save quiz"
       setError(errorMessage)
       toast.error(errorMessage)
@@ -713,12 +725,12 @@ export default function AdminQuizzes() {
                         type === "fill"
                           ? { prompt: "", type, options: [], correctAnswers: [""], points: 1 }
                           : {
-                              prompt: "",
-                              type,
-                              options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-                              correctAnswers: [""],
-                              points: 1,
-                            },
+                            prompt: "",
+                            type,
+                            options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+                            correctAnswers: [""],
+                            points: 1,
+                          },
                       ],
                     }))
                     e.target.value = ""

@@ -968,6 +968,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import axios from "../../api/axiosConfig"
 import { Card } from "../../components/Layouts/Card"
 import { BookOpen, CheckCircle, Award, Clock } from "lucide-react"
 
@@ -982,14 +983,16 @@ export default function DashboardUserMetrics() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const token = localStorage.getItem("token")
-        const response = await fetch("/api/user/metrics", {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get("/dashboard/user")
+        const data = response.data
+
+        // Transform dashboard data to metrics format
+        setMetrics({
+          enrolledCourses: (data.ongoing?.length || 0) + (data.completed?.length || 0),
+          ongoingCourses: data.ongoing?.length || 0,
+          completedCourses: data.completed?.length || 0,
+          certificates: data.certificates?.length || 0,
         })
-        if (response.ok) {
-          const data = await response.json()
-          setMetrics(data)
-        }
       } catch (error) {
         console.error("Error fetching metrics:", error)
       }

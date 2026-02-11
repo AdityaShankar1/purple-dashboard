@@ -589,6 +589,7 @@
 
 
 import Course from "../models/Course.js"
+import Enrollment from "../models/Enrollment.js"
 import { createHttpError } from "../utils/errors.js"
 import { sendResponse } from "../utils/response.js"
 import { logger } from "../config/logger.js"
@@ -596,9 +597,23 @@ import { logger } from "../config/logger.js"
 // GET /api/courses (public list)
 export const getPublicCourses = async (req, res, next) => {
   try {
-    // ✅ return all active/published courses
-    const courses = await Course.find().sort({ createdAt: -1 })
-    sendResponse(res, 200, "Courses fetched successfully", courses)
+    const courses = await Course.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).lean()
+
+    // If user is authenticated, check enrollments
+    if (req.user) {
+      try {
+        const enrollments = await Enrollment.find({ userId: req.user._id, status: "active" }).select("courseId").lean()
+        const enrolledCourseIds = new Set(enrollments.map(e => e.courseId.toString()))
+
+        courses.forEach(course => {
+          course.isEnrolled = enrolledCourseIds.has(course._id.toString())
+        })
+      } catch (enrollErr) {
+        logger.error("[getPublicCourses] Enrollment check failed:", enrollErr)
+      }
+    }
+
+    sendResponse(res, 200, "Courses fetched successfully", { courses })
   } catch (err) {
     next(err)
   }
@@ -607,6 +622,11 @@ export const getPublicCourses = async (req, res, next) => {
 // POST /api/courses (admin only)
 export const createCourse = async (req, res, next) => {
   try {
+    logger.info("[createCourse] Request received", {
+      bodyKeys: Object.keys(req.body),
+      user: req.user?._id
+    });
+
     const safe = {
       courseId: (req.body.courseId || "").trim(),
       title: (req.body.title || "").trim(),
@@ -619,15 +639,20 @@ export const createCourse = async (req, res, next) => {
       isActive: true   // ✅ ensure course is visible
     }
 
+    logger.info("[createCourse] Safe payload prepared", { safe });
+
     if (!safe.courseId || !safe.title || !safe.description || !safe.instructor) {
+      logger.warn("[createCourse] Validation failed", { safe });
       return next(createHttpError(400, "Course ID, title, description, and instructor are required"))
     }
 
     const exists = await Course.findOne({ courseId: safe.courseId })
     if (exists) {
+      logger.warn("[createCourse] Course ID exists", { courseId: safe.courseId });
       return next(createHttpError(409, "Course ID already exists"))
     }
 
+    logger.info("[createCourse] Creating course document...");
     const course = await Course.create({
       ...safe,
       createdBy: req.user._id
@@ -636,6 +661,7 @@ export const createCourse = async (req, res, next) => {
     logger.info(`[createCourse] created ${course.title} (${course.courseId})`)
     sendResponse(res, 201, "Course created successfully", course)
   } catch (err) {
+    logger.error('[createCourse] Unexpected error:', err)
     next(err)
   }
 }

@@ -387,7 +387,7 @@
 // // // // // // // // // // //     if (!courseId || !title || !questions || questions.length === 0) {
 // // // // // // // // // // //       return next(createHttpError(400, "Missing required quiz fields (Course ID, title, questions)."));
 // // // // // // // // // // //     }
-    
+
 // // // // // // // // // // //     // Check if the custom courseId exists
 // // // // // // // // // // //     const courseExists = await Course.findOne({ courseId });
 // // // // // // // // // // //     if (!courseExists) {
@@ -471,19 +471,19 @@
 // // // // // // // // // // //         if (!courseId || !quizId) {
 // // // // // // // // // // //             return next(createHttpError(400, "Course ID and Quiz ID are required."));
 // // // // // // // // // // //         }
-        
+
 // // // // // // // // // // //         // 1. Get the MongoDB _id for the Course
 // // // // // // // // // // //         const course = await Course.findOne({ courseId });
 // // // // // // // // // // //         if (!course) {
 // // // // // // // // // // //             return next(createHttpError(404, "Course not found."));
 // // // // // // // // // // //         }
 // // // // // // // // // // //         const courseObjectId = course._id;
-        
+
 // // // // // // // // // // //         // 2. Find all enrollments (users) for this course
 // // // // // // // // // // //         const enrollments = await Enrollment.find({ course: courseObjectId })
 // // // // // // // // // // //             .populate('user', 'name email role') 
 // // // // // // // // // // //             .select('user'); 
-        
+
 // // // // // // // // // // //         const enrolledUsers = enrollments.map(e => e.user);
 // // // // // // // // // // //         const enrolledUserIds = enrolledUsers.map(user => user._id);
 
@@ -492,16 +492,16 @@
 // // // // // // // // // // //             quizId: quizId,
 // // // // // // // // // // //             userId: { $in: enrolledUserIds } 
 // // // // // // // // // // //         }).select('userId submittedAt score');
-        
+
 // // // // // // // // // // //         const submittedUserIds = results.map(s => s.userId.toString());
-        
+
 // // // // // // // // // // //         // 4. Map the results
 // // // // // // // // // // //         const statusReport = enrolledUsers.map(user => {
 // // // // // // // // // // //             const isCompleted = submittedUserIds.includes(user._id.toString());
 // // // // // // // // // // //             const resultData = isCompleted 
 // // // // // // // // // // //                 ? results.find(s => s.userId.toString() === user._id.toString())
 // // // // // // // // // // //                 : null;
-            
+
 // // // // // // // // // // //             return {
 // // // // // // // // // // //                 user: {
 // // // // // // // // // // //                     id: user._id,
@@ -535,14 +535,14 @@
 // // // // // // // // // // //     if (!customCourseId) {
 // // // // // // // // // // //       return next(createHttpError(400, "Course ID is required"));
 // // // // // // // // // // //     }
-    
+
 // // // // // // // // // // //     // Find the course's MongoDB ObjectId using the custom string ID
 // // // // // // // // // // //     const course = await Course.findOne({ courseId: customCourseId });
-    
+
 // // // // // // // // // // //     if (!course) {
 // // // // // // // // // // //         return next(createHttpError(404, "Course not found."));
 // // // // // // // // // // //     }
-    
+
 // // // // // // // // // // //     const courseObjectId = course._id; 
 
 // // // // // // // // // // //     // Check enrollment using the Course's MongoDB _id
@@ -550,7 +550,7 @@
 // // // // // // // // // // //         user: userId, 
 // // // // // // // // // // //         course: courseObjectId 
 // // // // // // // // // // //     });
-    
+
 // // // // // // // // // // //     if (!isEnrolled) {
 // // // // // // // // // // //       // Returns 403 Forbidden if not enrolled, as fixed previously
 // // // // // // // // // // //       return next(createHttpError(403, "Access denied. You are not enrolled in this course."));
@@ -561,7 +561,7 @@
 // // // // // // // // // // //         courseId: customCourseId,
 // // // // // // // // // // //         // Optional: Add visibility/timing logic here if needed (e.g., startAt < now)
 // // // // // // // // // // //     }).sort({ startAt: 1 });
-    
+
 // // // // // // // // // // //     res.json(quizzes);
 // // // // // // // // // // //   } catch (err) {
 // // // // // // // // // // //     console.error("🔥 Error fetching visible quizzes:", err);
@@ -605,14 +605,22 @@
 // // // // // // // // // //     if (!courseId || !title || !questions || questions.length === 0) {
 // // // // // // // // // //       return next(createHttpError(400, "Missing required quiz fields (Course ID, title, questions)."));
 // // // // // // // // // //     }
-    
+
 // // // // // // // // // //     // Check if the custom courseId exists
 // // // // // // // // // //     const courseExists = await Course.findOne({ courseId });
 // // // // // // // // // //     if (!courseExists) {
 // // // // // // // // // //         return next(createHttpError(404, `Course with ID '${courseId}' not found. Quiz creation failed.`));
 // // // // // // // // // //     }
 
-// // // // // // // // // //     const quiz = await Quiz.create({ courseId, title, description, startAt, dueAt, questions });
+// // // // // // // // // //     const quiz = await Quiz.create({ 
+// // // // // // // // // //         courseId,
+// // // // // // // // // //         title,
+// // // // // // // // // //         description,
+// // // // // // // // // //         startAt,
+// // // // // // // // // //         dueAt,
+// // // // // // // // // //         questions,
+// // // // // // // // // //         createdBy: req.user._id // ✅ Added missing required field
+// // // // // // // // // //     });
 // // // // // // // // // //     res.status(201).json({ message: "Quiz created", data: quiz });
 // // // // // // // // // //   } catch (err) {
 // // // // // // // // // //     console.error("🔥 Error creating quiz:", err);
@@ -677,7 +685,7 @@
 // // // // // // // // // //             filter.courseId = courseId.trim();
 // // // // // // // // // //         } 
 // // // // // // // // // //         // If courseId is NOT provided, filter remains {}, fetching ALL quizzes.
-        
+
 // // // // // // // // // //         // Fetch quizzes based on the filter. Sort by due date then creation date.
 // // // // // // // // // //         const quizzes = await Quiz.find(filter)
 // // // // // // // // // //             .sort({ dueAt: 1, createdAt: -1 })
@@ -703,19 +711,19 @@
 // // // // // // // // // //         if (!courseId || !quizId) {
 // // // // // // // // // //             return next(createHttpError(400, "Course ID and Quiz ID are required."));
 // // // // // // // // // //         }
-        
+
 // // // // // // // // // //         // 1. Get the MongoDB _id for the Course
 // // // // // // // // // //         const course = await Course.findOne({ courseId });
 // // // // // // // // // //         if (!course) {
 // // // // // // // // // //             return next(createHttpError(404, "Course not found."));
 // // // // // // // // // //         }
 // // // // // // // // // //         const courseObjectId = course._id;
-        
+
 // // // // // // // // // //         // 2. Find all enrollments (users) for this course
 // // // // // // // // // //         const enrollments = await Enrollment.find({ course: courseObjectId })
 // // // // // // // // // //             .populate('user', 'name email role') 
 // // // // // // // // // //             .select('user'); 
-        
+
 // // // // // // // // // //         const enrolledUsers = enrollments.map(e => e.user);
 // // // // // // // // // //         const enrolledUserIds = enrolledUsers.map(user => user._id);
 
@@ -724,16 +732,16 @@
 // // // // // // // // // //             quizId: quizId,
 // // // // // // // // // //             userId: { $in: enrolledUserIds } 
 // // // // // // // // // //         }).select('userId submittedAt score');
-        
+
 // // // // // // // // // //         const submittedUserIds = results.map(s => s.userId.toString());
-        
+
 // // // // // // // // // //         // 4. Map the results
 // // // // // // // // // //         const statusReport = enrolledUsers.map(user => {
 // // // // // // // // // //             const isCompleted = submittedUserIds.includes(user._id.toString());
 // // // // // // // // // //             const resultData = isCompleted 
 // // // // // // // // // //                 ? results.find(s => s.userId.toString() === user._id.toString())
 // // // // // // // // // //                 : null;
-            
+
 // // // // // // // // // //             return {
 // // // // // // // // // //                 user: {
 // // // // // // // // // //                     id: user._id,
@@ -766,20 +774,20 @@
 // // // // // // // // // //     if (!customCourseId) {
 // // // // // // // // // //       return next(createHttpError(400, "Course ID is required"));
 // // // // // // // // // //     }
-    
+
 // // // // // // // // // //     const course = await Course.findOne({ courseId: customCourseId });
-    
+
 // // // // // // // // // //     if (!course) {
 // // // // // // // // // //         return next(createHttpError(404, "Course not found."));
 // // // // // // // // // //     }
-    
+
 // // // // // // // // // //     const courseObjectId = course._id; 
 
 // // // // // // // // // //     const isEnrolled = await Enrollment.findOne({ 
 // // // // // // // // // //         user: userId, 
 // // // // // // // // // //         course: courseObjectId 
 // // // // // // // // // //     });
-    
+
 // // // // // // // // // //     if (!isEnrolled) {
 // // // // // // // // // //       return next(createHttpError(403, "Access denied. You are not enrolled in this course."));
 // // // // // // // // // //     }
@@ -788,7 +796,7 @@
 // // // // // // // // // //         courseId: customCourseId,
 // // // // // // // // // //         // Optional: Add visibility/timing logic here
 // // // // // // // // // //     }).sort({ startAt: 1 });
-    
+
 // // // // // // // // // //     res.json(quizzes);
 // // // // // // // // // //   } catch (err) {
 // // // // // // // // // //     console.error("🔥 Error fetching visible quizzes:", err);
@@ -826,7 +834,7 @@
 // // // // // // // // //     if (!courseId || !title || !questions || questions.length === 0) {
 // // // // // // // // //       return next(createHttpError(400, "Missing required quiz fields (Course ID, title, questions)."));
 // // // // // // // // //     }
-    
+
 // // // // // // // // //     // Check if the custom courseId exists
 // // // // // // // // //     const courseExists = await Course.findOne({ courseId });
 // // // // // // // // //     if (!courseExists) {
@@ -890,7 +898,7 @@
 // // // // // // // // //         if (courseId && courseId.trim() !== "") {
 // // // // // // // // //             filter.courseId = courseId.trim();
 // // // // // // // // //         } 
-        
+
 // // // // // // // // //         const quizzes = await Quiz.find(filter)
 // // // // // // // // //             .sort({ dueAt: 1, createdAt: -1 })
 // // // // // // // // //             .lean();
@@ -914,19 +922,19 @@
 // // // // // // // // //         if (!courseId || !quizId) {
 // // // // // // // // //             return next(createHttpError(400, "Course ID and Quiz ID are required."));
 // // // // // // // // //         }
-        
+
 // // // // // // // // //         // 1. Get the MongoDB _id for the Course
 // // // // // // // // //         const course = await Course.findOne({ courseId });
 // // // // // // // // //         if (!course) {
 // // // // // // // // //             return next(createHttpError(404, "Course not found."));
 // // // // // // // // //         }
 // // // // // // // // //         const courseObjectId = course._id;
-        
+
 // // // // // // // // //         // 2. Find all enrollments (users) for this course
 // // // // // // // // //         const enrollments = await Enrollment.find({ course: courseObjectId })
 // // // // // // // // //             .populate('user', 'name email role') 
 // // // // // // // // //             .select('user'); 
-        
+
 // // // // // // // // //         const enrolledUsers = enrollments.map(e => e.user);
 // // // // // // // // //         const enrolledUserIds = enrolledUsers.map(user => user._id);
 
@@ -935,16 +943,16 @@
 // // // // // // // // //             quizId: quizId,
 // // // // // // // // //             userId: { $in: enrolledUserIds } 
 // // // // // // // // //         }).select('userId submittedAt score');
-        
+
 // // // // // // // // //         const submittedUserIds = results.map(s => s.userId.toString());
-        
+
 // // // // // // // // //         // 4. Map the results
 // // // // // // // // //         const statusReport = enrolledUsers.map(user => {
 // // // // // // // // //             const isCompleted = submittedUserIds.includes(user._id.toString());
 // // // // // // // // //             const resultData = isCompleted 
 // // // // // // // // //                 ? results.find(s => s.userId.toString() === user._id.toString())
 // // // // // // // // //                 : null;
-            
+
 // // // // // // // // //             return {
 // // // // // // // // //                 user: {
 // // // // // // // // //                     id: user._id,
@@ -977,20 +985,20 @@
 // // // // // // // // //     if (!customCourseId) {
 // // // // // // // // //       return next(createHttpError(400, "Course ID is required"));
 // // // // // // // // //     }
-    
+
 // // // // // // // // //     const course = await Course.findOne({ courseId: customCourseId });
-    
+
 // // // // // // // // //     if (!course) {
 // // // // // // // // //         return next(createHttpError(404, "Course not found."));
 // // // // // // // // //     }
-    
+
 // // // // // // // // //     const courseObjectId = course._id; 
 
 // // // // // // // // //     const isEnrolled = await Enrollment.findOne({ 
 // // // // // // // // //         user: userId, 
 // // // // // // // // //         course: courseObjectId 
 // // // // // // // // //     });
-    
+
 // // // // // // // // //     if (!isEnrolled) {
 // // // // // // // // //       return next(createHttpError(403, "Access denied. You are not enrolled in this course."));
 // // // // // // // // //     }
@@ -999,7 +1007,7 @@
 // // // // // // // // //         courseId: customCourseId,
 // // // // // // // // //         // FUTURE ENHANCEMENT: Filter by { dueAt: { $gte: new Date() } } to show only active quizzes
 // // // // // // // // //     }).sort({ startAt: 1 });
-    
+
 // // // // // // // // //     res.json(quizzes);
 // // // // // // // // //   } catch (err) {
 // // // // // // // // //     console.error("🔥 Error fetching visible quizzes:", err);
@@ -1029,13 +1037,13 @@
 // // // // // // // // //         if (existingSubmission) {
 // // // // // // // // //             return next(createHttpError(409, "Quiz already submitted."));
 // // // // // // // // //         }
-        
+
 // // // // // // // // //         // 2. Fetch the original quiz to get correct answers
 // // // // // // // // //         const quiz = await Quiz.findById(quizId);
 // // // // // // // // //         if (!quiz) {
 // // // // // // // // //             return next(createHttpError(404, "Quiz not found."));
 // // // // // // // // //         }
-        
+
 // // // // // // // // //         // 3. Score the quiz
 // // // // // // // // //         let score = 0;
 // // // // // // // // //         let totalPoints = quiz.questions.length; // Assuming 1 point per question
@@ -1053,12 +1061,12 @@
 // // // // // // // // //                 // Single Choice: Check if selectedIndex matches correctIndex
 // // // // // // // // //                 const submittedIndex = submittedAnswer.selectedIndex;
 // // // // // // // // //                 isCorrect = submittedIndex === originalQuestion.correctIndex;
-                
+
 // // // // // // // // //             } else if (originalQuestion.type === 'multiple') {
 // // // // // // // // //                 // Multiple Choice: Check if selectedIndices array matches correctIndices array
 // // // // // // // // //                 const submittedIndices = submittedAnswer.selectedIndices?.sort() || [];
 // // // // // // // // //                 const correctIndices = originalQuestion.correctIndices?.sort() || [];
-                
+
 // // // // // // // // //                 // Compare length AND check if every element matches in order
 // // // // // // // // //                 isCorrect = submittedIndices.length === correctIndices.length &&
 // // // // // // // // //                             submittedIndices.every((val, index) => val === correctIndices[index]);
@@ -1067,7 +1075,7 @@
 // // // // // // // // //                 // Fill-in-the-Blank: Case-insensitive and trimming comparison
 // // // // // // // // //                 const submittedText = (submittedAnswer.answerText || '').trim().toLowerCase();
 // // // // // // // // //                 const correctText = (originalQuestion.answer || '').trim().toLowerCase();
-                
+
 // // // // // // // // //                 isCorrect = submittedText === correctText;
 // // // // // // // // //             }
 
@@ -1775,7 +1783,7 @@
 // // // // export const createQuiz = async (req, res, next) => {
 // // // //     try {
 // // // //         const { courseId, title, description, questions, dateTimeRange } = req.body;
-        
+
 // // // //         if (!courseId || !title || !questions || questions.length === 0) {
 // // // //             return next(createHttpError(400, "Missing required fields: course ID, title, or questions."));
 // // // //         }
@@ -1798,7 +1806,7 @@
 // // // //         });
 
 // // // //         const savedQuiz = await newQuiz.save();
-        
+
 // // // //         successResponse(res, 201, "Quiz published successfully.", savedQuiz);
 // // // //     } catch (error) {
 // // // //         // Handle MongoDB validation or other saving errors
@@ -1859,7 +1867,7 @@
 // // // //         if (dueAt <= startAt) {
 // // // //              return next(createHttpError(400, "Due time must be after the start time."));
 // // // //         }
-        
+
 // // // //         const updatedQuiz = await Quiz.findByIdAndUpdate(
 // // // //             quizId,
 // // // //             { courseId, title, description, questions, startAt, dueAt },
@@ -2762,6 +2770,11 @@ import Quiz from "../models/Quiz.js"
 import QuizSubmission from "../models/QuizSubmission.js"
 import Enrollment from "../models/Enrollment.js"
 import { createHttpError } from "../utils/errors.js"
+import Course from "../models/Course.js"
+import mongoose from "mongoose"
+import * as notificationController from "./notificationController.js"
+
+// // // // // // // // // // import Course from "../models/Course.js" // Ensure Course is imported if not already
 
 // Admin: Create quiz
 export const createQuiz = async (req, res, next) => {
@@ -2772,10 +2785,28 @@ export const createQuiz = async (req, res, next) => {
       return next(createHttpError(400, "Course, title, and questions are required"))
     }
 
+    // Check if course is a valid ObjectId (direct reference) or a custom string ID
+    let courseObjectId = course;
+
+    // Try finding the course by its custom ID string (e.g. "CS101")
+    // If 'course' is not a valid ObjectId, we assume it's a custom ID.
+
+    const foundCourse = await Course.findOne({
+      $or: [
+        { courseId: course },
+        { _id: mongoose.isValidObjectId(course) ? course : null }
+      ]
+    });
+
+    if (!foundCourse) {
+      return next(createHttpError(404, `Course '${course}' not found.`));
+    }
+    courseObjectId = foundCourse._id;
+
     const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0)
 
     const quiz = new Quiz({
-      course,
+      courseId: courseObjectId, // Use the resolved MongoDB ObjectId
       title,
       description,
       questions,
@@ -2783,20 +2814,21 @@ export const createQuiz = async (req, res, next) => {
       startAt,
       dueAt,
       totalPoints,
+      createdBy: req.user._id
     })
 
     await quiz.save()
 
     // Notify enrolled users
-    const enrollments = await Enrollment.find({ course })
-    const notificationController = require("./notificationController")
+    const enrollments = await Enrollment.find({ course: courseObjectId })
+
     for (const enrollment of enrollments) {
       await notificationController.createNotification({
         userId: enrollment.user,
         type: "quiz",
         title: `New Quiz: ${title}`,
         message: `A new quiz has been added to your course`,
-        courseId: course,
+        courseId: course, // Keep original string for notification context if needed? Or use ObjectId. Let's use string if that's what notifs expect, but usually IDs are better. The notification service might expect strings. Leaving original 'course' variable which holds the string/input.
       })
     }
 
@@ -2816,10 +2848,21 @@ export const getQuiz = async (req, res, next) => {
     const { quizId } = req.params
     const userId = req.user._id
 
-    const quiz = await Quiz.findById(quizId).populate("course")
+    const quiz = await Quiz.findById(quizId).populate("courseId")
 
     if (!quiz) {
       return next(createHttpError(404, "Quiz not found"))
+    }
+
+    // Verify enrollment
+    const enrollment = await Enrollment.findOne({
+      userId: userId,
+      courseId: quiz.courseId._id,
+      status: "active"
+    })
+
+    if (!enrollment) {
+      return next(createHttpError(403, "Access denied. You are not enrolled in this course."))
     }
 
     // Get or create submission
@@ -2832,7 +2875,7 @@ export const getQuiz = async (req, res, next) => {
       submission = new QuizSubmission({
         quiz: quizId,
         user: userId,
-        enrollment: req.body.enrollmentId,
+        enrollment: enrollment._id,
       })
       await submission.save()
     }
@@ -2949,10 +2992,30 @@ export const submitQuiz = async (req, res, next) => {
 // Get user quiz submissions
 export const getUserQuizzes = async (req, res, next) => {
   try {
-    const { courseId } = req.params
+    const courseIdParam = req.params.courseId || req.query.courseId
     const userId = req.user._id
 
-    const quizzes = await Quiz.find({ course: courseId, isPublished: true })
+    if (!courseIdParam) {
+      return next(createHttpError(400, "Course ID is required"))
+    }
+
+    // Resolve courseId if it's a code or custom ID
+    let courseObj = await Course.findById(courseIdParam);
+    if (!courseObj) {
+      courseObj = await Course.findOne({ courseId: courseIdParam });
+    }
+
+    if (!courseObj) {
+      return next(createHttpError(404, "Course not found"));
+    }
+
+    // Check enrollment
+    const enrollment = await Enrollment.findOne({ userId: userId, courseId: courseObj._id, status: "active" })
+    if (!enrollment) {
+      return next(createHttpError(403, "Access denied. You are not enrolled in this course."));
+    }
+
+    const quizzes = await Quiz.find({ courseId: courseObj._id, isPublished: true })
 
     const submissions = await QuizSubmission.find({
       user: userId,
@@ -2997,8 +3060,12 @@ export const getQuizSubmissions = async (req, res, next) => {
 export const getAdminQuizzes = async (req, res, next) => {
   try {
     const { courseId } = req.params
+    // Handle "undefined" string coming from frontend or legitimate missing params
+    const effectiveId = (courseId && courseId !== "undefined") ? courseId : null;
 
-    const quizzes = await Quiz.find({ course: courseId }).populate("course", "title").sort({ createdAt: -1 })
+    const query = effectiveId ? { courseId: effectiveId } : {};
+
+    const quizzes = await Quiz.find(query).sort({ createdAt: -1 });
 
     res.json({
       success: true,

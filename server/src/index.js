@@ -29,18 +29,25 @@ import { setupSocket } from "./config/socket.js";
 
 // Add this import at the top with the other route imports
 import materialRoutes from "./routes/materialRoutes.js";
+import aiRoutes from "./routes/ai.js";
 
 
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // ----------------------
 // 🔒 Core Middleware
 // ----------------------
 app.use(helmet());
+
+// DEBUG: Log all requests
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
+  next();
+});
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
@@ -75,8 +82,20 @@ app.use("/api/courses", courseRoutes); // ✅ matches frontend
 
 // Then, below your other route definitions (near the bottom)
 app.use("/api/materials", materialRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Celebrate validation errors
+app.use((err, req, res, next) => {
+  if (err.joi) {
+    console.log("[DEBUG] Validation Error Details:", JSON.stringify(err.joi.details, null, 2));
+    return res.status(400).json({
+      message: "Validation failed",
+      details: err.joi.details
+    });
+  }
+  next(err);
+});
+
 app.use(errors());
 
 // Global error handler

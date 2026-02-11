@@ -439,13 +439,16 @@ import * as assignmentController from "../controllers/assignmentController.js"
 const router = express.Router()
 
 // Admin routes
+router.get("/admin", requireAuth, rbac(["admin"]), assignmentController.getAdminAssignments)
 router.post("/", requireAuth, rbac(["admin"]), assignmentController.createAssignment)
 router.get("/:assignmentId/submissions", requireAuth, rbac(["admin"]), assignmentController.getAssignmentSubmissions)
 router.patch("/:submissionId/grade", requireAuth, rbac(["admin"]), assignmentController.gradeAssignment)
 router.delete("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.deleteAssignment)
 router.patch("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment)
+router.put("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment) // Added for frontend compatibility
 
 // User routes
+router.get("/visible", requireAuth, assignmentController.getUserAssignments)
 router.get("/course/:courseId", requireAuth, assignmentController.getUserAssignments)
 router.get("/:assignmentId", requireAuth, assignmentController.getAssignment)
 router.post("/:submissionId/draft", requireAuth, assignmentController.saveAssignmentDraft)
