@@ -1220,6 +1220,7 @@
 
 
 
+import mongoose from "mongoose"
 import Enrollment from "../models/Enrollment.js"
 import { createHttpError } from "../utils/errors.js"
 import { sendResponse } from "../utils/response.js"
@@ -1228,7 +1229,15 @@ import { sendResponse } from "../utils/response.js"
 export const enrollInCourse = async (req, res, next) => {
   try {
     const userId = req.user._id   // ✅ use _id from protect middleware
-    const { courseId } = req.params
+    const courseId = req.body?.courseId || req.params?.courseId
+
+    if (!courseId) {
+      return next(createHttpError(400, "courseId is required"))
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return next(createHttpError(400, "Invalid courseId"))
+    }
 
     // prevent duplicate enrollment
     const existing = await Enrollment.findOne({ userId, courseId })

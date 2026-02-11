@@ -672,7 +672,7 @@ const courseSchema = new mongoose.Schema({
   timestamps: true
 })
 
-courseSchema.index({ courseId: 1 })
+// courseSchema.index({ courseId: 1 }) // Removed duplicate index
 courseSchema.index({ category: 1 })
 courseSchema.index({ difficulty: 1 })
 courseSchema.index({ title: 'text', description: 'text' })

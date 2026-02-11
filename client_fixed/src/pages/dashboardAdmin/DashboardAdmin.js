@@ -11,10 +11,13 @@ import DashboardAdminNetworking from "./DashboardAdminNetworking"
 import DashboardAdminUserEndpoint from "./DashboardAdminUserEndpoint"
 import DashboardAdminCompliance from "./DashboardAdminCompliance"
 import DashboardAdminCourses from "./DashboardAdminCourses"
-import AddCourseMaterials from "./AddCourseMaterials"  
+import AddCourseMaterials from "./AddCourseMaterials"
 import MonitoringUsers from "./MonitoringUsers"
 import Assignments from "./Assignments"
+
 import Quizzes from "./Quizzes"
+import DashboardAdminAI from "./DashboardAdminAI" // Import the new AI component
+import { Bot } from "lucide-react" // Import icon
 
 export default function DashboardAdmin() {
   const [activePage, setActivePage] = useState("dashboard") // default to Dashboard Overview
@@ -30,12 +33,14 @@ export default function DashboardAdmin() {
         { key: "threat", label: "Threat Intelligence" },
         { key: "networking", label: "Networking" },
         { key: "userendpoint", label: "User Endpoint" },
+
         { key: "compliance", label: "Compliance" },
+        { key: "ai_assistant", label: "AI Assistant", icon: <Bot size={18} /> }, // Added AI Assistant
       ],
     },
     {
       key: "monitoring",
-      label: "Monitoring Users", 
+      label: "Monitoring Users",
     },
     {
       key: "learning",
@@ -61,14 +66,16 @@ export default function DashboardAdmin() {
       {activePage === "threat" && <DashboardAdminThreatIntelligence />}
       {activePage === "networking" && <DashboardAdminNetworking />}
       {activePage === "userendpoint" && <DashboardAdminUserEndpoint />}
+
       {activePage === "compliance" && <DashboardAdminCompliance />}
+      {activePage === "ai_assistant" && <DashboardAdminAI />}
 
       {/* Standalone */}
       {activePage === "monitoring" && <MonitoringUsers />}
 
       {/* Learning section */}
       {activePage === "courses" && <DashboardAdminCourses />}
-       {activePage === "managecourses" && <AddCourseMaterials />} 
+      {activePage === "managecourses" && <AddCourseMaterials />}
       {activePage === "assignments" && <Assignments />}
       {activePage === "quizzes" && <Quizzes />}
     </AdminLayout>
