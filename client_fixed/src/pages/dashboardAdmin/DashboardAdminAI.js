@@ -6,6 +6,15 @@ import { Bot, Send, Trash2, User, Loader2, AlertCircle } from "lucide-react";
 import { useIncidentsData } from "../../hooks/useIncidentsData";
 
 export default function DashboardAdminAI() {
+    const getApiBase = () => {
+        if (typeof window !== "undefined") {
+            const host = window.location.hostname;
+            if (host === "localhost" || host === "127.0.0.1") {
+                return "/api";
+            }
+        }
+        return process.env.REACT_APP_API_URL || "/api";
+    };
     // Data State
     const incidentsFromHook = useIncidentsData();
     const [metrics, setMetrics] = useState(null);
@@ -32,7 +41,7 @@ export default function DashboardAdminAI() {
         const fetchData = async () => {
             setConnStatus("checking");
             try {
-                const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+                const API = getApiBase();
 
                 // 1. Try Wazuh Alerts (Real-time)
                 const wazuhRes = await fetch(`${API}/wazuh/logs`).catch(() => null);
@@ -120,8 +129,9 @@ export default function DashboardAdminAI() {
                 timestamp: new Date().toISOString()
             };
 
+            const apiBase = getApiBase();
             const res = await fetch(
-                `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/ai/summarize-dashboard`,
+                `${apiBase}/ai/summarize-dashboard`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

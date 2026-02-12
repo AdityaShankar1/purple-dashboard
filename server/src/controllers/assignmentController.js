@@ -3159,9 +3159,6 @@ export const submitAssignment = async (req, res, next) => {
       submission.isLate = new Date() > assignment.dueDate
     }
 
-    // Try to find assignment first
-    let assignment = await Assignment.findById(idParam);
-
     // Update progress
     const { updateCourseProgress } = await import("./progressController.js")
     await updateCourseProgress(userId, assignment.courseId)
@@ -3176,39 +3173,6 @@ export const submitAssignment = async (req, res, next) => {
     next(error)
   }
 }
-
-// Get user assignments
-export const getUserAssignments = async (req, res, next) => {
-  try {
-    const { courseId } = req.params
-    const userId = req.user._id
-
-    // Validate courseId is a valid ObjectId
-    if (!/^[0-9a-fA-F]{24}$/.test(courseId)) {
-      return res.json({
-        success: true,
-        data: [],
-      })
-    }
-
-    const assignments = await Assignment.find({ courseId: courseId, isPublished: true })
-
-    const submissions = await AssignmentSubmission.find({
-      userId: userId,
-      assignment: { $in: assignments.map((a) => a._id) },
-    })
-
-    const assignmentsWithSubmissions = assignments.map((assignment) => {
-      const submission = submissions.find((s) => s.assignment.toString() === assignment._id.toString())
-      return {
-        ...assignment.toObject(),
-        submission: submission || null,
-      }
-    }
-
-    if (!assignment.isPublished) {
-      return next(createHttpError(400, "Assignment is not published yet"));
-    }
 
 // User: Get all assignments from all enrolled courses
 export const getAllUserAssignments = async (req, res, next) => {
@@ -3257,53 +3221,3 @@ export const getAllUserAssignments = async (req, res, next) => {
     next(error)
   }
 }
-
-// Admin: Get assignment submissions
-export const getAssignmentSubmissions = async (req, res, next) => {
-  try {
-    const { assignmentId } = req.params
-
-    if (!isEnrolled) {
-      return next(createHttpError(403, "You are not enrolled in this course"));
-    }
-
-    // Check if already submitted
-    let submission = await AssignmentSubmission.findOne({
-      assignment: assignment._id,
-      userId: studentId,
-    });
-
-    if (submission && submission.submitted && !submission.canResubmit) {
-      // canResubmit field? exists in one of the schemas I saw? 
-      // Schema in view_file 90 lines 350-366 does NOT have canResubmit. 
-      // It has status enum.
-      // So we check if status is submitted/graded.
-      return next(createHttpError(400, "You have already submitted this assignment"));
-    }
-
-    if (!submission) {
-      submission = new AssignmentSubmission({
-        assignment: assignment._id,
-        userId: studentId,
-        courseId: assignment.courseId
-      });
-    }
-
-    submission.submissionText = text;
-    submission.submitted = true;
-    submission.submittedAt = new Date();
-    submission.status = "submitted";
-    // handle file/attachment mapping
-    if (file) submission.submissionFile = file; // Schema has submissionFile
-
-    await submission.save();
-
-    const populatedSubmission = await AssignmentSubmission.findById(submission._id)
-      .populate("assignment", "title")
-      .populate("userId", "name email");
-
-    res.status(201).json(successResponse(populatedSubmission, "Assignment submitted successfully"));
-  } catch (error) {
-    next(error);
-  }
-};

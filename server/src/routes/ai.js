@@ -48,8 +48,10 @@ User Question: ${userPrompt || "Summarize the current status."}
 Previous Chat History:
 ${JSON.stringify(history || [])}
 
-Provide a helpful, natural language response. Be concise but professional. 
+Provide a helpful, natural language response. Be concise but professional.
 If analyzing logs, mention specific details like the affected agent or alert description.
+Also identify likely MITRE ATT&CK tactics and techniques for any incidents or alerts.
+If you are unsure, say "Unknown" and explain briefly.
 `;
 
         const response = await ollama.chat({
