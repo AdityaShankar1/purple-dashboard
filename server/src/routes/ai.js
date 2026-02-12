@@ -35,44 +35,49 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
 - Data Source: ${statsToUse.source || 'Unknown'}
 `;
 
-        const prompt = `SOC ALERT SYSTEM - MACHINE FORMAT RESPONSE
+        const prompt = `SOC SECURITY STATUS REPORT - DATA-BASED ONLY
 
-DATA:
+ACTUAL DATA FROM DASHBOARD:
 ${contextInfo}
 
-QUERY: ${userPrompt || "status"}
+SEVERITY MAPPING (APPLY STRICTLY):
+- If activeIncidents = 0: SEVERITY IS Low
+- If activeIncidents 1-2: SEVERITY IS Medium  
+- If activeIncidents 3-5: SEVERITY IS High
+- If activeIncidents > 5: SEVERITY IS Critical
+- NEVER escalate beyond what incidents show
 
-CRITICAL RULES:
-1. Respond ONLY based on the provided security data above
-2. Do NOT invent threats or change threat levels without data support
-3. If data shows low/no alerts, respond accurately - do NOT escalate severity
-4. Each line is ONE fact from the data
-5. Answer should reference specific incidents/alerts in the data provided
-6. Consistency: Repeat the same assessment if queried again with same data
+RESPONSE FORMAT:
+SUMMARY: State the actual count of activeIncidents and the top risk level from riskDistribution
+SEVERITY: (Apply from mapping above based on activeIncidents count ONLY)
+MITRE ATT&CK: Only list if recentIncidents contain specific attack types, else "None Detected"
+NEXT ACTIONS: List only if Severity is High or Critical. If Low/Medium, omit this section.
 
-RESPONSE FORMAT (no other text):
-SUMMARY: ONE-LINE description of security status from the provided data
-SEVERITY: (Critical/High/Medium/Low) - based only on provided metrics
-MITRE ATT&CK: (Technique codes if applicable, or "None Detected")
-NEXT ACTIONS: Line-by-line directives (3-5 max). Omit if severity is Low.
+CRITICAL RULES - OBEY THESE:
+1. Report ONLY facts from the provided data
+2. NEVER invent incidents, threats, or activities not in the data
+3. If data shows 0 activeIncidents, do NOT say "high risk"
+4. If riskDistribution is mostly low, severity cannot be High
+5. Reference specific numbers from the data
+6. Do NOT add drama or assumptions
 
-EXAMPLES (format only, do NOT copy content):
-Example 1:
-SUMMARY: Brute force activity on authentication service
-SEVERITY: Critical
-MITRE ATT&CK: Brute Force (T1110) - Confidence: 92%
-NEXT ACTIONS:
-Block source IP ranges
-Enable MFA enforcement
-Review failed login logs
-
-Example 2:
-SUMMARY: No active security incidents detected
+EXAMPLE RESPONSE (format reference only):
+Given: activeIncidents: 0, low risk distribution, 0 open alerts
+SUMMARY: No active security incidents detected. 1,414,832 total alerts on file with mostly low-level activity.
 SEVERITY: Low
 MITRE ATT&CK: None Detected
-NEXT ACTIONS: (none - omit when Low severity)
+(no NEXT ACTIONS for Low severity)
 
-OUTPUT ONLY THE FORMATTED RESPONSE. NO OTHER TEXT.`;
+Given: activeIncidents: 4, high: 39, medium: 149, low: 12
+SUMMARY: 4 active incidents detected with medium-to-low risk distribution (39 high, 149 medium, 12 low)
+SEVERITY: High
+MITRE ATT&CK: Possible lateral movement patterns
+NEXT ACTIONS:
+Investigate the 4 active incidents immediately
+Review high-risk alerts (39 total)
+Monitor for spread to additional systems
+
+OUTPUT ONLY THIS FORMAT. NO OTHER TEXT. NO PROSE.`;
 
         // Build conversation with history for context continuity
         const messages = [];
