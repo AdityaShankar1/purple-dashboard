@@ -42,10 +42,49 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
         else if (activeInc >= 3 && activeInc <= 5) baseSeverity = 'High';
         else if (activeInc > 5) baseSeverity = 'Critical';
 
+        // Map incident descriptions to MITRE ATT&CK techniques
+        const mitreMapping = {
+            'lateral movement': 'T1021 - Remote Services',
+            'brute force': 'T1110 - Brute Force',
+            'privilege escalation': 'T1134 - Access Token Manipulation',
+            'data exfiltration': 'T1041 - Exfiltration Over Network',
+            'credential theft': 'T1555 - Credentials from Password Stores',
+            'malware': 'T1204 - User Execution',
+            'ransomware': 'T1486 - Data Encrypted for Impact',
+            'ddos': 'T1498 - Network Denial of Service',
+            'sql injection': 'T1190 - Exploit Public-Facing Application',
+            'phishing': 'T1566 - Phishing',
+            'credential stuffing': 'T1110.004 - Credential Stuffing',
+            'scanning': 'T1018 - Remote System Discovery',
+            'reconnaissance': 'T1592 - Gather Victim Host Information',
+            'unauthorized access': 'T1078 - Valid Accounts',
+            'backdoor': 'T1098 - Account Manipulation',
+            'persistence': 'T1547 - Boot or Logon Autostart Execution'
+        };
+
+        let detectedTechniques = [];
+        if (statsToUse.recentIncidents && Array.isArray(statsToUse.recentIncidents)) {
+            statsToUse.recentIncidents.forEach(incident => {
+                const desc = (incident.description || '').toLowerCase();
+                for (const [keyword, technique] of Object.entries(mitreMapping)) {
+                    if (desc.includes(keyword)) {
+                        detectedTechniques.push(technique);
+                        break;
+                    }
+                }
+            });
+        }
+        
+        const mitreText = detectedTechniques.length > 0 
+            ? detectedTechniques.slice(0, 3).join(', ')
+            : 'None Detected';
+
         const prompt = `SOC SECURITY REPORT
 
 DATA:
 ${contextInfo}
+
+DETECTED MITRE ATT&CK TECHNIQUES: ${mitreText}
 
 USER ASKS: "${userPrompt || "What is the security status?"}"
 
@@ -57,7 +96,7 @@ ANSWER THE USER'S SPECIFIC QUESTION USING ONLY THE DATA ABOVE.
 RESPONSE FORMAT:
 SUMMARY: [One sentence directly answering their question]
 SEVERITY: ${baseSeverity}
-MITRE ATT&CK: [Technique if described in incidents, else "None Detected"]
+MITRE ATT&CK: ${mitreText}
 NEXT ACTIONS: [Only if severity is High or Critical, else omit]
 
 ANSWER APPROACH BY QUESTION TYPE:
@@ -69,10 +108,11 @@ ANSWER APPROACH BY QUESTION TYPE:
 
 CRITICAL RULES:
 1. Severity is ALWAYS ${baseSeverity} for this data (${activeInc} active incidents)
-2. Use ONLY real numbers from data above
-3. Tailor summary wording to their specific question
-4. Keep concise, no invented data
-5. Format must be exact
+2. MITRE ATT&CK is ALWAYS: ${mitreText}
+3. Use ONLY real numbers from data above
+4. Tailor summary wording to their specific question
+5. Keep concise, no invented data
+6. Format must be exact
 
 OUTPUT ONLY THE FORMAT ABOVE.`;
 
