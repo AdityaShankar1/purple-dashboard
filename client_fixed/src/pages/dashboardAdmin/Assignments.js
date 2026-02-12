@@ -2720,7 +2720,14 @@ const api = async (path, opts = {}) => {
     ...opts,
   })
 
-  const json = await response.json().catch(() => ({}))
+  let json = {};
+  const text = await response.text();
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch (e) {
+    console.error("❌ Failed to parse JSON:", text);
+    json = { message: text || `HTTP ${response.status}` };
+  }
 
   if (!response.ok) {
     console.error("❌ API error:", {
@@ -2729,11 +2736,13 @@ const api = async (path, opts = {}) => {
       body: json,
     })
 
+    const errorMessage = json.message || json.error || `Error ${response.status}: ${response.statusText || 'Unknown error'}`;
+
     if (response.status === 401 || response.status === 403) {
-      return { error: json.message || "Access denied", status: response.status }
+      return { error: errorMessage, status: response.status }
     }
 
-    throw new Error(json.message || "Request failed")
+    throw new Error(errorMessage)
   }
 
   return json
@@ -2823,9 +2832,12 @@ export default function AdminAssignments() {
       }
 
       const payload = {
-        ...form,
         course: courseId,
-        dueDate: form.dueAt || undefined,
+        title: form.title,
+        description: form.description || "",
+        dueDate: form.dueAt || null,
+        maxScore: 100,
+        isPublished: form.isPublished || false,
       }
 
       const r = editing
@@ -2873,12 +2885,12 @@ export default function AdminAssignments() {
     setEditing(a._id)
     setShowCreateForm(true)
     setForm({
-      course: a.course?._id || a.course,
-      title: a.title,
+      course: a.courseId?._id || a.courseId || "",
+      title: a.title || "",
       description: a.description || "",
       instructions: a.instructions || "",
       isPublished: !!a.isPublished,
-      dueAt: a.dueAt ? dayjs(a.dueAt).toISOString().slice(0, 16) : "",
+      dueAt: a.dueDate ? dayjs(a.dueDate).toISOString().slice(0, 16) : "",
       attachment: a.attachment || null,
     })
     window.scrollTo({ top: 0, behavior: "smooth" })

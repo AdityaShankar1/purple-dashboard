@@ -33,7 +33,7 @@
 // // // //     fetchData();
 // // // //   }, []);
 
-  
+
 // // // // const handleEnroll = async (courseId) => {
 // // // //   setEnrolling(courseId);
 // // // //   try {
@@ -170,7 +170,7 @@
 // // // //                     <h3 className="text-lg font-semibold mb-1">
 // // // //                       {course.title}
 // // // //                     </h3>
-                    
+
 // // // //                     {/* ADDED: Course ID for reference */}
 // // // //                     <p className="text-xs text-gray-400 mb-1">ID: {course.courseId}</p>
 
@@ -317,7 +317,7 @@
 // // //     fetchData();
 // // //   }, []);
 
-  
+
 // // // const handleEnroll = async (courseId) => {
 // // //   setEnrolling(courseId);
 // // //   try {
@@ -340,7 +340,8 @@
 // // //         courseApi.getCourses(),
 // // //         enrollmentApi.getUserEnrollments(),
 // // //       ]);
-// // //       setCourses(coursesResponse.data.data.courses || []);
+// // //       const coursesData = coursesResponse.data.data;
+// // //       setCourses(Array.isArray(coursesData) ? coursesData : coursesData?.courses || []);
 // // //       // Filter out enrollments that failed population due to the bad data
 // // //       setEnrolledCourses(
 // // //         (enrollmentsResponse.data.data || []).filter((e) => e.course) 
@@ -456,7 +457,7 @@
 // // //                     <h3 className="text-lg font-semibold mb-1">
 // // //                       {course.title}
 // // //                     </h3>
-                    
+
 // // //                     {/* ADDED: Course ID for reference */}
 // // //                     <p className="text-xs text-gray-400 mb-1">ID: {course.courseId}</p>
 
@@ -893,7 +894,7 @@
 //         const response = await fetch("/api/courses", {
 //           headers: { Authorization: `Bearer ${token}` },
 //         })
-        
+
 //         if (response.ok) {
 //           const result = await response.json()
 //           // Backend returns data wrapped in { data: [...] }
@@ -994,6 +995,7 @@ import {
   CheckCircle,
   Star,
   TrendingUp,
+  Play,
 } from "lucide-react";
 import axios from "../../api/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
@@ -1039,7 +1041,7 @@ export default function CourseList() {
   const fetchCourses = async () => {
     try {
       const params = {};
-      
+
       if (selectedCategory !== "All Categories") {
         params.category = selectedCategory;
       }
@@ -1246,9 +1248,8 @@ export default function CourseList() {
               >
                 {/* Course Header with Category Gradient */}
                 <div
-                  className={`bg-gradient-to-r ${
-                    CATEGORY_COLORS[course.category] || "from-gray-500 to-gray-600"
-                  } p-5 relative overflow-hidden`}
+                  className={`bg-gradient-to-r ${CATEGORY_COLORS[course.category] || "from-gray-500 to-gray-600"
+                    } p-5 relative overflow-hidden`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                   <div className="relative">
@@ -1257,9 +1258,8 @@ export default function CourseList() {
                         {course.category}
                       </span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                          DIFFICULTY_BADGES[course.difficulty]
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${DIFFICULTY_BADGES[course.difficulty]
+                          }`}
                       >
                         {course.difficulty}
                       </span>
@@ -1306,10 +1306,13 @@ export default function CourseList() {
 
                   {/* Action Button */}
                   {course.isEnrolled ? (
-                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-green-100 text-green-600 rounded-xl font-semibold text-sm">
-                      <CheckCircle size={18} />
-                      Enrolled
-                    </div>
+                    <a
+                      href={`/course/${course._id}`}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <Play size={18} />
+                      Continue Learning
+                    </a>
                   ) : (
                     <button
                       onClick={() => handleEnrollCourse(course._id)}

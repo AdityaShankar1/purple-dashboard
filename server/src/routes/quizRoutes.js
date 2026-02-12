@@ -496,11 +496,13 @@ router.post("/", requireAuth, rbac(["admin"]), quizController.createQuiz)
 router.get("/:quizId/submissions", requireAuth, rbac(["admin"]), quizController.getQuizSubmissions)
 router.get("/admin", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes)
 router.get("/admin/course/:courseId", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes)
+router.get("/admin", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes) // ✅ Added route for all quizzes
 router.delete("/:quizId", requireAuth, rbac(["admin"]), quizController.deleteQuiz)
 router.patch("/:quizId", requireAuth, rbac(["admin"]), quizController.updateQuiz)
 router.patch("/:submissionId/allow-resubmit", requireAuth, rbac(["admin"]), quizController.allowResubmit)
 
 // User routes
+router.get("/visible", requireAuth, quizController.getUserQuizzes)
 router.get("/course/:courseId", requireAuth, quizController.getUserQuizzes)
 router.get("/:quizId", requireAuth, quizController.getQuiz)
 router.post("/:submissionId/answer", requireAuth, quizController.saveQuizAnswer)

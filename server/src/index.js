@@ -44,6 +44,12 @@ const PORT = process.env.PORT || 5001;
 // 🔒 Core Middleware
 // ----------------------
 app.use(helmet());
+
+// DEBUG: Log all requests
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
+  next();
+});
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
@@ -84,6 +90,17 @@ app.use("/api/api/materials", materialRoutes); // ✅ Alias for frontend bug
 app.use("/api/api/quizzes", quizRoutes); // ✅ Alias for frontend bug?
 
 // Celebrate validation errors
+app.use((err, req, res, next) => {
+  if (err.joi) {
+    console.log("[DEBUG] Validation Error Details:", JSON.stringify(err.joi.details, null, 2));
+    return res.status(400).json({
+      message: "Validation failed",
+      details: err.joi.details
+    });
+  }
+  next(err);
+});
+
 app.use(errors());
 
 // Global error handler

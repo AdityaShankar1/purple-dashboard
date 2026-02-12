@@ -452,6 +452,7 @@ router.get("/:assignmentId/submissions", requireAuth, rbac(["admin"]), assignmen
 router.patch("/:submissionId/grade", requireAuth, rbac(["admin"]), assignmentController.gradeAssignment)
 router.delete("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.deleteAssignment)
 router.patch("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment)
+router.put("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment) // Added for frontend compatibility
 
 // User routes - IMPORTANT: specific routes before parameterized ones
 router.get("/user/all", requireAuth, assignmentController.getAllUserAssignments)
