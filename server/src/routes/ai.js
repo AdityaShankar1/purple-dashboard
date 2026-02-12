@@ -97,9 +97,44 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
             });
         }
         
-        const mitreText = detectedTechniques.length > 0 
-            ? detectedTechniques.slice(0, 3).join(', ')
+        // Deduplicate techniques before slicing
+        const uniqueTechniques = [...new Set(detectedTechniques)];
+        const mitreText = uniqueTechniques.length > 0 
+            ? uniqueTechniques.slice(0, 3).join(', ')
             : 'None Detected';
+
+        // Generate intelligent NEXT ACTIONS based on severity and detected techniques
+        let actionItems = [];
+        if (baseSeverity === 'Critical' || baseSeverity === 'High') {
+            // Technique-specific actions
+            if (uniqueTechniques.some(t => t.includes('T1110') || t.includes('T1078'))) {
+                actionItems.push('Review and strengthen authentication controls');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1021'))) {
+                actionItems.push('Investigate lateral movement patterns and network segmentation');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1001') || t.includes('T1071'))) {
+                actionItems.push('Analyze network traffic for obfuscation and command & control');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1548') || t.includes('T1543'))) {
+                actionItems.push('Review process creation and privilege escalation attempts');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1059'))) {
+                actionItems.push('Block suspicious script execution and PowerShell usage');
+            }
+            
+            // Severity-specific actions
+            if (baseSeverity === 'Critical') {
+                if (actionItems.length === 0) {
+                    actionItems.push('Isolate affected systems immediately');
+                    actionItems.push('Escalate to incident response team');
+                }
+            }
+        }
+        
+        const nextActionsText = actionItems.length > 0 
+            ? actionItems.slice(0, 2).join('\n')
+            : '';
 
         const prompt = `SOC SECURITY REPORT
 
@@ -116,16 +151,17 @@ DETERMINISTIC SEVERITY (CALCULATED): ${baseSeverity}
 ANSWER THE USER'S SPECIFIC QUESTION USING ONLY THE DATA ABOVE.
 
 RESPONSE FORMAT:
-SUMMARY: [One sentence directly answering their question]
-SEVERITY: ${baseSeverity}
-MITRE ATT&CK: ${mitreText}
-NEXT ACTIONS: [Only if severity is High or Critical, else omit]
+[TITLE]: [Brief assessment]
+- Severity: ${baseSeverity}
+- Incidents: ${activeInc}
+- MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
 
 ANSWER APPROACH BY QUESTION TYPE:
 - "logs" → Describe incidents/logs shown
-- "status" → Describe overall security posture
+- "status" → Describe overall security posture  
 - "actions" → Describe recommended steps
 - "severity" → Explain why this severity level
+- "MITRE" → List detected techniques and implications
 - Generic → Overall assessment
 
 CRITICAL RULES:
@@ -134,7 +170,8 @@ CRITICAL RULES:
 3. Use ONLY real numbers from data above
 4. Tailor summary wording to their specific question
 5. Keep concise, no invented data
-6. Format must be exact
+6. Format must be exact (use bullet points with dash -)
+7. Only show Action lines if severity is High or Critical
 
 OUTPUT ONLY THE FORMAT ABOVE.`;
 
