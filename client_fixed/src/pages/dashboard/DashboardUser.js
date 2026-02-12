@@ -741,10 +741,10 @@
 // export default function DashboardUser() {
 //   const { user } = useContext(AuthContext); // Get user for ID if needed
 //   const [activePage, setActivePage] = useState("dashboard");
-  
+
 //   // 🌟 FIX 1: State to manage the ID of the course currently selected for detail views (e.g., quizzes)
 //   const [selectedCourseId, setSelectedCourseId] = useState(null); 
-  
+
 //   // Optional: State to store the actual list of ongoing courses
 //   const [userCourses, setUserCourses] = useState([]);
 //   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -806,7 +806,7 @@
 //         { key: "completed", label: "Completed", icon: <CheckCircle size={18} /> },
 //         { key: "ongoing", label: "Ongoing", icon: <Clock size={18} /> },
 //         { key: "certificates", label: "Certificates", icon: <Award size={18} /> },
-        
+
 //         // These will now require selecting a course first, or we render a default list/prompt
 //         { key: "assignments", label: "Assignments", icon: <ListChecks size={18} /> },
 //         { key: "quizzes", label: "Quizzes", icon: <PenTool size={18} /> },
@@ -821,7 +821,7 @@
 //     switch (activePage) {
 //       case "courses": return <CourseList />;
 //       case "completed": return <CompletedCourses />;
-      
+
 //       // 🌟 UPDATED: Pass the course list and the selection handler
 //       case "ongoing": return (
 //         <OngoingCourses 
@@ -833,7 +833,7 @@
 //       );
 
 //       case "certificates": return <Certificates />;
-      
+
 //       // 🌟 FIX 3: Conditionally render UserQuizzes/UserAssignments only if a course is selected
 //       case "assignments":
 //         if (!selectedCourseId) {
@@ -960,16 +960,7 @@ export default function DashboardUser() {
       case "certificates":
         return <Certificates />
       case "assignments":
-        if (!selectedCourseId) {
-          return (
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Assignments</h2>
-              <p className="p-4 bg-yellow-50 rounded text-yellow-800">
-                Please go to "Ongoing" courses and select a course to view its assignments.
-              </p>
-            </div>
-          )
-        }
+        // Allow viewing all assignments or course-specific assignments
         return <UserAssignments courseId={selectedCourseId} />
       case "quizzes":
         if (!selectedCourseId) {

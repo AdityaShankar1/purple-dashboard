@@ -214,7 +214,7 @@ export const resetPassword = async (req, res, next) => {
 // Get all users (Admin only)
 export const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ role: "user" }).sort({ createdAt: -1 })
+    const users = await User.find({}).sort({ createdAt: -1 })
     sendResponse(res, 200, "Users fetched successfully", users)
   } catch (error) {
     next(error)

@@ -22,12 +22,11 @@
     "dayjs": "^1.11.18",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.8",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.8.2",
-    "react-scripts": "^5.0.1",
     "react-simple-maps": "^3.0.0",
     "react-toastify": "^11.0.5",
     "recharts": "^3.2.1",
@@ -60,8 +59,11 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
+    "react-scripts": "^5.0.1",
     "tailwindcss": "^3.4.17"
   }
 }

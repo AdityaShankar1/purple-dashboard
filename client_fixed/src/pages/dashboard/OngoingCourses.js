@@ -1193,12 +1193,15 @@ import {
   TrendingUp,
   Award,
   File,
+  FileQuestion,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import axios from "../../api/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function OngoingCourses() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -1206,10 +1209,21 @@ export default function OngoingCourses() {
   const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [courseProgress, setCourseProgress] = useState(null);
+  const [certCount, setCertCount] = useState(0);
 
   useEffect(() => {
     fetchOngoingCourses();
+    fetchCertCount();
   }, []);
+
+  const fetchCertCount = async () => {
+    try {
+      const response = await axios.get("/certificates/count");
+      setCertCount(response.data?.data?.count || 0);
+    } catch (error) {
+      console.error("Failed to fetch certificate count", error);
+    }
+  };
 
   const fetchOngoingCourses = async () => {
     try {
@@ -1339,8 +1353,8 @@ export default function OngoingCourses() {
                 <p className="text-3xl font-bold text-blue-600 mt-1">
                   {courses.length > 0
                     ? Math.round(
-                        courses.reduce((sum, c) => sum + (c.progress || 0), 0) / courses.length
-                      )
+                      courses.reduce((sum, c) => sum + (c.progress || 0), 0) / courses.length
+                    )
                     : 0}
                   %
                 </p>
@@ -1357,7 +1371,7 @@ export default function OngoingCourses() {
               <div>
                 <p className="text-slate-500 text-sm font-medium">Certificates</p>
                 <p className="text-3xl font-bold text-green-600 mt-1">
-                  {courses.filter((c) => c.progress >= 100).length}
+                  {certCount}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -1453,13 +1467,23 @@ export default function OngoingCourses() {
                   </div>
 
                   {/* View Materials Button */}
-                  <button
-                    onClick={() => handleViewMaterials(course)}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
-                  >
-                    <Play size={18} />
-                    View Course Materials
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleViewMaterials(course)}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+                    >
+                      <Play size={18} />
+                      Materials
+                    </button>
+                    <button
+                      onClick={() => navigate(`/user/quizzes/${course._id}`)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all border border-gray-600"
+                    >
+                      <FileQuestion size={18} />
+                      Quizzes
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -1536,18 +1560,16 @@ export default function OngoingCourses() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`bg-slate-50 rounded-xl p-5 border-2 transition-all ${
-                          material.viewed
-                            ? "border-green-300 bg-green-50"
-                            : "border-slate-200 hover:border-purple-300"
-                        }`}
+                        className={`bg-slate-50 rounded-xl p-5 border-2 transition-all ${material.viewed
+                          ? "border-green-300 bg-green-50"
+                          : "border-slate-200 hover:border-purple-300"
+                          }`}
                       >
                         <div className="flex items-start gap-4">
                           {/* Icon */}
                           <div
-                            className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
-                              material.viewed ? "bg-green-100" : "bg-white"
-                            }`}
+                            className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${material.viewed ? "bg-green-100" : "bg-white"
+                              }`}
                           >
                             {material.viewed ? (
                               <CheckCircle className="text-green-600" size={24} />
@@ -1563,11 +1585,10 @@ export default function OngoingCourses() {
                                 {material.title}
                               </h4>
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 capitalize ${
-                                  material.viewed
-                                    ? "bg-green-200 text-green-700"
-                                    : "bg-purple-100 text-purple-700"
-                                }`}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 capitalize ${material.viewed
+                                  ? "bg-green-200 text-green-700"
+                                  : "bg-purple-100 text-purple-700"
+                                  }`}
                               >
                                 {material.type}
                               </span>

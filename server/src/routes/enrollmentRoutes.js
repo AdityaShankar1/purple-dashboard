@@ -109,17 +109,14 @@
 
 import { Router } from "express"
 import { protect } from "../middleware/authMiddleware.js"
-import { enrollInCourse, getOngoingEnrollments, getCompletedEnrollments } from "../controllers/enrollmentController.js"
+import { enrollInCourse, getOngoingEnrollments, getCompletedEnrollments, getAllEnrollments } from "../controllers/enrollmentController.js"
 
 const router = Router()
 
-// Enroll using body payload (preferred)
+router.post("/", protect, enrollInCourse)
 router.post("/enroll", protect, enrollInCourse)
-
-// Legacy support: enroll by courseId in URL
-router.post("/:courseId", protect, enrollInCourse)
-
 router.get("/ongoing", protect, getOngoingEnrollments)
 router.get("/completed", protect, getCompletedEnrollments)
+router.get("/admin/all", protect, getAllEnrollments)
 
 export default router

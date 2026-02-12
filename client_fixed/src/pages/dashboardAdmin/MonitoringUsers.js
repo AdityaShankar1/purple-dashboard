@@ -407,7 +407,7 @@ export default function MonitoringUsers() {
   }
 
   const getUserEnrollments = (userId) => {
-    return enrollments.filter((enrollment) => enrollment.user._id === userId)
+    return enrollments.filter((enrollment) => enrollment.userId._id === userId)
   }
 
   const getUserStats = (userId) => {
@@ -506,7 +506,9 @@ export default function MonitoringUsers() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Active Enrollments</p>
-              <p className="text-2xl font-bold text-gray-900">{enrollments.filter((e) => e.status === "active").length}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {enrollments.length - enrollments.filter((e) => e.status === "completed").length}
+              </p>
             </div>
             <Clock className="text-yellow-600" size={24} />
           </div>
@@ -689,7 +691,7 @@ export default function MonitoringUsers() {
                   <tbody>
                     {getUserEnrollments(selectedUser._id).map((enrollment) => (
                       <tr key={enrollment._id} className="border-b border-gray-200">
-                        <td className="py-2 text-gray-900">{enrollment.course.title}</td>
+                        <td className="py-2 text-gray-900">{enrollment.courseId.title}</td>
                         <td className="py-2">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

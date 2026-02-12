@@ -494,6 +494,7 @@ const router = express.Router()
 // Admin routes
 router.post("/", requireAuth, rbac(["admin"]), quizController.createQuiz)
 router.get("/:quizId/submissions", requireAuth, rbac(["admin"]), quizController.getQuizSubmissions)
+router.get("/admin", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes)
 router.get("/admin/course/:courseId", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes)
 router.get("/admin", requireAuth, rbac(["admin"]), quizController.getAdminQuizzes) // ✅ Added route for all quizzes
 router.delete("/:quizId", requireAuth, rbac(["admin"]), quizController.deleteQuiz)

@@ -25,6 +25,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import submissionRoutes from "./routes/submissionRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { setupSocket } from "./config/socket.js";
 
 // Add this import at the top with the other route imports
@@ -36,7 +37,8 @@ import aiRoutes from "./routes/ai.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+app.set("trust proxy", 1);
+const PORT = process.env.PORT || 5001;
 
 // ----------------------
 // 🔒 Core Middleware
@@ -76,6 +78,7 @@ app.use("/api/wazuh", wazuhRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/submissions", submissionRoutes);
+app.use("/api/user", userRoutes);
 app.use("/uploads", express.static(path.resolve("uploads")));
 app.use("/api/courses", courseRoutes); // ✅ matches frontend
 
@@ -83,6 +86,8 @@ app.use("/api/courses", courseRoutes); // ✅ matches frontend
 // Then, below your other route definitions (near the bottom)
 app.use("/api/materials", materialRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/api/materials", materialRoutes); // ✅ Alias for frontend bug
+app.use("/api/api/quizzes", quizRoutes); // ✅ Alias for frontend bug?
 
 // Celebrate validation errors
 app.use((err, req, res, next) => {

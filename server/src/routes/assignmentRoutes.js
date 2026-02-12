@@ -432,9 +432,16 @@
 
 
 import express from "express"
+import multer from "multer"
 import { requireAuth } from "../middleware/auth.js"
 import { rbac } from "../middleware/rbac.js"
 import * as assignmentController from "../controllers/assignmentController.js"
+
+// Configure multer for file uploads (store in memory)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+})
 
 const router = express.Router()
 
@@ -447,11 +454,11 @@ router.delete("/:assignmentId", requireAuth, rbac(["admin"]), assignmentControll
 router.patch("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment)
 router.put("/:assignmentId", requireAuth, rbac(["admin"]), assignmentController.updateAssignment) // Added for frontend compatibility
 
-// User routes
-router.get("/visible", requireAuth, assignmentController.getUserAssignments)
+// User routes - IMPORTANT: specific routes before parameterized ones
+router.get("/user/all", requireAuth, assignmentController.getAllUserAssignments)
 router.get("/course/:courseId", requireAuth, assignmentController.getUserAssignments)
 router.get("/:assignmentId", requireAuth, assignmentController.getAssignment)
+router.post("/:assignmentId/submit", requireAuth, upload.single("file"), assignmentController.submitAssignment)
 router.post("/:submissionId/draft", requireAuth, assignmentController.saveAssignmentDraft)
-router.post("/:submissionId/submit", requireAuth, assignmentController.submitAssignment)
 
 export default router

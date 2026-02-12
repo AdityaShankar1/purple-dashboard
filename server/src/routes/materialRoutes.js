@@ -125,12 +125,14 @@ import {
   deleteMaterial,
   getAllMaterials,
   updateMaterial,
+  markMaterialViewed,
 } from "../controllers/materialController.js"
 
 const router = express.Router()
 
 // User-facing
 router.get("/course/:courseId", protect, getCourseMaterials)
+router.post("/view", protect, markMaterialViewed)
 
 // Admin
 router.get("/admin/all", protect, adminOnly, getAllMaterials)

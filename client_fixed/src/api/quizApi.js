@@ -12,7 +12,10 @@ export const quizApi = {
 
   getSubmissions: (quizId) => axios.get(`/quizzes/${quizId}/submissions`),
 
-  getAdminQuizzes: (courseId) => courseId ? axios.get(`/quizzes/admin/course/${courseId}`) : axios.get("/quizzes/admin"),
+  getAdminQuizzes: (courseId) =>
+    courseId && courseId !== "undefined"
+      ? axios.get(`/quizzes/admin/course/${courseId}`)
+      : axios.get("/quizzes/admin"),
 
   createQuiz: (data) => axios.post(`/quizzes`, data),
 

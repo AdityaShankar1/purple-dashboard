@@ -881,14 +881,14 @@
 // //     try {
 // //       const r = await api("/user")
 // //       setAssignments(r.data || [])
-      
+
 // //       // Check for new assignments (simulated notifications)
 // //       const newAssignments = (r.data || []).filter(a => {
 // //         const createdAt = dayjs(a.createdAt)
 // //         const hoursSinceCreation = dayjs().diff(createdAt, 'hour')
 // //         return hoursSinceCreation < 24 && !a.submission
 // //       })
-      
+
 // //       if (newAssignments.length > 0) {
 // //         setNotifications(newAssignments.map(a => ({
 // //           id: a._id,
@@ -911,13 +911,13 @@
 // //       setSubmissionFile(null)
 // //       return
 // //     }
-    
+
 // //     const allowed = /\.(pdf|doc|docx|ppt|pptx|xls|xlsx|txt|zip)$/i.test(file.name)
 // //     if (!allowed) {
 // //       toast.error("Unsupported file type. Allowed: pdf, doc, docx, ppt, pptx, xls, xlsx, txt, zip")
 // //       return
 // //     }
-    
+
 // //     const reader = new FileReader()
 // //     reader.onload = () => {
 // //       setSubmissionFile({
@@ -931,7 +931,7 @@
 
 // //   const submitAssignment = async () => {
 // //     if (!selectedAssignment) return
-    
+
 // //     if (!submissionFile && !submissionText.trim()) {
 // //       toast.error("Please provide either a file or text submission")
 // //       return
@@ -943,12 +943,12 @@
 // //         text: submissionText,
 // //         attachment: submissionFile
 // //       }
-      
+
 // //       await api(`/${selectedAssignment._id}/submit`, {
 // //         method: "POST",
 // //         body: JSON.stringify(payload)
 // //       })
-      
+
 // //       toast.success("Assignment submitted successfully!")
 // //       setSelectedAssignment(null)
 // //       setSubmissionFile(null)
@@ -968,11 +968,11 @@
 // //       }
 // //       return "blue"
 // //     }
-    
+
 // //     if (assignment.dueAt && dayjs().isAfter(dayjs(assignment.dueAt))) {
 // //       return "red"
 // //     }
-    
+
 // //     return "orange"
 // //   }
 
@@ -983,11 +983,11 @@
 // //       }
 // //       return "Submitted"
 // //     }
-    
+
 // //     if (assignment.dueAt && dayjs().isAfter(dayjs(assignment.dueAt))) {
 // //       return "Overdue"
 // //     }
-    
+
 // //     return "Pending"
 // //   }
 
@@ -1013,7 +1013,7 @@
 // //   return (
 // //     <div className="min-h-screen p-6">
 // //       <ToastContainer position="bottom-right" theme="colored" />
-      
+
 // //       {/* Header */}
 // //       <div className="max-w-7xl mx-auto mb-8">
 // //         <div className="flex items-center gap-3 mb-2">
@@ -1145,7 +1145,7 @@
 // //             {filteredAssignments.map((assignment) => {
 // //               const statusColor = getStatusColor(assignment)
 // //               const statusText = getStatusText(assignment)
-              
+
 // //               return (
 // //                 <div
 // //                   key={assignment._id}
@@ -1304,7 +1304,7 @@
 // //               {!selectedAssignment.submission ? (
 // //                 <div className="border-t border-slate-200 pt-6">
 // //                   <h3 className="text-lg font-bold text-slate-900 mb-4">Submit Your Work</h3>
-                  
+
 // //                   {/* Text Submission */}
 // //                   <div className="mb-4">
 // //                     <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -1367,7 +1367,7 @@
 // //               ) : (
 // //                 <div className="border-t border-slate-200 pt-6">
 // //                   <h3 className="text-lg font-bold text-slate-900 mb-4">Your Submission</h3>
-                  
+
 // //                   {selectedAssignment.submission.text && (
 // //                     <div className="mb-4">
 // //                       <p className="text-sm font-semibold text-slate-500 mb-2">Submitted Text</p>
@@ -1376,7 +1376,7 @@
 // //                       </div>
 // //                     </div>
 // //                   )}
-                  
+
 // //                   {selectedAssignment.submission.attachment && (
 // //                     <div className="mb-4">
 // //                       <p className="text-sm font-semibold text-slate-500 mb-2">Submitted File</p>
@@ -1471,54 +1471,257 @@
 
 ///client/src/pages/dashboard/UserAssignments.js
 
-import { useEffect, useState } from "react"
-import { Card } from "../../components/Layouts/Card"
-import { Button } from "../../components/Layouts/Button"
+import { useState, useEffect } from "react"
+import { toast } from "react-toastify"
 
 export default function UserAssignments({ courseId }) {
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedAssignment, setSelectedAssignment] = useState(null)
+  const [submissionFile, setSubmissionFile] = useState(null)
+  const [submissionText, setSubmissionText] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+
+  const fetchAssignments = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const endpoint = courseId
+        ? `/api/assignments/course/${courseId}`
+        : `/api/assignments/user/all`
+
+      const response = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const result = await response.json()
+        setAssignments(result.data || result)
+      }
+    } catch (error) {
+      console.error("Error fetching assignments:", error)
+      toast.error("Failed to load assignments")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        const token = localStorage.getItem("token")
-        const response = await fetch(`/api/assignments/course/${courseId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (response.ok) {
-          const result = await response.json()
-          setAssignments(result.data || result)
-        }
-      } catch (error) {
-        console.error("Error fetching assignments:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchAssignments()
   }, [courseId])
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const validTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload a PDF or DOC file")
+        return
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB")
+        return
+      }
+      setSubmissionFile(file)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!submissionFile && !submissionText.trim()) {
+      toast.error("Please upload a file or enter submission text")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("assignmentId", selectedAssignment._id)
+      if (submissionFile) {
+        formData.append("file", submissionFile)
+      }
+      if (submissionText.trim()) {
+        formData.append("submissionText", submissionText)
+      }
+
+      const response = await fetch(`/api/assignments/${selectedAssignment._id}/submit`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (response.ok) {
+        toast.success("Assignment submitted successfully!")
+        setSelectedAssignment(null)
+        setSubmissionFile(null)
+        setSubmissionText("")
+        // Refresh assignments to show updated submission status
+        await fetchAssignments()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || "Failed to submit assignment")
+      }
+    } catch (error) {
+      console.error("Error submitting assignment:", error)
+      toast.error("Failed to submit assignment")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (loading) return <div className="text-center py-8">Loading assignments...</div>
 
-  return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-6">Assignments</h2>
-      <div className="space-y-4">
-        {assignments.map((assignment) => (
-          <Card key={assignment._id} className="p-6">
-            <h3 className="text-lg font-semibold mb-2">{assignment.title}</h3>
-            <p className="text-gray-600 text-sm mb-4">{assignment.description}</p>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">
-                Due: {new Date(assignment.dueDate).toLocaleDateString()}
-              </span>
-              <Button size="sm">Submit</Button>
-            </div>
-          </Card>
-        ))}
+  if (assignments.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Assignments</h2>
+        <p className="text-gray-600">No assignments available at the moment.</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {courseId
+            ? "This course doesn't have any assignments yet."
+            : "You don't have any assignments in your enrolled courses."}
+        </p>
       </div>
-    </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold mb-6">
+          {courseId ? "Course Assignments" : "All Assignments"}
+        </h2>
+        <div className="space-y-4">
+          {assignments.map((assignment) => (
+            <div key={assignment._id} className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">{assignment.title}</h3>
+                  {assignment.courseId?.title && (
+                    <p className="text-sm text-purple-600 mb-2">
+                      📚 {assignment.courseId.title}
+                    </p>
+                  )}
+                  <p className="text-gray-600 text-sm mb-2">{assignment.description}</p>
+                  {assignment.instructions && (
+                    <p className="text-gray-500 text-xs mt-2">
+                      <strong>Instructions:</strong> {assignment.instructions}
+                    </p>
+                  )}
+                </div>
+                {assignment.submission && (
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    ✓ Submitted
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">
+                  Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                </span>
+                <button
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${assignment.submission
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      : "bg-purple-600 text-white hover:bg-purple-700"
+                    }`}
+                  disabled={assignment.submission}
+                  onClick={() => setSelectedAssignment(assignment)}
+                >
+                  {assignment.submission ? "Submitted" : "Submit"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Submission Modal */}
+      {selectedAssignment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
+              <h2 className="text-2xl font-bold text-gray-900">Submit Assignment</h2>
+              <p className="text-sm text-gray-600 mt-1">{selectedAssignment.title}</p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Instructions */}
+              {selectedAssignment.instructions && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-2">Instructions</h3>
+                  <p className="text-sm text-blue-800">{selectedAssignment.instructions}</p>
+                </div>
+              )}
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload File (PDF or DOC) *
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-purple-50 file:text-purple-700
+                    hover:file:bg-purple-100
+                    cursor-pointer"
+                />
+                {submissionFile && (
+                  <p className="mt-2 text-sm text-green-600">
+                    ✓ Selected: {submissionFile.name} ({(submissionFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
+              </div>
+
+              {/* Optional Text */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Notes (Optional)
+                </label>
+                <textarea
+                  value={submissionText}
+                  onChange={(e) => setSubmissionText(e.target.value)}
+                  placeholder="Add any additional comments or notes..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setSelectedAssignment(null)
+                    setSubmissionFile(null)
+                    setSubmissionText("")
+                  }}
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || (!submissionFile && !submissionText.trim())}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Submitting..." : "Submit Assignment"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

@@ -423,10 +423,11 @@ const assignmentSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: String,
+    instructions: String,
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     dueDate: Date,
-    maxScore: { type: Number, default: 100 },
+    maxGrade: { type: Number, default: 100 },
     isPublished: { type: Boolean, default: false },
   },
   { timestamps: true }

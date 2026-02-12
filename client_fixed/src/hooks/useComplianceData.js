@@ -14,7 +14,7 @@ export const useComplianceData = () => {
     const fetchCompliance = async () => {
       try {
         const baseUrl =
-          process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+          process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
         // Fetch compliance data
         const complianceRes = await fetch(`${baseUrl}/wazuh/compliance`);

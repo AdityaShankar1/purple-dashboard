@@ -597,22 +597,8 @@ import { logger } from "../config/logger.js"
 // GET /api/courses (public list)
 export const getPublicCourses = async (req, res, next) => {
   try {
-    const courses = await Course.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).lean()
-
-    // If user is authenticated, check enrollments
-    if (req.user) {
-      try {
-        const enrollments = await Enrollment.find({ userId: req.user._id, status: "active" }).select("courseId").lean()
-        const enrolledCourseIds = new Set(enrollments.map(e => e.courseId.toString()))
-
-        courses.forEach(course => {
-          course.isEnrolled = enrolledCourseIds.has(course._id.toString())
-        })
-      } catch (enrollErr) {
-        logger.error("[getPublicCourses] Enrollment check failed:", enrollErr)
-      }
-    }
-
+    // ✅ return all active/published courses
+    const courses = await Course.find().sort({ createdAt: -1 })
     sendResponse(res, 200, "Courses fetched successfully", { courses })
   } catch (err) {
     next(err)

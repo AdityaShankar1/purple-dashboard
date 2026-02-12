@@ -173,10 +173,10 @@
 
 import { Router } from "express"
 import { getCourseProgress } from "../controllers/progressController.js"
-// import { requireAuth } from "../middleware/authMiddleware.js"
+import { protect } from "../middleware/authMiddleware.js"
 
 const router = Router()
 
-router.get("/:courseId", /* requireAuth, */ getCourseProgress)
+router.get("/course/:courseId", protect, getCourseProgress)
 
 export default router

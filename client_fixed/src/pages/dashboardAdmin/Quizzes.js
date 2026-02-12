@@ -524,7 +524,7 @@ export default function AdminQuizzes() {
   const [quizzes, setQuizzes] = useState([])
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({
-    course: "",
+    courseId: "",
     title: "",
     description: "",
     isPublished: false,
@@ -553,7 +553,7 @@ export default function AdminQuizzes() {
 
   const resetForm = () =>
     setForm({
-      course: "",
+      courseId: "",
       title: "",
       description: "",
       isPublished: false,
@@ -562,8 +562,10 @@ export default function AdminQuizzes() {
       questions: [],
     })
 
-  const save = async () => {
-    try {
+  const save = async () => {    if (!form.courseId || form.courseId.trim() === "" || form.courseId === "undefined") {
+      setError("Course ID is required and must be valid")
+      return
+    }    try {
       const payload = { ...form }
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString()
       if (payload.dueAt) payload.dueAt = new Date(payload.dueAt).toISOString()
@@ -618,7 +620,7 @@ export default function AdminQuizzes() {
   const edit = (qz) => {
     setEditing(qz._id)
     setForm({
-      course: qz.course?._id || qz.course,
+      courseId: qz.course?._id || qz.course || "",
       title: qz.title,
       description: qz.description || "",
       isPublished: !!qz.isPublished,
@@ -648,8 +650,8 @@ export default function AdminQuizzes() {
             <input
               className="border rounded px-3 py-2 w-full text-black"
               placeholder="Course name or ID"
-              value={form.course}
-              onChange={(e) => setForm((f) => ({ ...f, course: e.target.value }))}
+              value={form.courseId}
+              onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
               required
             />
             <input

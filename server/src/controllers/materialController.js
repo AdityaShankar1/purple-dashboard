@@ -490,13 +490,47 @@ import { createHttpError } from "../utils/errors.js"
 // Get materials for a course (user-facing)
 export const getCourseMaterials = async (req, res, next) => {
   try {
-    const { courseId } = req.params
+    let { courseId } = req.params
+    console.log(`DEBUG: getCourseMaterials called with courseId: ${courseId}`);
+
+    // Resolve courseId string to proper ObjectId
+    const Course = (await import("../models/Course.js")).default;
+    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log("DEBUG: Resolving string ID...");
+      const course = await Course.findOne({ courseId: courseId });
+      if (course) {
+        console.log(`DEBUG: Found course _id: ${course._id}`);
+        courseId = course._id;
+      } else {
+        console.log("DEBUG: Course not found for string ID");
+        return next(createHttpError(404, "Course not found"));
+      }
+    } else {
+      console.log("DEBUG: ID is already an ObjectId format.");
+    }
+
+    const userId = req.user?._id || req.user?.id;
     const materials = await Material.find({ course: courseId, isPublished: true })
       .sort({ createdAt: -1 })
       .populate("uploadedBy", "name email")
 
-    res.json({ success: true, data: materials })
+    // Get user progress to mark viewed materials
+    const Progress = (await import("../models/Progress.js")).default;
+    const progress = await Progress.findOne({ userId, courseId });
+
+    const materialsWithStatus = materials.map((m) => {
+      const materialObj = m.toObject();
+      return {
+        ...materialObj,
+        viewed: progress?.completedMaterials?.some(id => id.toString() === m._id.toString()) || false
+      };
+    });
+
+    console.log(`DEBUG: Found ${materials.length} materials`);
+
+    res.json({ success: true, data: materialsWithStatus })
   } catch (err) {
+    console.error("DEBUG: Error in getCourseMaterials:", err);
     next(err)
   }
 }
@@ -504,14 +538,25 @@ export const getCourseMaterials = async (req, res, next) => {
 // Admin: Create material (file or URL)
 export const createMaterial = async (req, res, next) => {
   try {
-    const { courseId, title, description, type, url, duration } = req.body
+    let { courseId, title, description, type, url, duration } = req.body
 
     if (!courseId || !title || !type) {
       return next(createHttpError(400, "Course, title, and type are required"))
     }
 
+    // Resolve courseId string to proper ObjectId
+    const Course = (await import("../models/Course.js")).default;
+    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      const course = await Course.findOne({ courseId: courseId });
+      if (course) {
+        courseId = course._id;
+      } else {
+        return next(createHttpError(404, "Course not found"));
+      }
+    }
+
     const material = new Material({
-      course: courseId,
+      course: courseId, // Save as ObjectId ref
       title,
       description,
       type,
@@ -580,5 +625,66 @@ export const updateMaterial = async (req, res, next) => {
     res.json({ success: true, data: material })
   } catch (err) {
     next(err)
+  }
+}
+
+// User: Mark material as viewed
+export const markMaterialViewed = async (req, res, next) => {
+  try {
+    let { courseId, materialId } = req.body
+    const userId = req.user?._id || req.user?.id
+
+    if (!courseId || !materialId) {
+      return next(createHttpError(400, "courseId and materialId are required"))
+    }
+
+    // Resolve courseId string to proper ObjectId if needed
+    const Course = (await import("../models/Course.js")).default
+    if (!courseId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+      const course = await Course.findOne({ courseId: courseId })
+      if (course) {
+        courseId = course._id
+      } else {
+        return next(createHttpError(404, "Course not found"))
+      }
+    }
+
+    const Progress = (await import("../models/Progress.js")).default
+    const Material = (await import("../models/Material.js")).default
+    const Quiz = (await import("../models/Quiz.js")).default
+    const Assignment = (await import("../models/Assignment.js")).default
+
+    let progress = await Progress.findOne({ userId, courseId })
+
+    if (!progress) {
+      progress = new Progress({
+        userId,
+        courseId,
+        completedMaterials: [],
+        completedQuizzes: [],
+        completedAssignments: [],
+      })
+    }
+
+    // Add material to completed if not already there
+    const materialIdStr = materialId.toString()
+    if (!progress.completedMaterials.some((id) => id.toString() === materialIdStr)) {
+      progress.completedMaterials.push(materialId)
+
+      await progress.save()
+
+      // Use unified progress updater
+      const { updateCourseProgress } = await import("./progressController.js")
+      await updateCourseProgress(userId, courseId)
+    }
+
+    res.json({
+      success: true,
+      message: "Material marked as viewed",
+      data: progress,
+    })
+  } catch (error) {
+    console.error("DEBUG: Error in markMaterialViewed:", error)
+    next(error)
   }
 }

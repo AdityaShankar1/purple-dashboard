@@ -222,7 +222,7 @@
 // // // // // // // //       { path: "course", select: "title description duration difficulty" },
 // // // // // // // //       { path: "user", select: "name email" },
 // // // // // // // //     ])
-    
+
 // // // // // // // //     logger.info(`User ${req.user.email} enrolled in course ${course.title}`)
 // // // // // // // //     sendResponse(res, 201, "Enrolled successfully", populatedEnrollment)
 // // // // // // // //   } catch (error) {
@@ -644,7 +644,7 @@
 
 // // // // //     // ✅ FIX APPLIED: Match course using MongoDB _id (instead of custom string ID)
 // // // // //     const course = await Course.findById(courseId); 
-    
+
 // // // // //     if (!course) {
 // // // // //       // isPublished check is redundant on Course.findById, but kept the logic for not available
 // // // // //       return next(createHttpError(404, "Course not found or not available"));
@@ -777,7 +777,7 @@
 
 // // // //     // ✅ FIX: Match course using MongoDB _id
 // // // //     const course = await Course.findById(courseId); 
-    
+
 // // // //     // Using findById implies checking for a published status might be separate or handled in your schema
 // // // //     if (!course) { 
 // // // //       return next(createHttpError(404, "Course not found."));
@@ -918,7 +918,7 @@
 // // //     // 1. Find Course by MongoDB _id
 // // //     // This correctly handles the lookup if the client sends the proper ID.
 // // //     const course = await Course.findById(courseId); 
-    
+
 // // //     if (!course) {
 // // //       return next(createHttpError(404, "Course not found."));
 // // //     }
@@ -1226,31 +1226,54 @@ import { createHttpError } from "../utils/errors.js"
 import { sendResponse } from "../utils/response.js"
 
 // POST /api/enrollments/:courseId
+// POST /api/enrollments/
 export const enrollInCourse = async (req, res, next) => {
   try {
-    const userId = req.user._id   // ✅ use _id from protect middleware
-    const courseId = req.body?.courseId || req.params?.courseId
+    const userId = req.user._id
 
-    if (!courseId) {
-      return next(createHttpError(400, "courseId is required"))
+    // Accept courseId from body (preferred) or params (fallback)
+    // The frontend might be sending it as 'courseId' or just 'course'
+    const courseIdInput = req.body.courseId || req.body.course || req.params.courseId;
+
+    if (!courseIdInput) {
+      return next(createHttpError(400, "Course ID is required"))
     }
 
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      return next(createHttpError(400, "Invalid courseId"))
+    // Resolve courseId string to MongoDB _id
+    // We import Course dynamically to avoid potential circular dependency issues if any, 
+    // though top-level import is usually fine.
+    const Course = (await import("../models/Course.js")).default;
+
+    // Find by the custom string ID first
+    let course = await Course.findOne({ courseId: courseIdInput });
+
+    // If not found, and it looks like an ObjectId, try finding by _id
+    if (!course && courseIdInput.match(/^[0-9a-fA-F]{24}$/)) {
+      course = await Course.findById(courseIdInput);
     }
 
-    // prevent duplicate enrollment
-    const existing = await Enrollment.findOne({ userId, courseId })
+    if (!course) {
+      return next(createHttpError(404, "Course not found"))
+    }
+
+    // Check if duplicate enrollment
+    // Schema has 'courseId' as ObjectId ref, 'userId' as ObjectId ref
+    const existing = await Enrollment.findOne({ userId, courseId: course._id });
+
     if (existing) {
       return next(createHttpError(400, "Already enrolled in this course"))
     }
 
+    // Create enrollment using Ref
     const enrollment = await Enrollment.create({
       userId,
-      courseId,
+      courseId: course._id, // Must be ObjectId according to schema
       status: "active",
       enrolledAt: new Date()
     })
+
+    // Increment count
+    await Course.findByIdAndUpdate(course._id, { $inc: { enrollmentCount: 1 } });
 
     sendResponse(res, 201, "Enrolled successfully", enrollment)
   } catch (err) {
@@ -1262,16 +1285,45 @@ export const enrollInCourse = async (req, res, next) => {
 export const getOngoingEnrollments = async (req, res, next) => {
   try {
     const userId = req.user._id
+    console.log(`[Enrollment] Fetching ongoing courses for User: ${userId}`);
+
     const enrollments = await Enrollment.find({ userId, status: "active" })
       .populate("courseId")
 
-    const courses = enrollments.map(e => ({
-      ...e.courseId.toObject(),
-      progress: e.progress || 0
+    console.log(`[Enrollment] Found ${enrollments.length} enrollments`);
+
+    // Trigger a background progress sync for each enrollment to ensure dashboard is accurate
+    const { updateCourseProgress } = await import("./progressController.js")
+    const courses = await Promise.all(enrollments.map(async (e) => {
+      if (!e.courseId) {
+        console.warn(`[Enrollment] Enrollment ${e._id} has no courseId`);
+        return null;
+      }
+
+      try {
+        // Background sync - ensure progress is up to date
+        const p = await updateCourseProgress(userId, e.courseId._id)
+
+        return {
+          ...e.courseId.toObject(),
+          progress: p ? p.overallProgress : (e.progress || 0)
+        }
+      } catch (err) {
+        console.error(`[Enrollment] Error syncing progress for course ${e.courseId._id}:`, err);
+        // Return course data even if progress sync fails
+        return {
+          ...e.courseId.toObject(),
+          progress: e.progress || 0
+        }
+      }
     }))
 
-    sendResponse(res, 200, "Ongoing courses fetched", courses)
+    const validCourses = courses.filter(c => c !== null);
+    console.log(`[Enrollment] Returning ${validCourses.length} ongoing courses`);
+
+    sendResponse(res, 200, "Ongoing courses fetched", validCourses)
   } catch (err) {
+    console.error("[Enrollment] Error in getOngoingEnrollments:", err);
     next(err)
   }
 }
@@ -1291,5 +1343,19 @@ export const getCompletedEnrollments = async (req, res, next) => {
     sendResponse(res, 200, "Completed courses fetched", courses)
   } catch (err) {
     next(err)
+  }
+}
+
+// GET /api/enrollments/admin/all
+export const getAllEnrollments = async (req, res, next) => {
+  try {
+    const enrollments = await Enrollment.find({})
+      .populate("userId", "name email")
+      .populate("courseId", "title")
+      .sort({ enrolledAt: -1 })
+
+    sendResponse(res, 200, "All enrollments fetched successfully", enrollments)
+  } catch (error) {
+    next(error)
   }
 }

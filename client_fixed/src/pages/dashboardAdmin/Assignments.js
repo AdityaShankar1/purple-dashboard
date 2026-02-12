@@ -2814,27 +2814,17 @@ export default function AdminAssignments() {
           },
         })
 
-        const text = await res.text()
-        let data = {}
-        try {
-          data = text ? JSON.parse(text) : {}
-        } catch (e) {
-          console.error("❌ Failed to parse JSON:", text)
-          toast.error("Failed to parse course data")
-          return
-        }
+        const data = await res.json()
+        const courses = data?.data?.courses || []
 
-        if (!res.ok) {
-          toast.error(data.message || `Error ${res.status}`)
-          return
-        }
-
-        const responseData = data.data || data; // Handle { data: { courses: [] } }
-        const coursesList = responseData.courses || [];
-        const match = coursesList.find((c) => (c.courseId || c.code)?.toLowerCase() === courseId.toLowerCase())
+        const match = courses.find(
+          (c) =>
+            c.courseId?.toLowerCase() === courseId.toLowerCase() ||
+            c.title?.toLowerCase() === courseId.toLowerCase(),
+        )
 
         if (!match) {
-          toast.error(`Course code "${courseId}" not found`)
+          toast.error(`Course code or name "${courseId}" not found`)
           return
         }
 
@@ -3271,6 +3261,11 @@ export default function AdminAssignments() {
                         ) : (
                           <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
                             Draft
+                          </span>
+                        )}
+                        {a.submissionCount !== undefined && (
+                          <span className="inline-block ml-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                            📝 {a.submissionCount} Submission{a.submissionCount !== 1 ? 's' : ''}
                           </span>
                         )}
                       </div>

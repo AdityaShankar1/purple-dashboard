@@ -1140,7 +1140,8 @@
 import { useEffect, useState } from "react"
 import { Button } from "../../components/Layouts/Button"
 import { Card } from "../../components/Layouts/Card"
-import { Download, Share2 } from "lucide-react"
+import { Download, Share2, Award, Clock } from "lucide-react"
+import { motion } from "framer-motion"
 
 export default function Certificates() {
   const [certificates, setCertificates] = useState([])
@@ -1199,27 +1200,76 @@ export default function Certificates() {
   if (loading) return <div className="text-center py-8">Loading certificates...</div>
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-6">My Certificates</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {certificates.map((cert) => (
-          <Card key={cert._id} className="p-6">
-            <h3 className="text-lg font-semibold mb-2">{cert.courseName || cert.course?.title}</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Issued on {new Date(cert.issuedDate || cert.createdAt).toLocaleDateString()}
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleDownload(cert._id)}>
-                <Download size={16} className="mr-2" />
-                Download
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => handleShare(cert._id)}>
-                <Share2 size={16} className="mr-2" />
-                Share
-              </Button>
-            </div>
-          </Card>
-        ))}
+    <div className="p-6 md:p-10 bg-slate-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Award className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">My Certificates</h1>
+            <p className="text-slate-500">Your achievements and credentials</p>
+          </div>
+        </div>
+
+        {certificates.length === 0 ? (
+          <div className="bg-white rounded-3xl shadow-xl p-16 text-center border-2 border-dashed border-slate-200">
+            <Award size={64} className="text-slate-200 mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No certificates yet</h3>
+            <p className="text-slate-500">Complete a course to earn your first certificate!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {certificates.map((cert) => (
+              <motion.div
+                key={cert._id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 hover:shadow-2xl transition-all relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/10 rounded-full -mr-12 -mt-12 transition-all group-hover:bg-yellow-400/20"></div>
+
+                <div className="flex items-start justify-between mb-6">
+                  <div className="p-3 bg-yellow-100 rounded-2xl">
+                    <Award className="text-yellow-600" size={24} />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Grade</p>
+                    <p className="text-2xl font-black text-yellow-600">{cert.grade || "A"}</p>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
+                  {cert.courseName || cert.course?.title}
+                </h3>
+
+                <div className="flex items-center gap-2 text-slate-500 text-sm mb-6">
+                  <Clock size={14} />
+                  <span>Issued on {new Date(cert.issuedDate || cert.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleDownload(cert._id)}
+                      className="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
+                    >
+                      <Download size={16} />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => handleShare(cert._id)}
+                      className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
+                      title="Share link"
+                    >
+                      <Share2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
