@@ -136,65 +136,51 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
             ? actionItems.slice(0, 2).join('\n')
             : '';
 
-        const prompt = `SOC SECURITY REPORT
+        // Determine title based on question
+        let titleSuffix = "Security Status";
+        if (userPrompt) {
+            const lower = userPrompt.toLowerCase();
+            if (lower.includes("log")) titleSuffix = "Log Analysis";
+            else if (lower.includes("mitre")) titleSuffix = "MITRE ATT&CK Analysis";
+            else if (lower.includes("action")) titleSuffix = "Recommended Actions";
+        }
 
-DATA:
-${contextInfo}
+        const prompt = `OUTPUT ONLY THIS EXACT FORMAT. NO EXTRA TEXT. NO BOLD. NO MARKDOWN.
 
-DETECTED MITRE ATT&CK TECHNIQUES: ${mitreText}
-
-USER ASKS: "${userPrompt || "What is the security status?"}"
-
-DETERMINISTIC SEVERITY (CALCULATED): ${baseSeverity}
-(This is determined by activeIncidents count: ${activeInc})
-
-ANSWER THE USER'S SPECIFIC QUESTION USING ONLY THE DATA ABOVE.
-
-RESPONSE FORMAT:
-[TITLE]: [Brief assessment]
+[${titleSuffix.toUpperCase()}]:
+${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
 - Severity: ${baseSeverity}
 - Incidents: ${activeInc}
 - MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
 
-ANSWER APPROACH BY QUESTION TYPE:
-- "logs" → Describe incidents/logs shown
-- "status" → Describe overall security posture  
-- "actions" → Describe recommended steps
-- "severity" → Explain why this severity level
-- "MITRE" → List detected techniques and implications
-- Generic → Overall assessment
-
-CRITICAL RULES:
-1. Severity is ALWAYS ${baseSeverity} for this data (${activeInc} active incidents)
-2. MITRE ATT&CK is ALWAYS: ${mitreText}
-3. Use ONLY real numbers from data above
-4. Tailor summary wording to their specific question
-5. Keep concise, no invented data
-6. Format must be exact (use bullet points with dash -)
-7. Only show Action lines if severity is High or Critical
-
-OUTPUT ONLY THE FORMAT ABOVE.`;
+STRICT RULES:
+1. NO PARAGRAPHS. NO SENTENCES.
+2. ONLY BULLET POINTS WITH DASHES (-).
+3. NO BOLD FORMATTING (**text**). 
+4. NO EXPLANATIONS. FACTS ONLY.
+5. Short summary line matches: ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
+6. Severity is ALWAYS: ${baseSeverity}
+7. Incidents is ALWAYS: ${activeInc}
+8. MITRE is ALWAYS: ${mitreText}
+9. User asked: "${userPrompt || 'What is the security status?'}"
+10. ANSWER ABOVE FORMAT ONLY.`;
 
         // Build conversation with history for context continuity
         const messages = [];
         
         // Add conversation history if available (preserves context from previous exchanges)
-        if (history && Array.isArray(history)) {
-            messages.push(...history);
+        if (history && Array.isArray(history) && history.length > 0) {
+            messages.push(...history.slice(-2)); // Only last 2 messages for context
         }
         
-        // Add the data context and rules as a SYSTEM message
-        const systemPrompt = prompt;
-        
-        // Add the user's ACTUAL QUERY as a separate message
-        // This allows the AI to respond differently to different questions
+        // Add the strict format rules as a SYSTEM message
         const userQuery = userPrompt && userPrompt.trim() 
             ? userPrompt 
             : "What is the current security status based on the dashboard data?";
         
         messages.push({ 
             role: 'user', 
-            content: `${systemPrompt}\n\nUSER QUERY: ${userQuery}` 
+            content: `${prompt}\n\nUser asked: ${userQuery}` 
         });
 
         const response = await ollama.chat({
@@ -202,7 +188,7 @@ OUTPUT ONLY THE FORMAT ABOVE.`;
             messages: messages,
             stream: false,
             options: {
-                temperature: 0.5 // Balanced: data-driven but with natural variation
+                temperature: 0.1 // Very low for strict format compliance
             }
         });
 
