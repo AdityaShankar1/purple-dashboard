@@ -145,7 +145,7 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
             else if (lower.includes("action")) titleSuffix = "Recommended Actions";
         }
 
-        const prompt = `OUTPUT ONLY THIS EXACT FORMAT. NO EXTRA TEXT. NO BOLD. NO MARKDOWN.
+        const prompt = `YOU MUST OUTPUT EXACTLY THIS FORMAT. DO NOT SKIP ANY LINES.
 
 [${titleSuffix.toUpperCase()}]:
 ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
@@ -153,17 +153,21 @@ ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'M
 - Incidents: ${activeInc}
 - MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
 
-STRICT RULES:
-1. NO PARAGRAPHS. NO SENTENCES.
-2. ONLY BULLET POINTS WITH DASHES (-).
-3. NO BOLD FORMATTING (**text**). 
-4. NO EXPLANATIONS. FACTS ONLY.
-5. Short summary line matches: ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
-6. Severity is ALWAYS: ${baseSeverity}
-7. Incidents is ALWAYS: ${activeInc}
-8. MITRE is ALWAYS: ${mitreText}
-9. User asked: "${userPrompt || 'What is the security status?'}"
-10. ANSWER ABOVE FORMAT ONLY.`;
+CRITICAL FORMAT RULES - FOLLOW EXACTLY:
+Line 1: [TITLE]: (must include brackets and colon)
+Line 2: Summary statement (Low risk detected. OR Medium risk status. OR High risk detected. OR Critical threat detected.)
+Line 3+: Bullet points only with dash and space (- Severity: OR - Incidents: OR - MITRE: OR - Action:)
+NO OTHER TEXT. NO PARAGRAPHS. NO BOLD (**). NO EXPLANATIONS.
+
+FROZEN VALUES FOR THIS RESPONSE:
+- Title: [${titleSuffix.toUpperCase()}]:
+- Summary: ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
+- Severity line: - Severity: ${baseSeverity}
+- Incidents line: - Incidents: ${activeInc}
+- MITRE line: - MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
+
+User asked: "${userPrompt || 'What is the security status?'}"
+Output ONLY the format above. Do not deviate.`;
 
         // Build conversation with history for context continuity
         const messages = [];
@@ -188,7 +192,7 @@ STRICT RULES:
             messages: messages,
             stream: false,
             options: {
-                temperature: 0.1 // Very low for strict format compliance
+                temperature: 0.05 // Ultra-low for absolute format compliance
             }
         });
 
