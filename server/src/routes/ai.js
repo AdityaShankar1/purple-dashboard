@@ -55,22 +55,38 @@ Content rules:
 - Confidence inline: (XX%)
 - Action items are plain directives, max 12 words each
 
-EXAMPLE RESPONSE:
+EXAMPLE FORMATS:
+Example 1:
 SUMMARY:
-Unusual activity detected from uncommon source IP 192.168.45.12
+Brute force attempt detected on Auth server with 247 failed logins in 15min
 
 SEVERITY:
-Medium
+Critical
 
 MITRE ATT&CK:
-Scanning (T1018) - Confidence: 75%
+Brute Force (T1110) - Confidence: 92%
 
 NEXT ACTIONS:
-Investigate source IP origin and intent
-Check logs for related suspicious traffic
-Implement temporary access controls if necessary
+Block source IPs immediately
+Enable MFA for affected accounts
+Review authentication logs
 
-OUTPUT ONLY THIS FORMAT. NO OTHER TEXT.`;
+Example 2:
+SUMMARY:
+Data exfiltration activity from endpoint Finance-Workstation-07
+
+SEVERITY:
+High
+
+MITRE ATT&CK:
+Exfiltration Over Network (T1041) - Confidence: 88%
+
+NEXT ACTIONS:
+Isolate compromised endpoint
+Audit recent file access and transfers
+Scan for malware signatures
+
+OUTPUT ONLY THIS FORMAT WITH YOUR OWN DATA. NO OTHER TEXT.`;
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
