@@ -107,15 +107,22 @@ export default function DashboardAdminAI() {
 
 
         try {
-            // Aggregating data for context
+            // Aggregating data for context - prioritize metrics over incidents
             const contextData = {
                 source: connStatus === 'wazuh' ? 'Wazuh Real-time API' : 'Dashboard Metrics Fallback',
-                totalAlerts: metrics?.count || 0,
-                activeIncidents: incidentsFromHook?.length || 0,
-                recentIncidents: (wazuhAlerts || incidentsFromHook || []).slice(0, 5).map(i => ({
-                    level: i.rule?.level || i.level,
-                    description: i.rule?.description || i.description,
-                    agent: i.agent?.name || i.agent
+                totalAlerts: metrics?.count || wazuhAlerts?.length || incidentsFromHook?.length || 0,
+                activeIncidents: (wazuhAlerts?.length || 0) + (incidentsFromHook?.length || 0),
+                riskDistribution: metrics?.alerts ? {
+                    critical: (metrics.alerts.filter(a => a.rule?.level >= 14) || []).length,
+                    high: (metrics.alerts.filter(a => a.rule?.level >= 8 && a.rule?.level < 14) || []).length,
+                    medium: (metrics.alerts.filter(a => a.rule?.level >= 5 && a.rule?.level < 8) || []).length,
+                    low: (metrics.alerts.filter(a => a.rule?.level < 5) || []).length,
+                } : {},
+                recentIncidents: (wazuhAlerts || metrics?.alerts || incidentsFromHook || []).slice(0, 5).map(i => ({
+                    level: i.rule?.level || i.level || 0,
+                    description: i.rule?.description || i.description || "Security event",
+                    agent: i.agent?.name || i.agent || "Unknown agent",
+                    timestamp: i.timestamp || new Date().toISOString()
                 })),
                 timestamp: new Date().toISOString()
             };
