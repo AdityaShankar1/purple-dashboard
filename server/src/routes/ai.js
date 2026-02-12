@@ -35,60 +35,63 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
 - Data Source: ${statsToUse.source || 'Unknown'}
 `;
 
-        const prompt = `SOC SECURITY STATUS REPORT - DATA-BASED ONLY
+        const prompt = `SOC SECURITY REPORT - ANSWER THE USER'S QUESTION BASED ON THIS EXACT DATA
 
-ACTUAL DATA FROM DASHBOARD:
+DATA DEFINITIONS:
+- totalAlerts: LIFETIME count of all alerts ever (example: 1,414,832)
+- activeIncidents: COUNT of CURRENT open/active issues (0, 1, 2, 3, 4, 5, etc.)
+- riskDistribution: BREAKDOWN of alert severity (critical, high, medium, low counts)
+- recentIncidents: LIST of current incident details
+
+TODAY'S DATA:
 ${contextInfo}
 
-SEVERITY MAPPING (APPLY STRICTLY):
-- If activeIncidents = 0: SEVERITY IS Low
-- If activeIncidents 1-2: SEVERITY IS Medium  
-- If activeIncidents 3-5: SEVERITY IS High
-- If activeIncidents > 5: SEVERITY IS Critical
-- NEVER escalate beyond what incidents show
+USER'S QUESTION: ${userPrompt || "What is the security status?"}
 
-RESPONSE FORMAT:
-SUMMARY: State the actual count of activeIncidents and the top risk level from riskDistribution
-SEVERITY: (Apply from mapping above based on activeIncidents count ONLY)
-MITRE ATT&CK: Only list if recentIncidents contain specific attack types, else "None Detected"
-NEXT ACTIONS: List only if Severity is High or Critical. If Low/Medium, omit this section.
+RULES FOR YOUR RESPONSE:
+1. SEVERITY = determined ONLY by activeIncidents count:
+   - activeIncidents = 0 → Severity LOW
+   - activeIncidents 1-2 → Severity MEDIUM
+   - activeIncidents 3-5 → Severity HIGH
+   - activeIncidents > 5 → Severity CRITICAL
 
-CRITICAL RULES - OBEY THESE:
-1. Report ONLY facts from the provided data
-2. NEVER invent incidents, threats, or activities not in the data
-3. If data shows 0 activeIncidents, do NOT say "high risk"
-4. If riskDistribution is mostly low, severity cannot be High
-5. Reference specific numbers from the data
-6. Do NOT add drama or assumptions
+2. ANSWER THEIR SPECIFIC QUESTION:
+   - If "status" → Report activeIncidents and severity
+   - If "logs" → Describe recentIncidents if any, else say "no recent incidents"
+   - If "what actions" → Suggest actions for the severity level
+   - Default → Overall security posture
 
-EXAMPLE RESPONSE (format reference only):
-Given: activeIncidents: 0, low risk distribution, 0 open alerts
-SUMMARY: No active security incidents detected. 1,414,832 total alerts on file with mostly low-level activity.
-SEVERITY: Low
-MITRE ATT&CK: None Detected
-(no NEXT ACTIONS for Low severity)
+3. CRITICAL: Use ONLY the numbers provided above. NEVER invent values.
 
-Given: activeIncidents: 4, high: 39, medium: 149, low: 12
-SUMMARY: 4 active incidents detected with medium-to-low risk distribution (39 high, 149 medium, 12 low)
-SEVERITY: High
-MITRE ATT&CK: Possible lateral movement patterns
-NEXT ACTIONS:
-Investigate the 4 active incidents immediately
-Review high-risk alerts (39 total)
-Monitor for spread to additional systems
+FORMAT:
+SUMMARY: [Answer their question using actual data]
+SEVERITY: [Low/Medium/High/Critical based on activeIncidents]
+MITRE ATT&CK: [Only if recentIncidents describe attack, else "None Detected"]
+NEXT ACTIONS: [Only for High/Critical severity, else omit]
 
-OUTPUT ONLY THIS FORMAT. NO OTHER TEXT. NO PROSE.`;
+OUTPUT ONLY THIS FORMAT. NO OTHER TEXT.`;
 
         // Build conversation with history for context continuity
         const messages = [];
         
-        // Add conversation history if available
+        // Add conversation history if available (preserves context from previous exchanges)
         if (history && Array.isArray(history)) {
             messages.push(...history);
         }
         
-        // Add current query
-        messages.push({ role: 'user', content: prompt });
+        // Add the data context and rules as a SYSTEM message
+        const systemPrompt = prompt;
+        
+        // Add the user's ACTUAL QUERY as a separate message
+        // This allows the AI to respond differently to different questions
+        const userQuery = userPrompt && userPrompt.trim() 
+            ? userPrompt 
+            : "What is the current security status based on the dashboard data?";
+        
+        messages.push({ 
+            role: 'user', 
+            content: `${systemPrompt}\n\nUSER QUERY: ${userQuery}` 
+        });
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
