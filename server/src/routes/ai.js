@@ -97,9 +97,42 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
             });
         }
         
-        const mitreText = detectedTechniques.length > 0 
-            ? detectedTechniques.slice(0, 3).join(', ')
+        // Deduplicate techniques and limit to 3
+        const uniqueTechniques = [...new Set(detectedTechniques)];
+        
+        const mitreText = uniqueTechniques.length > 0 
+            ? uniqueTechniques.slice(0, 3).join(', ')
             : 'None Detected';
+
+        // Generate action items based on severity and techniques
+        let actionItems = [];
+        if (baseSeverity === 'Critical' || baseSeverity === 'High') {
+            if (uniqueTechniques.some(t => t.includes('T1110') || t.includes('T1078'))) {
+                actionItems.push('Review and strengthen authentication controls');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1021'))) {
+                actionItems.push('Investigate lateral movement patterns in network');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1041'))) {
+                actionItems.push('Monitor and block suspicious data exfiltration');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1001'))) {
+                actionItems.push('Analyze traffic for obfuscation or suspicious patterns');
+            }
+            if (uniqueTechniques.some(t => t.includes('T1059'))) {
+                actionItems.push('Disable or restrict script execution capabilities');
+            }
+            // Generic actions if no specific techniques matched
+            if (actionItems.length === 0) {
+                actionItems.push('Immediately review and investigate all active incidents');
+                actionItems.push('Implement incident response procedures');
+            }
+        }
+        
+        const nextActionsText = actionItems.length > 0 
+            ? actionItems.join('\n')
+            : '(None - Continue monitoring)';
+
 
         const prompt = `SOC SECURITY REPORT
 
@@ -113,28 +146,28 @@ USER ASKS: "${userPrompt || "What is the security status?"}"
 DETERMINISTIC SEVERITY (CALCULATED): ${baseSeverity}
 (This is determined by activeIncidents count: ${activeInc})
 
-ANSWER THE USER'S SPECIFIC QUESTION USING ONLY THE DATA ABOVE.
+ANSWER THE USER'S SPECIFIC QUESTION - CUSTOMIZE YOUR RESPONSE:
+- If they ask "status" → Focus on overall security health and risk level
+- If they ask "logs" → Focus on what incidents/logs show and what happened
+- If they ask "MITRE" → Focus on techniques detected and attack patterns
+- If they ask "actions" → Focus on what needs to be done
+- Generic → Give overall assessment
 
 RESPONSE FORMAT:
-SUMMARY: [One sentence directly answering their question]
+SUMMARY: [One sentence directly answering their specific question]
 SEVERITY: ${baseSeverity}
 MITRE ATT&CK: ${mitreText}
-NEXT ACTIONS: [Only if severity is High or Critical, else omit]
-
-ANSWER APPROACH BY QUESTION TYPE:
-- "logs" → Describe incidents/logs shown
-- "status" → Describe overall security posture
-- "actions" → Describe recommended steps
-- "severity" → Explain why this severity level
-- Generic → Overall assessment
+NEXT ACTIONS: 
+${nextActionsText}
 
 CRITICAL RULES:
-1. Severity is ALWAYS ${baseSeverity} for this data (${activeInc} active incidents)
+1. Severity is ALWAYS ${baseSeverity} (${activeInc} active incidents)
 2. MITRE ATT&CK is ALWAYS: ${mitreText}
-3. Use ONLY real numbers from data above
-4. Tailor summary wording to their specific question
-5. Keep concise, no invented data
-6. Format must be exact
+3. NEXT ACTIONS are ALWAYS: ${nextActionsText}
+4. Use ONLY real numbers from data above
+5. Tailor SUMMARY to answer their SPECIFIC question, not generic status
+6. Keep concise, no invented data
+7. Format must be exact
 
 OUTPUT ONLY THE FORMAT ABOVE.`;
 
