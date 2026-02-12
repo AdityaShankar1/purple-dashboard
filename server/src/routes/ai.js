@@ -35,41 +35,46 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
 - Data Source: ${statsToUse.source || 'Unknown'}
 `;
 
-        const prompt = `SOC SECURITY REPORT - ANSWER THE USER'S QUESTION BASED ON THIS EXACT DATA
+        // Pre-calculate severity to ensure it's deterministic
+        const activeInc = statsToUse.activeIncidents || 0;
+        let baseSeverity = 'Low';
+        if (activeInc >= 1 && activeInc <= 2) baseSeverity = 'Medium';
+        else if (activeInc >= 3 && activeInc <= 5) baseSeverity = 'High';
+        else if (activeInc > 5) baseSeverity = 'Critical';
 
-DATA DEFINITIONS:
-- totalAlerts: LIFETIME count of all alerts ever (example: 1,414,832)
-- activeIncidents: COUNT of CURRENT open/active issues (0, 1, 2, 3, 4, 5, etc.)
-- riskDistribution: BREAKDOWN of alert severity (critical, high, medium, low counts)
-- recentIncidents: LIST of current incident details
+        const prompt = `SOC SECURITY REPORT
 
-TODAY'S DATA:
+DATA:
 ${contextInfo}
 
-USER'S QUESTION: ${userPrompt || "What is the security status?"}
+USER ASKS: "${userPrompt || "What is the security status?"}"
 
-RULES FOR YOUR RESPONSE:
-1. SEVERITY = determined ONLY by activeIncidents count:
-   - activeIncidents = 0 → Severity LOW
-   - activeIncidents 1-2 → Severity MEDIUM
-   - activeIncidents 3-5 → Severity HIGH
-   - activeIncidents > 5 → Severity CRITICAL
+DETERMINISTIC SEVERITY (CALCULATED): ${baseSeverity}
+(This is determined by activeIncidents count: ${activeInc})
 
-2. ANSWER THEIR SPECIFIC QUESTION:
-   - If "status" → Report activeIncidents and severity
-   - If "logs" → Describe recentIncidents if any, else say "no recent incidents"
-   - If "what actions" → Suggest actions for the severity level
-   - Default → Overall security posture
+ANSWER THE USER'S SPECIFIC QUESTION USING ONLY THE DATA ABOVE.
 
-3. CRITICAL: Use ONLY the numbers provided above. NEVER invent values.
+RESPONSE FORMAT:
+SUMMARY: [One sentence directly answering their question]
+SEVERITY: ${baseSeverity}
+MITRE ATT&CK: [Technique if described in incidents, else "None Detected"]
+NEXT ACTIONS: [Only if severity is High or Critical, else omit]
 
-FORMAT:
-SUMMARY: [Answer their question using actual data]
-SEVERITY: [Low/Medium/High/Critical based on activeIncidents]
-MITRE ATT&CK: [Only if recentIncidents describe attack, else "None Detected"]
-NEXT ACTIONS: [Only for High/Critical severity, else omit]
+ANSWER APPROACH BY QUESTION TYPE:
+- "logs" → Describe incidents/logs shown
+- "status" → Describe overall security posture
+- "actions" → Describe recommended steps
+- "severity" → Explain why this severity level
+- Generic → Overall assessment
 
-OUTPUT ONLY THIS FORMAT. NO OTHER TEXT.`;
+CRITICAL RULES:
+1. Severity is ALWAYS ${baseSeverity} for this data (${activeInc} active incidents)
+2. Use ONLY real numbers from data above
+3. Tailor summary wording to their specific question
+4. Keep concise, no invented data
+5. Format must be exact
+
+OUTPUT ONLY THE FORMAT ABOVE.`;
 
         // Build conversation with history for context continuity
         const messages = [];
