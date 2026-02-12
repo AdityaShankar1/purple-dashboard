@@ -11,53 +11,65 @@
  * @returns {Object} Mock security stats including alerts, incidents, and recent logs.
  */
 export const getMockDashboardStats = () => {
-    // Generate some random variation to make it feel slightly dynamic
-    const totalAlerts = Math.floor(Math.random() * 50) + 120;
-    const activeIncidents = Math.floor(Math.random() * 5) + 2;
-
-    const mockStats = {
-        source: "Mock Security Data Engine",
-        totalAlerts: totalAlerts,
-        activeIncidents: activeIncidents,
-        riskDistribution: {
-            critical: Math.floor(totalAlerts * 0.1),
-            high: Math.floor(totalAlerts * 0.25),
-            medium: Math.floor(totalAlerts * 0.4),
-            low: Math.floor(totalAlerts * 0.25)
-        },
-        recentIncidents: [
-            {
-                level: 12,
-                description: "Lateral movement attempt detected via SMB",
-                agent: "Finance-Server-01",
-                timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString()
+    // Use consistent mock data based on current hour to avoid extreme variance
+    // This ensures the same threat level for multiple queries within the same hour
+    const hour = new Date().getHours();
+    const seed = hour % 2; // Alternate between two stable scenarios
+    
+    // Scenario A: Moderate threat level (60% of the time)
+    if (seed === 0) {
+        return {
+            source: "Mock Security Data Engine",
+            totalAlerts: 145,
+            activeIncidents: 3,
+            riskDistribution: {
+                critical: 14,
+                high: 36,
+                medium: 58,
+                low: 37
             },
-            {
-                level: 10,
-                description: "Multiple failed root login attempts",
-                agent: "DB-Cluster-Node-3",
-                timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString()
+            recentIncidents: [
+                {
+                    level: 9,
+                    description: "Lateral movement attempt detected via SMB",
+                    agent: "Finance-Server-01",
+                    timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString()
+                },
+                {
+                    level: 7,
+                    description: "Multiple failed root login attempts",
+                    agent: "DB-Cluster-Node-3",
+                    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString()
+                },
+                {
+                    level: 5,
+                    description: "High network traffic spike detected",
+                    agent: "Gateway-Firewall",
+                    timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString()
+                }
+            ]
+        };
+    } 
+    // Scenario B: Low threat level (40% of the time)
+    else {
+        return {
+            source: "Mock Security Data Engine",
+            totalAlerts: 18,
+            activeIncidents: 0,
+            riskDistribution: {
+                critical: 0,
+                high: 2,
+                medium: 7,
+                low: 9
             },
-            {
-                level: 8,
-                description: "Suspicious PowerShell execution policy bypass",
-                agent: "HR-Workstation-04",
-                timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-            },
-            {
-                level: 7,
-                description: "Outbound traffic to known malicious IP",
-                agent: "Gateway-Firewall",
-                timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
-            },
-            {
-                level: 5,
-                description: "New user account created with administrative privileges",
-                agent: "Domain-Controller-01",
-                timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
-            }
-        ]
-    };
-
-    return mockStats;
+            recentIncidents: [
+                {
+                    level: 3,
+                    description: "Routine security scan completed successfully",
+                    agent: "Security-Scanner-01",
+                    timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString()
+                }
+            ]
+        };
+    }
 };

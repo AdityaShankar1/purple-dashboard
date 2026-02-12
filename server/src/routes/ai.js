@@ -42,56 +42,56 @@ ${contextInfo}
 
 QUERY: ${userPrompt || "status"}
 
-RESPONSE RULES:
-First section: SUMMARY:
-Second section: SEVERITY: (Critical/High/Medium/Low)
-Third section: MITRE ATT&CK: (T#### - Technique)
-Fourth section: NEXT ACTIONS: (line by line, no bullet prose)
+CRITICAL RULES:
+1. Respond ONLY based on the provided security data above
+2. Do NOT invent threats or change threat levels without data support
+3. If data shows low/no alerts, respond accurately - do NOT escalate severity
+4. Each line is ONE fact from the data
+5. Answer should reference specific incidents/alerts in the data provided
+6. Consistency: Repeat the same assessment if queried again with same data
 
-Content rules:
-- NO markdown, NO paragraphs, NO explanations
-- Each line is ONE fact
-- If IP data available, mention IP and its risk profile
-- Confidence inline: (XX%)
-- Action items are plain directives, max 12 words each
+RESPONSE FORMAT (no other text):
+SUMMARY: ONE-LINE description of security status from the provided data
+SEVERITY: (Critical/High/Medium/Low) - based only on provided metrics
+MITRE ATT&CK: (Technique codes if applicable, or "None Detected")
+NEXT ACTIONS: Line-by-line directives (3-5 max). Omit if severity is Low.
 
-EXAMPLE FORMATS:
+EXAMPLES (format only, do NOT copy content):
 Example 1:
-SUMMARY:
-Brute force attempt detected on Auth server with 247 failed logins in 15min
-
-SEVERITY:
-Critical
-
-MITRE ATT&CK:
-Brute Force (T1110) - Confidence: 92%
-
+SUMMARY: Brute force activity on authentication service
+SEVERITY: Critical
+MITRE ATT&CK: Brute Force (T1110) - Confidence: 92%
 NEXT ACTIONS:
-Block source IPs immediately
-Enable MFA for affected accounts
-Review authentication logs
+Block source IP ranges
+Enable MFA enforcement
+Review failed login logs
 
 Example 2:
-SUMMARY:
-Data exfiltration activity from endpoint Finance-Workstation-07
+SUMMARY: No active security incidents detected
+SEVERITY: Low
+MITRE ATT&CK: None Detected
+NEXT ACTIONS: (none - omit when Low severity)
 
-SEVERITY:
-High
+OUTPUT ONLY THE FORMATTED RESPONSE. NO OTHER TEXT.`;
 
-MITRE ATT&CK:
-Exfiltration Over Network (T1041) - Confidence: 88%
-
-NEXT ACTIONS:
-Isolate compromised endpoint
-Audit recent file access and transfers
-Scan for malware signatures
-
-OUTPUT ONLY THIS FORMAT WITH YOUR OWN DATA. NO OTHER TEXT.`;
+        // Build conversation with history for context continuity
+        const messages = [];
+        
+        // Add conversation history if available
+        if (history && Array.isArray(history)) {
+            messages.push(...history);
+        }
+        
+        // Add current query
+        messages.push({ role: 'user', content: prompt });
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
-            messages: [{ role: 'user', content: prompt }],
+            messages: messages,
             stream: false,
+            options: {
+                temperature: 0.1 // Low temperature for consistent, deterministic responses
+            }
         });
 
         res.json({
