@@ -138,36 +138,45 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
 
         // Determine title based on question
         let titleSuffix = "Security Status";
+        let summaryHint = "";
         if (userPrompt) {
             const lower = userPrompt.toLowerCase();
-            if (lower.includes("log")) titleSuffix = "Log Analysis";
-            else if (lower.includes("mitre")) titleSuffix = "MITRE ATT&CK Analysis";
-            else if (lower.includes("action")) titleSuffix = "Recommended Actions";
+            if (lower.includes("log")) {
+                titleSuffix = "Log Analysis";
+                summaryHint = "Describe what the logs reveal";
+            } else if (lower.includes("mitre")) {
+                titleSuffix = "MITRE ATT&CK Analysis";
+                summaryHint = "Focus on detected techniques";
+            } else if (lower.includes("action")) {
+                titleSuffix = "Recommended Actions";
+                summaryHint = "Focus on what needs to be done";
+            } else {
+                summaryHint = "General security assessment";
+            }
         }
 
-        const prompt = `YOU MUST OUTPUT EXACTLY THIS FORMAT. DO NOT SKIP ANY LINES.
+        const prompt = `OUTPUT FORMAT (MANDATORY STRUCTURE):
 
 [${titleSuffix.toUpperCase()}]:
-${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
+[One sentence summary - tailor to question type: ${summaryHint}. Must mention ${baseSeverity} severity]
 - Severity: ${baseSeverity}
 - Incidents: ${activeInc}
 - MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
 
-CRITICAL FORMAT RULES - FOLLOW EXACTLY:
-Line 1: [TITLE]: (must include brackets and colon)
-Line 2: Summary statement (Low risk detected. OR Medium risk status. OR High risk detected. OR Critical threat detected.)
-Line 3+: Bullet points only with dash and space (- Severity: OR - Incidents: OR - MITRE: OR - Action:)
-NO OTHER TEXT. NO PARAGRAPHS. NO BOLD (**). NO EXPLANATIONS.
+STRICT RULES:
+1. Line 1 MUST BE: [${titleSuffix.toUpperCase()}]:
+2. Line 2: One brief sentence (5-8 words) relevant to question type
+3. Lines 3+: Exact bullet points as shown above
+4. NO markdown formatting (**bold**), NO extra text
+5. Summary must reflect the question focus while stating the ${baseSeverity} severity level
 
-FROZEN VALUES FOR THIS RESPONSE:
-- Title: [${titleSuffix.toUpperCase()}]:
-- Summary: ${baseSeverity === 'Low' ? 'Low risk detected.' : baseSeverity === 'Medium' ? 'Medium risk status.' : baseSeverity === 'High' ? 'High risk detected.' : 'Critical threat detected.'}
-- Severity line: - Severity: ${baseSeverity}
-- Incidents line: - Incidents: ${activeInc}
-- MITRE line: - MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
+NON-NEGOTIABLE DATA (USE EXACT VALUES):
+- Severity: ${baseSeverity}
+- Incidents: ${activeInc}
+- MITRE: ${mitreText}${nextActionsText ? '\n- Action lines: ' + actionItems.slice(0, 2).join(', ') : ''}
 
-User asked: "${userPrompt || 'What is the security status?'}"
-Output ONLY the format above. Do not deviate.`;
+User Question: "${userPrompt || 'What is the security status?'}"
+Vary ONLY the summary sentence to match the question. All other lines are fixed.`;
 
         // Build conversation with history for context continuity
         const messages = [];
@@ -192,7 +201,7 @@ Output ONLY the format above. Do not deviate.`;
             messages: messages,
             stream: false,
             options: {
-                temperature: 0.05 // Ultra-low for absolute format compliance
+                temperature: 0.3 // Balanced: allows summary variation while keeping data deterministic
             }
         });
 
