@@ -35,24 +35,42 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
 - Data Source: ${statsToUse.source || 'Unknown'}
 `;
 
-        const prompt = `
-You are a Security Assistant chatbot for a SOC dashboard. 
-${isMock ? "IMPORTANT: The system is currently in DEMO MODE using MOCK DATA. Explicitly mention this if asked about the data source, but otherwise treat the data as real for analysis purposes." : ""}
+        const prompt = `SOC ALERT SYSTEM - MACHINE FORMAT RESPONSE
 
-Use the following context to answer the user's question about the security posture.
-
+DATA:
 ${contextInfo}
 
-User Question: ${userPrompt || "Summarize the current status."}
+QUERY: ${userPrompt || "status"}
 
-Previous Chat History:
-${JSON.stringify(history || [])}
+RESPONSE RULES:
+First section: SUMMARY:
+Second section: SEVERITY: (Critical/High/Medium/Low)
+Third section: MITRE ATT&CK: (T#### - Technique)
+Fourth section: NEXT ACTIONS: (line by line, no bullet prose)
 
-Provide a helpful, natural language response. Be concise but professional.
-If analyzing logs, mention specific details like the affected agent or alert description.
-Also identify likely MITRE ATT&CK tactics and techniques for any incidents or alerts.
-If you are unsure, say "Unknown" and explain briefly.
-`;
+Content rules:
+- NO markdown, NO paragraphs, NO explanations
+- Each line is ONE fact
+- If IP data available, mention IP and its risk profile
+- Confidence inline: (XX%)
+- Action items are plain directives, max 12 words each
+
+EXAMPLE RESPONSE:
+SUMMARY:
+Unusual activity detected from uncommon source IP 192.168.45.12
+
+SEVERITY:
+Medium
+
+MITRE ATT&CK:
+Scanning (T1018) - Confidence: 75%
+
+NEXT ACTIONS:
+Investigate source IP origin and intent
+Check logs for related suspicious traffic
+Implement temporary access controls if necessary
+
+OUTPUT ONLY THIS FORMAT. NO OTHER TEXT.`;
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',

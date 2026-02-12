@@ -23,11 +23,7 @@ export default function DashboardAdminAI() {
     // Chat State
     const [messages, setMessages] = useState(() => {
         const saved = localStorage.getItem("ai_chat_history");
-        return saved ? JSON.parse(saved) : [{
-            id: 1,
-            role: 'assistant',
-            content: "Hello! I'm your AI Security Assistant. I'm ready to help you analyze your security posture."
-        }];
+        return saved ? JSON.parse(saved) : [];
     });
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -93,13 +89,8 @@ export default function DashboardAdminAI() {
 
     const handleClearChat = () => {
         if (window.confirm("Are you sure you want to clear the chat history?")) {
-            const initialMsg = [{
-                id: Date.now(),
-                role: 'assistant',
-                content: "Chat cleared. I'm ready to help!"
-            }];
-            setMessages(initialMsg);
-            localStorage.setItem("ai_chat_history", JSON.stringify(initialMsg));
+            setMessages([]);
+            localStorage.removeItem("ai_chat_history");
         }
     };
 
@@ -212,7 +203,7 @@ export default function DashboardAdminAI() {
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-purple-600'}`}>
                                 {msg.role === 'user' ? <User size={20} className="text-white" /> : <Bot size={20} className="text-white" />}
                             </div>
-                            <div className={`p-4 rounded-2xl shadow-sm border ${msg.role === 'user' ? 'bg-indigo-600 text-white border-transparent rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-100 dark:border-gray-700 rounded-tl-none text-[15px] leading-relaxed'}`}>
+                            <div className={`p-4 rounded-2xl shadow-sm border whitespace-pre-line ${msg.role === 'user' ? 'bg-indigo-600 text-white border-transparent rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-100 dark:border-gray-700 rounded-tl-none text-[15px] leading-relaxed'}`}>
                                 {msg.content}
                             </div>
                         </div>
