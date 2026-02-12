@@ -59,8 +59,30 @@ Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
             'reconnaissance': 'T1592 - Gather Victim Host Information',
             'unauthorized access': 'T1078 - Valid Accounts',
             'backdoor': 'T1098 - Account Manipulation',
-            'persistence': 'T1547 - Boot or Logon Autostart Execution'
+            'persistence': 'T1547 - Boot or Logon Autostart Execution',
+            // Technical log patterns
+            'netstat': 'T1001 - Data Obfuscation',
+            'port': 'T1001 - Data Obfuscation',
+            'logon': 'T1078 - Valid Accounts',
+            'failed login': 'T1110 - Brute Force',
+            'failed logon': 'T1110 - Brute Force',
+            'access denied': 'T1001 - Obfuscated Files or Information',
+            'privilege': 'T1548 - Abuse Elevation Control Mechanism',
+            'powershell': 'T1059 - Command and Scripting Interpreter',
+            'cmd': 'T1059 - Command and Scripting Interpreter',
+            'registry': 'T1112 - Modify Registry',
+            'service': 'T1543 - Create or Modify System Process',
+            'process': 'T1547 - Boot or Logon Autostart Execution',
+            'network': 'T1071 - Application Layer Protocol',
+            'traffic': 'T1071 - Application Layer Protocol',
+            'connection': 'T1071 - Application Layer Protocol',
+            'outbound': 'T1071 - Application Layer Protocol',
+            'inbound': 'T1064 - Scripting',
+            'firewall': 'T1518 - Software Discovery',
+            'antivirus': 'T1518 - Software Discovery',
+            'events': 'T1070 - Indicator Removal'
         };
+
 
         let detectedTechniques = [];
         if (statsToUse.recentIncidents && Array.isArray(statsToUse.recentIncidents)) {
