@@ -30,6 +30,7 @@ import { setupSocket } from "./config/socket.js";
 
 // Add this import at the top with the other route imports
 import materialRoutes from "./routes/materialRoutes.js";
+import aiRoutes from "./routes/ai.js";
 
 
 
@@ -78,6 +79,7 @@ app.use("/api/courses", courseRoutes); // ✅ matches frontend
 
 // Then, below your other route definitions (near the bottom)
 app.use("/api/materials", materialRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/api/materials", materialRoutes); // ✅ Alias for frontend bug
 app.use("/api/api/quizzes", quizRoutes); // ✅ Alias for frontend bug?
 
