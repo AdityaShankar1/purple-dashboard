@@ -90,7 +90,7 @@ OUTPUT ONLY THE FORMATTED RESPONSE. NO OTHER TEXT.`;
             messages: messages,
             stream: false,
             options: {
-                temperature: 0.1 // Low temperature for consistent, deterministic responses
+                temperature: 0.5 // Balanced: data-driven but with natural variation
             }
         });
 
