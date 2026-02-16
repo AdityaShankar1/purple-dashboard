@@ -6,6 +6,15 @@ import { Bot, Send, Trash2, User, Loader2, AlertCircle } from "lucide-react";
 import { useIncidentsData } from "../../hooks/useIncidentsData";
 
 export default function DashboardAdminAI() {
+    const getApiBase = () => {
+        if (typeof window !== "undefined") {
+            const host = window.location.hostname;
+            if (host === "localhost" || host === "127.0.0.1") {
+                return "/api";
+            }
+        }
+        return process.env.REACT_APP_API_URL || "/api";
+    };
     // Data State
     const incidentsFromHook = useIncidentsData();
     const [metrics, setMetrics] = useState(null);
@@ -14,11 +23,7 @@ export default function DashboardAdminAI() {
     // Chat State
     const [messages, setMessages] = useState(() => {
         const saved = localStorage.getItem("ai_chat_history");
-        return saved ? JSON.parse(saved) : [{
-            id: 1,
-            role: 'assistant',
-            content: "Hello! I'm your AI Security Assistant. I'm ready to help you analyze your security posture."
-        }];
+        return saved ? JSON.parse(saved) : [];
     });
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -32,7 +37,7 @@ export default function DashboardAdminAI() {
         const fetchData = async () => {
             setConnStatus("checking");
             try {
-                const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+                const API = getApiBase();
 
                 // 1. Try Wazuh Alerts (Real-time)
                 const wazuhRes = await fetch(`${API}/wazuh/logs`).catch(() => null);
@@ -84,13 +89,8 @@ export default function DashboardAdminAI() {
 
     const handleClearChat = () => {
         if (window.confirm("Are you sure you want to clear the chat history?")) {
-            const initialMsg = [{
-                id: Date.now(),
-                role: 'assistant',
-                content: "Chat cleared. I'm ready to help!"
-            }];
-            setMessages(initialMsg);
-            localStorage.setItem("ai_chat_history", JSON.stringify(initialMsg));
+            setMessages([]);
+            localStorage.removeItem("ai_chat_history");
         }
     };
 
@@ -107,21 +107,29 @@ export default function DashboardAdminAI() {
 
 
         try {
-            // Aggregating data for context
+            // Aggregating data for context - prioritize metrics over incidents
             const contextData = {
                 source: connStatus === 'wazuh' ? 'Wazuh Real-time API' : 'Dashboard Metrics Fallback',
-                totalAlerts: metrics?.count || 0,
-                activeIncidents: incidentsFromHook?.length || 0,
-                recentIncidents: (wazuhAlerts || incidentsFromHook || []).slice(0, 5).map(i => ({
-                    level: i.rule?.level || i.level,
-                    description: i.rule?.description || i.description,
-                    agent: i.agent?.name || i.agent
+                totalAlerts: metrics?.count || wazuhAlerts?.length || incidentsFromHook?.length || 0,
+                activeIncidents: (wazuhAlerts?.length || 0) + (incidentsFromHook?.length || 0),
+                riskDistribution: metrics?.alerts ? {
+                    critical: (metrics.alerts.filter(a => a.rule?.level >= 14) || []).length,
+                    high: (metrics.alerts.filter(a => a.rule?.level >= 8 && a.rule?.level < 14) || []).length,
+                    medium: (metrics.alerts.filter(a => a.rule?.level >= 5 && a.rule?.level < 8) || []).length,
+                    low: (metrics.alerts.filter(a => a.rule?.level < 5) || []).length,
+                } : {},
+                recentIncidents: (wazuhAlerts || metrics?.alerts || incidentsFromHook || []).slice(0, 5).map(i => ({
+                    level: i.rule?.level || i.level || 0,
+                    description: i.rule?.description || i.description || "Security event",
+                    agent: i.agent?.name || i.agent || "Unknown agent",
+                    timestamp: i.timestamp || new Date().toISOString()
                 })),
                 timestamp: new Date().toISOString()
             };
 
+            const apiBase = getApiBase();
             const res = await fetch(
-                `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/ai/summarize-dashboard`,
+                `${apiBase}/ai/summarize-dashboard`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -202,7 +210,7 @@ export default function DashboardAdminAI() {
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-purple-600'}`}>
                                 {msg.role === 'user' ? <User size={20} className="text-white" /> : <Bot size={20} className="text-white" />}
                             </div>
-                            <div className={`p-4 rounded-2xl shadow-sm border ${msg.role === 'user' ? 'bg-indigo-600 text-white border-transparent rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-100 dark:border-gray-700 rounded-tl-none text-[15px] leading-relaxed'}`}>
+                            <div className={`p-4 rounded-2xl shadow-sm border whitespace-pre-line ${msg.role === 'user' ? 'bg-indigo-600 text-white border-transparent rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-100 dark:border-gray-700 rounded-tl-none text-[15px] leading-relaxed'}`}>
                                 {msg.content}
                             </div>
                         </div>

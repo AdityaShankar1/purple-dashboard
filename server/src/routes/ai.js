@@ -1,73 +1,197 @@
 import express from 'express';
 import ollama from 'ollama';
 import { getMockDashboardStats } from '../services/mockDataService.js';
+import { wazuhService } from '../services/wazuhService.js';
 
 const router = express.Router();
 
+/**
+ * AI Dashboard Summarization Route
+ * 
+ * DESCRIPTION:
+ * This route fetches real-time security data from Wazuh and uses Ollama (Qwen 2.5:1.5b) 
+ * to generate a structured SOC reporting summary.
+ * 
+ * DESIGN PHILOSOPHY:
+ * - Direct Data: Fetches alerts server-side to ensure the AI sees the same data as the Dashboard.
+ * - Strict Formatting: Enforces a bracketed title and bulleted list for a "CLI/SOC Console" feel.
+ * - Balanced Descriptiveness: Targets a 2-3 sentence summary explaining the "why" behind logs.
+ * 
+ * ENCOUNTERED BUGS & FIXES:
+ * 1. Incident Count Mismatch:
+ *    - Bug: AI reported 0 incidents while dashboard showed many.
+ *    - Fix: Synced backend logic: Dashboard counts "Incidents" as Level >= 7 alerts.
+ * 2. Response Multi-lining (Collapsed Lines):
+ *    - Bug: Qwen 1.5b tended to collapse outputs into a single line to be "concise".
+ *    - Fix: Implemented a rigid structural template with explicit newline instructions (\n).
+ * 3. Prompt Leakage:
+ *    - Bug: AI repeated "User Query:" and "Response:" labels in its final output.
+ *    - Fix: Removed terminal labels from the end of the prompt and added strict output instructions.
+ * 4. MITRE Hallucination:
+ *    - Bug: Model sometimes generated its own MITRE codes when "None Detected" was provided.
+ *    - Fix: Hardened prompt instructions to use the EXACT provided metrics without rewriting.
+ */
 router.post('/summarize-dashboard', async (req, res) => {
     try {
-        const { dashboardStats, userPrompt, history } = req.body;
+        const { userPrompt, history } = req.body;
 
-        // Check if we have valid real data
-        // We consider data "real" if we have >0 alerts or incidents
-        let statsToUse = dashboardStats;
-        let isMock = false;
+        // 1. Fetch Real Data Server-Side (Don't rely on frontend stats)
+        let stats = {
+            totalAlerts: 0,
+            activeIncidents: 0,
+            riskDistribution: {},
+            recentIncidents: [],
+            source: 'Real-time Wazuh API'
+        };
 
-        const hasRealData = dashboardStats &&
-            (dashboardStats.totalAlerts > 0 ||
-                dashboardStats.activeIncidents > 0 ||
-                (dashboardStats.recentIncidents && dashboardStats.recentIncidents.length > 0));
+        try {
+            // Fetch total alerts, recent alerts (to count incidents and show logs), and risk
+            const [total, recentAlerts, risk] = await Promise.all([
+                wazuhService.getTotalAlerts(),
+                wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
+                wazuhService.getRiskDistribution()
+            ]);
 
-        // Fallback Logic: If no real data is found, switch to mock data service
-        if (!hasRealData) {
-            console.log("No real security data found. Switching to Mock Data Mode.");
-            statsToUse = getMockDashboardStats();
-            isMock = true; // Flag to inform frontend/AI that this is a simulation
+            stats.totalAlerts = total;
+            stats.recentIncidents = recentAlerts;
+
+            // Sync with Dashboard logic: Incidents are Level >= 7
+            stats.activeIncidents = recentAlerts.filter(a => a.rule && a.rule.level >= 7).length;
+
+            // Format risk distribution
+            if (risk && risk.levels) {
+                stats.riskDistribution = risk.levels.reduce((acc, curr) => {
+                    acc[`Level ${curr.key}`] = curr.doc_count;
+                    return acc;
+                }, {});
+            }
+        } catch (err) {
+            console.error("Failed to fetch real Wazuh data for AI:", err.message);
+            // Fallback naturally if stats remain zero/empty
         }
 
-        // Construct the prompt with context
+        // 2. Fallback to Mock Data if no real data found
+        let isMock = false;
+        if (stats.totalAlerts === 0 && stats.activeIncidents === 0) {
+            stats = getMockDashboardStats();
+            isMock = true;
+        }
+
+        // 3. Prepare Context for AI
+        const activeInc = stats.activeIncidents || 0;
+        let baseSeverity = 'Low';
+        if (activeInc >= 1 && activeInc <= 5) baseSeverity = 'Medium';
+        else if (activeInc > 5 && activeInc <= 10) baseSeverity = 'High';
+        else if (activeInc > 10) baseSeverity = 'Critical';
+
+        // Map incident descriptions to MITRE techniques
+        const mitreMapping = {
+            'lateral movement': 'T1021 - Remote Services',
+            'brute force': 'T1110 - Brute Force',
+            'privilege escalation': 'T1134 - Access Token Manipulation',
+            'data exfiltration': 'T1041 - Exfiltration Over Network',
+            'malware': 'T1204 - User Execution',
+            'unauthorized access': 'T1078 - Valid Accounts',
+            'failed login': 'T1110 - Brute Force',
+            'scanning': 'T1046 - Network Service Scanning'
+        };
+
+        const detectedTechniques = new Set();
+        stats.recentIncidents.forEach(i => {
+            const desc = (i.rule?.description || '').toLowerCase();
+            for (const [key, val] of Object.entries(mitreMapping)) {
+                if (desc.includes(key)) detectedTechniques.add(val);
+            }
+        });
+        const mitreText = detectedTechniques.size > 0
+            ? Array.from(detectedTechniques).slice(0, 3).join(', ')
+            : 'None Detected';
+
+        const recentLogs = stats.recentIncidents.slice(0, 5).map(i => {
+            return `[${i['@timestamp']}] Level ${i.rule?.level}: ${i.rule?.description}`;
+        }).join('\n');
+
         const contextInfo = `
-Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
-- Total Alerts: ${statsToUse.totalAlerts || 0}
-- Active Incidents: ${statsToUse.activeIncidents || 0}
-- Risk Distribution: ${JSON.stringify(statsToUse.riskDistribution || {})}
-- Recent Critical Logs: ${JSON.stringify(statsToUse.recentIncidents || [])}
-- Data Source: ${statsToUse.source || 'Unknown'}
+DATA SOURCE: ${isMock ? "SIMULATED" : "LIVE WAZUH"}
+TOTAL ALERTS: ${stats.totalAlerts}
+ACTIVE INCIDENTS (Level>=7): ${activeInc}
+RISK LEVELS: ${JSON.stringify(stats.riskDistribution)}
+RECENT LOG ENTRIES:
+${recentLogs}
 `;
 
-        const prompt = `
-You are a Security Assistant chatbot for a SOC dashboard. 
-${isMock ? "IMPORTANT: The system is currently in DEMO MODE using MOCK DATA. Explicitly mention this if asked about the data source, but otherwise treat the data as real for analysis purposes." : ""}
+        // 4. Improved System Prompt (Balanced & Structured)
+        const systemPrompt = `ROLE: You are an expert SOC Security Auditor.
+GOAL: Provide a balanced security summary. It must be descriptive enough for a user to understand the threat but strictly formatted.
+AUDIENCE: Security analysts.
 
-Use the following context to answer the user's question about the security posture.
-
+DATA CONTEXT:
 ${contextInfo}
 
-User Question: ${userPrompt || "Summarize the current status."}
+OUTPUT FORMAT RULES (STRICT):
+1. START with the title in brackets: [SECURITY STATUS]: or [LOG ANALYSIS]:
+2. Next line: EXACTLY 2-3 DESCRIPTIVE SENTENCES explaining the current situation. 
+   - Mention specific logs (e.g. "failed login attempts", "Apparmor DENIED").
+   - Explain the impact (e.g. "potential brute force attack").
+3. EACH detail MUST be on a NEW LINE starting with a dash (-).
+4. USE THE EXACT VALUES PROVIDED BELOW FOR SEVERITY, INCIDENTS, AND MITRE. DO NOT REWRITE OR HALLUCINATE MITRE CODES.
+5. NO pipes (|), NO markdown bold (**), NO horizontal lines.
 
-Previous Chat History:
-${JSON.stringify(history || [])}
+STRICT TEMPLATE (Must use NEW LINES for every item):
+[TITLE]:
+[2-3 sentence summary]
 
-Provide a helpful, natural language response. Be concise but professional. 
-If analyzing logs, mention specific details like the affected agent or alert description.
-`;
+- Severity: ${baseSeverity}
+- Incidents: ${activeInc}
+- MITRE: ${mitreText}
+- Action: [Step 1]
+- Action: [Step 2]
+
+7. DO NOT repeat the User Query. DO NOT include "User Query" or "Response" labels.
+8. START directly with [SECURITY STATUS]: or [LOG ANALYSIS]:.
+
+EXAMPLE OUTPUT:
+[SECURITY STATUS]:
+We have detected a significantly high volume of failed authentication attempts on the domain controller. This pattern suggests an active brute force attack targeting the administrator account, although current safeguards are holding.
+
+- Severity: Critical
+- Incidents: 37
+- MITRE: T1110 - Brute Force
+- Action: Enable multi-factor authentication immediately.
+- Action: Block the suspicious source IPs found in the logs.
+
+THE USER QUERY IS: "${userPrompt || "Status report"}"
+YOUR REPORT:`;
+
+        // 5. Ollama Chat
+        const messages = [
+            { role: 'system', content: "You are a robotic SOC reporting tool. Output ONLY the report. No chat." },
+            { role: 'user', content: systemPrompt }
+        ];
+
+        // Include truncated history if relevant
+        if (history && history.length > 0) {
+            messages.splice(1, 0, ...history.slice(-2));
+        }
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
-            messages: [{ role: 'user', content: prompt }],
+            messages: messages,
             stream: false,
+            options: {
+                temperature: 0.1, // Very low for consistency
+                num_predict: 300
+            }
         });
 
         res.json({
-            summary: response.message.content,
+            summary: response.message.content.trim(),
             isMock: isMock
         });
+
     } catch (error) {
-        console.error("Ollama Error:", error);
-        res.status(500).json({
-            error: "Failed to connect to local AI",
-            details: error.message
-        });
+        console.error("AI Error:", error);
+        res.status(500).json({ error: "Ollama connection failed", details: error.message });
     }
 });
 
