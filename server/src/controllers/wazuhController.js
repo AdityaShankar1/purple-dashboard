@@ -1778,7 +1778,7 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
-    const alerts = await wazuhService.getThreatIntelData();
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
 
     // Global threat map markers
     const global = alerts
@@ -1873,10 +1873,11 @@ export const fetchThreatIntel = async (_req, res, next) => {
 export const fetchAgentList = async (_req, res) => {
   try {
     // Step 1: Authenticate and get JWT token
-    const authRes = await fetch("https://localhost:55000/security/user/authenticate", {
+    const authRes = await fetch("https://192.168.31.24:55000/security/user/authenticate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "admin", password: "admin" }),
+      body: JSON.stringify({ username: process.env.WAZUH_API_USER || "admin", password: process.env.WAZUH_API_PASS || "admin" }),
+      agent: new (require('https').Agent)({ rejectUnauthorized: false })
     });
 
     const authJson = await authRes.json();
@@ -1884,8 +1885,9 @@ export const fetchAgentList = async (_req, res) => {
     if (!token) throw new Error("Missing JWT token");
 
     // Step 2: Fetch active agents
-    const agentsRes = await fetch("https://localhost:55000/agents?status=active", {
+    const agentsRes = await fetch("https://192.168.31.24:55000/agents?status=active", {
       headers: { Authorization: `Bearer ${token}` },
+      agent: new (require('https').Agent)({ rejectUnauthorized: false })
     });
 
     const agentsJson = await agentsRes.json();

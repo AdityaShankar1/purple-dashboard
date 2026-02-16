@@ -813,7 +813,7 @@ const geoUrl =
 
 export default function DashboardAdminThreatIntelligence() {
   const { global, actors, assets } = useThreatIntelData();
-  const agentList = useAgentList();
+  const agentList = useAgentList() || [];
   const agentHealth = useAgentHealth();
   const [selectedAgent, setSelectedAgent] = useState("all");
   const { alerts, mitre } = useAgentDetails(selectedAgent);
