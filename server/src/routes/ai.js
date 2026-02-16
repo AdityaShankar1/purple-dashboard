@@ -1,220 +1,197 @@
 import express from 'express';
 import ollama from 'ollama';
 import { getMockDashboardStats } from '../services/mockDataService.js';
+import { wazuhService } from '../services/wazuhService.js';
 
 const router = express.Router();
 
+/**
+ * AI Dashboard Summarization Route
+ * 
+ * DESCRIPTION:
+ * This route fetches real-time security data from Wazuh and uses Ollama (Qwen 2.5:1.5b) 
+ * to generate a structured SOC reporting summary.
+ * 
+ * DESIGN PHILOSOPHY:
+ * - Direct Data: Fetches alerts server-side to ensure the AI sees the same data as the Dashboard.
+ * - Strict Formatting: Enforces a bracketed title and bulleted list for a "CLI/SOC Console" feel.
+ * - Balanced Descriptiveness: Targets a 2-3 sentence summary explaining the "why" behind logs.
+ * 
+ * ENCOUNTERED BUGS & FIXES:
+ * 1. Incident Count Mismatch:
+ *    - Bug: AI reported 0 incidents while dashboard showed many.
+ *    - Fix: Synced backend logic: Dashboard counts "Incidents" as Level >= 7 alerts.
+ * 2. Response Multi-lining (Collapsed Lines):
+ *    - Bug: Qwen 1.5b tended to collapse outputs into a single line to be "concise".
+ *    - Fix: Implemented a rigid structural template with explicit newline instructions (\n).
+ * 3. Prompt Leakage:
+ *    - Bug: AI repeated "User Query:" and "Response:" labels in its final output.
+ *    - Fix: Removed terminal labels from the end of the prompt and added strict output instructions.
+ * 4. MITRE Hallucination:
+ *    - Bug: Model sometimes generated its own MITRE codes when "None Detected" was provided.
+ *    - Fix: Hardened prompt instructions to use the EXACT provided metrics without rewriting.
+ */
 router.post('/summarize-dashboard', async (req, res) => {
     try {
-        const { dashboardStats, userPrompt, history } = req.body;
+        const { userPrompt, history } = req.body;
 
-        // Check if we have valid real data
-        // We consider data "real" if we have >0 alerts or incidents
-        let statsToUse = dashboardStats;
-        let isMock = false;
+        // 1. Fetch Real Data Server-Side (Don't rely on frontend stats)
+        let stats = {
+            totalAlerts: 0,
+            activeIncidents: 0,
+            riskDistribution: {},
+            recentIncidents: [],
+            source: 'Real-time Wazuh API'
+        };
 
-        const hasRealData = dashboardStats &&
-            (dashboardStats.totalAlerts > 0 ||
-                dashboardStats.activeIncidents > 0 ||
-                (dashboardStats.recentIncidents && dashboardStats.recentIncidents.length > 0));
+        try {
+            // Fetch total alerts, recent alerts (to count incidents and show logs), and risk
+            const [total, recentAlerts, risk] = await Promise.all([
+                wazuhService.getTotalAlerts(),
+                wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
+                wazuhService.getRiskDistribution()
+            ]);
 
-        // Fallback Logic: If no real data is found, switch to mock data service
-        if (!hasRealData) {
-            console.log("No real security data found. Switching to Mock Data Mode.");
-            statsToUse = getMockDashboardStats();
-            isMock = true; // Flag to inform frontend/AI that this is a simulation
+            stats.totalAlerts = total;
+            stats.recentIncidents = recentAlerts;
+
+            // Sync with Dashboard logic: Incidents are Level >= 7
+            stats.activeIncidents = recentAlerts.filter(a => a.rule && a.rule.level >= 7).length;
+
+            // Format risk distribution
+            if (risk && risk.levels) {
+                stats.riskDistribution = risk.levels.reduce((acc, curr) => {
+                    acc[`Level ${curr.key}`] = curr.doc_count;
+                    return acc;
+                }, {});
+            }
+        } catch (err) {
+            console.error("Failed to fetch real Wazuh data for AI:", err.message);
+            // Fallback naturally if stats remain zero/empty
         }
 
-        // Construct the prompt with context
-        const contextInfo = `
-Current Security Context (${isMock ? "SIMULATED/MOCK DATA" : "Real-time Data"}):
-- Total Alerts: ${statsToUse.totalAlerts || 0}
-- Active Incidents: ${statsToUse.activeIncidents || 0}
-- Risk Distribution: ${JSON.stringify(statsToUse.riskDistribution || {})}
-- Recent Critical Logs: ${JSON.stringify(statsToUse.recentIncidents || [])}
-- Data Source: ${statsToUse.source || 'Unknown'}
-`;
+        // 2. Fallback to Mock Data if no real data found
+        let isMock = false;
+        if (stats.totalAlerts === 0 && stats.activeIncidents === 0) {
+            stats = getMockDashboardStats();
+            isMock = true;
+        }
 
-        // Pre-calculate severity to ensure it's deterministic
-        const activeInc = statsToUse.activeIncidents || 0;
+        // 3. Prepare Context for AI
+        const activeInc = stats.activeIncidents || 0;
         let baseSeverity = 'Low';
-        if (activeInc >= 1 && activeInc <= 2) baseSeverity = 'Medium';
-        else if (activeInc >= 3 && activeInc <= 5) baseSeverity = 'High';
-        else if (activeInc > 5) baseSeverity = 'Critical';
+        if (activeInc >= 1 && activeInc <= 5) baseSeverity = 'Medium';
+        else if (activeInc > 5 && activeInc <= 10) baseSeverity = 'High';
+        else if (activeInc > 10) baseSeverity = 'Critical';
 
-        // Map incident descriptions to MITRE ATT&CK techniques
+        // Map incident descriptions to MITRE techniques
         const mitreMapping = {
             'lateral movement': 'T1021 - Remote Services',
             'brute force': 'T1110 - Brute Force',
             'privilege escalation': 'T1134 - Access Token Manipulation',
             'data exfiltration': 'T1041 - Exfiltration Over Network',
-            'credential theft': 'T1555 - Credentials from Password Stores',
             'malware': 'T1204 - User Execution',
-            'ransomware': 'T1486 - Data Encrypted for Impact',
-            'ddos': 'T1498 - Network Denial of Service',
-            'sql injection': 'T1190 - Exploit Public-Facing Application',
-            'phishing': 'T1566 - Phishing',
-            'credential stuffing': 'T1110.004 - Credential Stuffing',
-            'scanning': 'T1018 - Remote System Discovery',
-            'reconnaissance': 'T1592 - Gather Victim Host Information',
             'unauthorized access': 'T1078 - Valid Accounts',
-            'backdoor': 'T1098 - Account Manipulation',
-            'persistence': 'T1547 - Boot or Logon Autostart Execution',
-            // Technical log patterns
-            'netstat': 'T1001 - Data Obfuscation',
-            'port': 'T1001 - Data Obfuscation',
-            'logon': 'T1078 - Valid Accounts',
             'failed login': 'T1110 - Brute Force',
-            'failed logon': 'T1110 - Brute Force',
-            'access denied': 'T1001 - Obfuscated Files or Information',
-            'privilege': 'T1548 - Abuse Elevation Control Mechanism',
-            'powershell': 'T1059 - Command and Scripting Interpreter',
-            'cmd': 'T1059 - Command and Scripting Interpreter',
-            'registry': 'T1112 - Modify Registry',
-            'service': 'T1543 - Create or Modify System Process',
-            'process': 'T1547 - Boot or Logon Autostart Execution',
-            'network': 'T1071 - Application Layer Protocol',
-            'traffic': 'T1071 - Application Layer Protocol',
-            'connection': 'T1071 - Application Layer Protocol',
-            'outbound': 'T1071 - Application Layer Protocol',
-            'inbound': 'T1064 - Scripting',
-            'firewall': 'T1518 - Software Discovery',
-            'antivirus': 'T1518 - Software Discovery',
-            'events': 'T1070 - Indicator Removal'
+            'scanning': 'T1046 - Network Service Scanning'
         };
 
-
-        let detectedTechniques = [];
-        if (statsToUse.recentIncidents && Array.isArray(statsToUse.recentIncidents)) {
-            statsToUse.recentIncidents.forEach(incident => {
-                const desc = (incident.description || '').toLowerCase();
-                for (const [keyword, technique] of Object.entries(mitreMapping)) {
-                    if (desc.includes(keyword)) {
-                        detectedTechniques.push(technique);
-                        break;
-                    }
-                }
-            });
-        }
-        
-        // Deduplicate techniques before slicing
-        const uniqueTechniques = [...new Set(detectedTechniques)];
-        const mitreText = uniqueTechniques.length > 0 
-            ? uniqueTechniques.slice(0, 3).join(', ')
+        const detectedTechniques = new Set();
+        stats.recentIncidents.forEach(i => {
+            const desc = (i.rule?.description || '').toLowerCase();
+            for (const [key, val] of Object.entries(mitreMapping)) {
+                if (desc.includes(key)) detectedTechniques.add(val);
+            }
+        });
+        const mitreText = detectedTechniques.size > 0
+            ? Array.from(detectedTechniques).slice(0, 3).join(', ')
             : 'None Detected';
 
-        // Generate intelligent NEXT ACTIONS based on severity and detected techniques
-        let actionItems = [];
-        if (baseSeverity === 'Critical' || baseSeverity === 'High') {
-            // Technique-specific actions
-            if (uniqueTechniques.some(t => t.includes('T1110') || t.includes('T1078'))) {
-                actionItems.push('Review and strengthen authentication controls');
-            }
-            if (uniqueTechniques.some(t => t.includes('T1021'))) {
-                actionItems.push('Investigate lateral movement patterns and network segmentation');
-            }
-            if (uniqueTechniques.some(t => t.includes('T1001') || t.includes('T1071'))) {
-                actionItems.push('Analyze network traffic for obfuscation and command & control');
-            }
-            if (uniqueTechniques.some(t => t.includes('T1548') || t.includes('T1543'))) {
-                actionItems.push('Review process creation and privilege escalation attempts');
-            }
-            if (uniqueTechniques.some(t => t.includes('T1059'))) {
-                actionItems.push('Block suspicious script execution and PowerShell usage');
-            }
-            
-            // Severity-specific actions
-            if (baseSeverity === 'Critical') {
-                if (actionItems.length === 0) {
-                    actionItems.push('Isolate affected systems immediately');
-                    actionItems.push('Escalate to incident response team');
-                }
-            }
-        }
-        
-        const nextActionsText = actionItems.length > 0 
-            ? actionItems.slice(0, 2).join('\n')
-            : '';
+        const recentLogs = stats.recentIncidents.slice(0, 5).map(i => {
+            return `[${i['@timestamp']}] Level ${i.rule?.level}: ${i.rule?.description}`;
+        }).join('\n');
 
-        // Determine title based on question
-        let titleSuffix = "Security Status";
-        let summaryHint = "";
-        if (userPrompt) {
-            const lower = userPrompt.toLowerCase();
-            if (lower.includes("log")) {
-                titleSuffix = "Log Analysis";
-                summaryHint = "Describe what the logs reveal";
-            } else if (lower.includes("mitre")) {
-                titleSuffix = "MITRE ATT&CK Analysis";
-                summaryHint = "Focus on detected techniques";
-            } else if (lower.includes("action")) {
-                titleSuffix = "Recommended Actions";
-                summaryHint = "Focus on what needs to be done";
-            } else {
-                summaryHint = "General security assessment";
-            }
-        }
+        const contextInfo = `
+DATA SOURCE: ${isMock ? "SIMULATED" : "LIVE WAZUH"}
+TOTAL ALERTS: ${stats.totalAlerts}
+ACTIVE INCIDENTS (Level>=7): ${activeInc}
+RISK LEVELS: ${JSON.stringify(stats.riskDistribution)}
+RECENT LOG ENTRIES:
+${recentLogs}
+`;
 
-        const prompt = `OUTPUT FORMAT (MANDATORY STRUCTURE):
+        // 4. Improved System Prompt (Balanced & Structured)
+        const systemPrompt = `ROLE: You are an expert SOC Security Auditor.
+GOAL: Provide a balanced security summary. It must be descriptive enough for a user to understand the threat but strictly formatted.
+AUDIENCE: Security analysts.
 
-[${titleSuffix.toUpperCase()}]:
-[One sentence summary - tailor to question type: ${summaryHint}. Must mention ${baseSeverity} severity]
+DATA CONTEXT:
+${contextInfo}
+
+OUTPUT FORMAT RULES (STRICT):
+1. START with the title in brackets: [SECURITY STATUS]: or [LOG ANALYSIS]:
+2. Next line: EXACTLY 2-3 DESCRIPTIVE SENTENCES explaining the current situation. 
+   - Mention specific logs (e.g. "failed login attempts", "Apparmor DENIED").
+   - Explain the impact (e.g. "potential brute force attack").
+3. EACH detail MUST be on a NEW LINE starting with a dash (-).
+4. USE THE EXACT VALUES PROVIDED BELOW FOR SEVERITY, INCIDENTS, AND MITRE. DO NOT REWRITE OR HALLUCINATE MITRE CODES.
+5. NO pipes (|), NO markdown bold (**), NO horizontal lines.
+
+STRICT TEMPLATE (Must use NEW LINES for every item):
+[TITLE]:
+[2-3 sentence summary]
+
 - Severity: ${baseSeverity}
 - Incidents: ${activeInc}
-- MITRE: ${mitreText}${nextActionsText ? '\n- Action: ' + nextActionsText.split('\n').join('\n- Action: ') : ''}
+- MITRE: ${mitreText}
+- Action: [Step 1]
+- Action: [Step 2]
 
-STRICT RULES:
-1. Line 1 MUST BE: [${titleSuffix.toUpperCase()}]:
-2. Line 2: One brief sentence (5-8 words) relevant to question type
-3. Lines 3+: Exact bullet points as shown above
-4. NO markdown formatting (**bold**), NO extra text
-5. Summary must reflect the question focus while stating the ${baseSeverity} severity level
+7. DO NOT repeat the User Query. DO NOT include "User Query" or "Response" labels.
+8. START directly with [SECURITY STATUS]: or [LOG ANALYSIS]:.
 
-NON-NEGOTIABLE DATA (USE EXACT VALUES):
-- Severity: ${baseSeverity}
-- Incidents: ${activeInc}
-- MITRE: ${mitreText}${nextActionsText ? '\n- Action lines: ' + actionItems.slice(0, 2).join(', ') : ''}
+EXAMPLE OUTPUT:
+[SECURITY STATUS]:
+We have detected a significantly high volume of failed authentication attempts on the domain controller. This pattern suggests an active brute force attack targeting the administrator account, although current safeguards are holding.
 
-User Question: "${userPrompt || 'What is the security status?'}"
-Vary ONLY the summary sentence to match the question. All other lines are fixed.`;
+- Severity: Critical
+- Incidents: 37
+- MITRE: T1110 - Brute Force
+- Action: Enable multi-factor authentication immediately.
+- Action: Block the suspicious source IPs found in the logs.
 
-        // Build conversation with history for context continuity
-        const messages = [];
-        
-        // Add conversation history if available (preserves context from previous exchanges)
-        if (history && Array.isArray(history) && history.length > 0) {
-            messages.push(...history.slice(-2)); // Only last 2 messages for context
+THE USER QUERY IS: "${userPrompt || "Status report"}"
+YOUR REPORT:`;
+
+        // 5. Ollama Chat
+        const messages = [
+            { role: 'system', content: "You are a robotic SOC reporting tool. Output ONLY the report. No chat." },
+            { role: 'user', content: systemPrompt }
+        ];
+
+        // Include truncated history if relevant
+        if (history && history.length > 0) {
+            messages.splice(1, 0, ...history.slice(-2));
         }
-        
-        // Add the strict format rules as a SYSTEM message
-        const userQuery = userPrompt && userPrompt.trim() 
-            ? userPrompt 
-            : "What is the current security status based on the dashboard data?";
-        
-        messages.push({ 
-            role: 'user', 
-            content: `${prompt}\n\nUser asked: ${userQuery}` 
-        });
 
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
             messages: messages,
             stream: false,
             options: {
-                temperature: 0.3 // Balanced: allows summary variation while keeping data deterministic
+                temperature: 0.1, // Very low for consistency
+                num_predict: 300
             }
         });
 
         res.json({
-            summary: response.message.content,
+            summary: response.message.content.trim(),
             isMock: isMock
         });
+
     } catch (error) {
-        console.error("Ollama Error:", error);
-        res.status(500).json({
-            error: "Failed to connect to local AI",
-            details: error.message
-        });
+        console.error("AI Error:", error);
+        res.status(500).json({ error: "Ollama connection failed", details: error.message });
     }
 });
 
