@@ -10,7 +10,7 @@ export const useMitreMap = () => {
     const fetchMitreData = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/wazuh/mitre-map`
+          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/mitre-map`
         );
         const json = await res.json();
         setData({

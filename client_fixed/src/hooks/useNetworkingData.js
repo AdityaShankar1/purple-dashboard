@@ -7,7 +7,7 @@ export function useNetworkingData() {
   const [malware, setMalware] = useState([]);
 
   useEffect(() => {
-    const API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
     const fetchData = async () => {
       try {
         const res = await fetch(`${API}/wazuh/networking`, {

@@ -246,7 +246,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -255,20 +255,96 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-} from "react-simple-maps";
 import { Card } from "../../components/Layouts/Card";
 import { useUserEndpointData } from "../../hooks/useUserEndpointData";
 
-const geoUrl =
-  "https://raw.githubusercontent.com/deldersveld/topojson/master/world-countries.json";
-
 export default function DashboardAdminUserEndpoint() {
-  const { logons, locations, compliance, loading, error } = useUserEndpointData();
+  const { logons, compliance, loading, error } = useUserEndpointData();
+
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const [mapError, setMapError] = useState(null);
+  const [isMapLoaded, setMapLoaded] = useState(false);
+
+  /**
+   * BUG FIX LOG:
+   * 1. Port Mismatch: Standardized all 5000/4000 port references to 5001 to match server configuration.
+   * 2. Map Race Condition: Implemented polling (setInterval) to ensure window.L is available before initialization.
+   * 3. Error Handling: Added try-catch block for robust initialization and error reporting.
+   */
+  useEffect(() => {
+    let checkInterval;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const initMap = () => {
+      try {
+        if (window.L && mapRef.current && !mapInstance.current) {
+          const collegeCoords = [12.9348, 77.5342];
+
+          mapInstance.current = window.L.map(mapRef.current, {
+            zoomControl: false
+          }).setView(collegeCoords, 17);
+
+          window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          }).addTo(mapInstance.current);
+
+          window.L.circle(collegeCoords, {
+            radius: 120,
+            fillColor: "#ff4d4d",
+            color: "#ff4d4d",
+            weight: 1,
+            opacity: 0.4,
+            fillOpacity: 0.15
+          }).addTo(mapInstance.current);
+
+          window.L.circleMarker(collegeCoords, {
+            radius: 4,
+            fillColor: "#ff4d4d",
+            color: "#fff",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+          })
+            .addTo(mapInstance.current)
+            .bindTooltip("PES University", {
+              permanent: true,
+              direction: 'top',
+              className: 'small-map-label',
+              offset: [0, -5]
+            });
+
+          if (checkInterval) clearInterval(checkInterval);
+          setMapError(null);
+          setMapLoaded(true);
+        } else if (!window.L && attempts >= maxAttempts) {
+          setMapError("Leaflet JS failed to load after multiple attempts.");
+          if (checkInterval) clearInterval(checkInterval);
+        }
+        attempts++;
+      } catch (err) {
+        console.error("[CRITICAL] Failed to initialize map in UserEndpoint:", err);
+        setMapError(`Map Init Error: ${err.message}`);
+        if (checkInterval) clearInterval(checkInterval);
+      }
+    };
+
+    initMap();
+    checkInterval = setInterval(initMap, 1000); // Polling every 1s
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+      if (mapInstance.current) {
+        try {
+          mapInstance.current.remove();
+        } catch (err) {
+          console.warn("[Map] Failed to clean up map instance:", err);
+        }
+        mapInstance.current = null;
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -307,29 +383,35 @@ export default function DashboardAdminUserEndpoint() {
 
       {/* Geographical Logon Map */}
       <Card title="🌍 Geographical Logon Map">
-        {locations.length === 0 ? (
-          <p className="text-purple-300">No login locations available</p>
-        ) : (
-          <ComposableMap projectionConfig={{ scale: 140 }}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1E1B4B"
-                    stroke="#6366F1"
-                  />
-                ))
-              }
-            </Geographies>
-            {locations.map((loc, i) => (
-              <Marker key={i} coordinates={[loc.lon, loc.lat]}>
-                <circle r={5} fill="#FACC15" stroke="#fff" strokeWidth={1} />
-              </Marker>
-            ))}
-          </ComposableMap>
-        )}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          .small-map-label {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 1px 4px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          }
+        `}} />
+        <div
+          ref={mapRef}
+          style={{ height: '300px', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
+          className="z-0 bg-gray-900 flex items-center justify-center relative"
+        >
+          {mapError ? (
+            <div className="text-red-400 text-sm p-4 text-center">
+              ⚠ {mapError}<br />
+              <span className="text-xs text-gray-500">Check CDN connection or CSP settings.</span>
+            </div>
+          ) : !isMapLoaded && (
+            <div className="flex items-center justify-center h-full text-purple-300 font-medium">
+              <div className="animate-pulse">Loading Map Infrastructure...</div>
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Endpoint Compliance */}

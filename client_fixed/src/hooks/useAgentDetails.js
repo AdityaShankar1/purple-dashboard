@@ -15,7 +15,7 @@ export const useAgentDetails = (agentName) => {
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/wazuh/agent/${agentName}`
+          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/agent/${agentName}`
         );
 
         const contentType = res.headers.get("content-type");
