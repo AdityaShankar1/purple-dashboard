@@ -809,9 +809,9 @@ import { useMitreAlerts } from "../../hooks/useMitreAlerts.js";
 
 
 export default function DashboardAdminThreatIntelligence() {
-  const { actors, assets } = useThreatIntelData();
+  const { actors, assets, connectionStatus } = useThreatIntelData();
   const agentListRaw = useAgentList();
-  const agentHealthRaw = useAgentHealth();
+  const { agents: agentHealthRaw, error: agentHealthError } = useAgentHealth();
   const agentList = Array.isArray(agentListRaw)
     ? agentListRaw
     : Array.isArray(agentListRaw?.agents)
@@ -945,8 +945,10 @@ export default function DashboardAdminThreatIntelligence() {
 
       {/* Vulnerable Assets */}
       <Card title="💥 Vulnerable Assets">
-        {assets.length === 0 ? (
-          <p className="text-purple-300">No vulnerable assets reported</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or threat intelligence source</p>
+        ) : assets.length === 0 ? (
+          <p className="text-purple-300">No vulnerable assets found (connected)</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {assets.map((asset, i) => (

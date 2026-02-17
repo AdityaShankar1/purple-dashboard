@@ -48,7 +48,7 @@ jest.mock('../../../hooks/useAgentDetails', () => ({
 
 jest.mock('../../../hooks/useAgentHealth', () => ({
     __esModule: true,
-    useAgentHealth: () => []
+    useAgentHealth: () => ({ agents: [], error: null })
 }));
 
 jest.mock('../../../hooks/useAgentList', () => ({

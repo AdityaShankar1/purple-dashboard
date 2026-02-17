@@ -5,6 +5,7 @@ export function useNetworkingData() {
   const [traffic, setTraffic] = useState([]);
   const [firewall, setFirewall] = useState([]);
   const [malware, setMalware] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState("connected");
 
   useEffect(() => {
     const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
@@ -13,6 +14,13 @@ export function useNetworkingData() {
         const res = await fetch(`${API}/wazuh/networking`, {
           credentials: "include",
         });
+        if (!res.ok) {
+          setConnectionStatus("disconnected");
+          setTraffic([]);
+          setFirewall([]);
+          setMalware([]);
+          return;
+        }
         const data = await res.json();
 
         // Shape traffic into {time, inbound, outbound}
@@ -43,8 +51,13 @@ export function useNetworkingData() {
         setTraffic(trafficData);
         setFirewall(firewallData);
         setMalware(malwareData);
+        setConnectionStatus("connected");
       } catch (err) {
         console.error("Failed to fetch networking data", err);
+        setConnectionStatus("disconnected");
+        setTraffic([]);
+        setFirewall([]);
+        setMalware([]);
       }
     };
 
@@ -54,4 +67,5 @@ export function useNetworkingData() {
   }, []);
 
   return { traffic, firewall, malware };
+  return { traffic, firewall, malware, connectionStatus };
 }

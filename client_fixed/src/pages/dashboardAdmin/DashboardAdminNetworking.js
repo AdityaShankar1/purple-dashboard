@@ -329,7 +329,7 @@ import { useNetworkingData } from "../../hooks/useNetworkingData";
 import { useWazuhAgents } from "../../hooks/useWazuhAgents";
 
 export default function DashboardAdminNetworking() {
-  const { traffic, firewall, malware } = useNetworkingData();
+  const { traffic, firewall, malware, connectionStatus } = useNetworkingData();
   const { agents } = useWazuhAgents(); // ✅ Hook used properly
 
   const systemStatus = [
@@ -343,8 +343,10 @@ export default function DashboardAdminNetworking() {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {/* Network Traffic Volume */}
       <Card title="🌐 Network Traffic Volume">
-        {traffic.length === 0 ? (
-          <p className="text-purple-300">No network traffic data</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or networking source</p>
+        ) : traffic.length === 0 ? (
+          <p className="text-purple-300">No network traffic data (connected)</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={traffic}>
@@ -360,8 +362,10 @@ export default function DashboardAdminNetworking() {
 
       {/* Firewall & IDS/IPS Alerts */}
       <Card title="🔥 Firewall & IDS/IPS Alerts">
-        {firewall.length === 0 ? (
-          <p className="text-purple-300">No firewall alerts</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or networking source</p>
+        ) : firewall.length === 0 ? (
+          <p className="text-purple-300">No firewall alerts (connected)</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={firewall}>
@@ -397,8 +401,10 @@ export default function DashboardAdminNetworking() {
 
       {/* Active Wazuh Agents */}
       <Card title="🧠 Active Wazuh Agents" className="md:col-span-2">
-        {agents.length === 0 ? (
-          <p className="text-purple-300">No active agents</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or agent source</p>
+        ) : agents.length === 0 ? (
+          <p className="text-purple-300">No active agents (connected)</p>
         ) : (
           <ul className="space-y-2">
             {agents.map((agent, i) => (
@@ -416,8 +422,10 @@ export default function DashboardAdminNetworking() {
 
       {/* Malware & Phishing Detections */}
       <Card title="🐛 Malware & Phishing Detections" className="md:col-span-2">
-        {malware.length === 0 ? (
-          <p className="text-purple-300">No malware or phishing detected</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or malware source</p>
+        ) : malware.length === 0 ? (
+          <p className="text-purple-300">No malware or phishing detected (connected)</p>
         ) : (
           <ul className="space-y-2">
             {malware.map((m, i) => (
