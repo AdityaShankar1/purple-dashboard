@@ -612,7 +612,15 @@
 // // // // // // // // // //         return next(createHttpError(404, `Course with ID '${courseId}' not found. Quiz creation failed.`));
 // // // // // // // // // //     }
 
-// // // // // // // // // //     const quiz = await Quiz.create({ courseId, title, description, startAt, dueAt, questions });
+// // // // // // // // // //     const quiz = await Quiz.create({ 
+// // // // // // // // // //         courseId,
+// // // // // // // // // //         title,
+// // // // // // // // // //         description,
+// // // // // // // // // //         startAt,
+// // // // // // // // // //         dueAt,
+// // // // // // // // // //         questions,
+// // // // // // // // // //         createdBy: req.user._id // ✅ Added missing required field
+// // // // // // // // // //     });
 // // // // // // // // // //     res.status(201).json({ message: "Quiz created", data: quiz });
 // // // // // // // // // //   } catch (err) {
 // // // // // // // // // //     console.error("🔥 Error creating quiz:", err);
@@ -2762,6 +2770,11 @@ import Quiz from "../models/Quiz.js"
 import QuizSubmission from "../models/QuizSubmission.js"
 import Enrollment from "../models/Enrollment.js"
 import { createHttpError } from "../utils/errors.js"
+import Course from "../models/Course.js"
+import mongoose from "mongoose"
+import * as notificationController from "./notificationController.js"
+
+// // // // // // // // // // import Course from "../models/Course.js" // Ensure Course is imported if not already
 
 // Admin: Create quiz
 export const createQuiz = async (req, res, next) => {
@@ -2879,6 +2892,17 @@ export const getQuiz = async (req, res, next) => {
 
     if (!quiz) {
       return next(createHttpError(404, "Quiz not found"))
+    }
+
+    // Verify enrollment
+    const enrollment = await Enrollment.findOne({
+      userId: userId,
+      courseId: quiz.courseId._id,
+      status: "active"
+    })
+
+    if (!enrollment) {
+      return next(createHttpError(403, "Access denied. You are not enrolled in this course."))
     }
 
     // Get or create submission

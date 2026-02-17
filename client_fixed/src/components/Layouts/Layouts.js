@@ -1,8 +1,3 @@
-
-
-
-
-
 /**
  * ============================================================================
  * LATEST VERSION - Modified by GitHub Copilot
@@ -51,4 +46,5 @@ export default function DashboardLayout({ children, user }) {
     </ThemeBackground>
   );
 }
+
 

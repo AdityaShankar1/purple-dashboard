@@ -396,7 +396,7 @@ import UserQuizzes from "./pages/dashboard/UserQuizzes";
 
 
 // ✅ Import the layout component (renamed from Layouts.js for clarity)
-import DashboardLayout from "./components/Layouts/Layouts"; 
+import DashboardLayout from "./components/Layouts/Layouts";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -404,7 +404,7 @@ import "react-toastify/dist/ReactToastify.css";
 // Providers
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
-import ThemeBackground from "./context/ThemeBackground"; 
+import ThemeBackground from "./context/ThemeBackground";
 
 // =========================================================================
 // Protected Route Wrapper Component
@@ -413,8 +413,8 @@ function ProtectedRoute({ element: Element, user, allowedRoles, redirectTo = "/l
   if (!user) {
     return <Navigate to={redirectTo} replace />;
   }
-  
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+
+  if (allowedRoles && !allowedRoles.map(role => role.toLowerCase()).includes(user.role?.toLowerCase())) {
     return (
       <DashboardLayout user={user}>
         <div className="p-6 text-red-500 font-bold text-center">
@@ -493,7 +493,7 @@ function AppContent() {
           path="/user"
           element={<ProtectedRoute element={DashboardUser} user={user} allowedRoles={["user"]} />}
         />
-        
+
         {/* Shared Routes */}
         <Route
           path="/notifications"
@@ -505,7 +505,7 @@ function AppContent() {
           path="/"
           element={
             user ? (
-              user.role === "admin" ? (
+              user.role?.toLowerCase() === "admin" ? (
                 <Navigate to="/admin" />
               ) : (
                 <Navigate to="/user" />
@@ -517,14 +517,14 @@ function AppContent() {
         />
         <Route path="*" element={<Navigate to="/login" />} />
 
-      <Route
-      path="/user/quizzes/:courseId"
-      element={<ProtectedRoute element={UserQuizzes} user={user} allowedRoles={["user"]} />}
-      />
+        <Route
+          path="/user/quizzes/:courseId"
+          element={<ProtectedRoute element={UserQuizzes} user={user} allowedRoles={["user"]} />}
+        />
 
 
       </Routes>
-      
+
       {/* Toast container is outside the router */}
       <ToastContainer position="bottom-right" autoClose={3000} />
     </>
