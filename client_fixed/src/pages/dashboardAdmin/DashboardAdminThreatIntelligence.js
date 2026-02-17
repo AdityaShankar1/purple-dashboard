@@ -1069,8 +1069,17 @@ export default function DashboardAdminThreatIntelligence() {
 
       {/* Agent Health Status */}
       <Card title="🩺 Agent Health Status">
+        {agentHealthError && (
+          <div className="bg-red-900/30 border border-red-500 rounded-lg p-3 mb-3">
+            <p className="text-red-300 text-sm font-semibold">⚠️ Error Loading Agent Health:</p>
+            <p className="text-red-200 text-xs mt-1">{agentHealthError}</p>
+            <p className="text-gray-400 text-xs mt-2">Check browser console for detailed logs</p>
+          </div>
+        )}
         {agentHealth.length === 0 ? (
-          <p className="text-purple-300">No agent health data available</p>
+          <p className="text-purple-300">
+            {agentHealthError ? "Unable to load agent data" : "No agent health data available"}
+          </p>
         ) : (
           <ul className="space-y-2 text-sm">
             {agentHealth.map((agent, i) => (

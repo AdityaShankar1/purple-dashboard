@@ -66,7 +66,7 @@
 // // // // //       medium: alerts?.data?.affected_items?.filter(a => a.rule?.level >= 4 && a.rule?.level < 8).length || 0,
 // // // // //       low: alerts?.data?.affected_items?.filter(a => a.rule?.level < 4).length || 0,
 // // // // //     };
-    
+
 // // // // //     // ... (Add your data processing logic here for other data points)
 
 // // // // //     res.status(200).json({
@@ -126,7 +126,7 @@
 // // // // //   try {
 // // // // //     const threatIntelData = await wazuhService.getThreatIntelData();
 // // // // //     const alerts = extractAlerts(threatIntelData);
-    
+
 // // // // //     // Process alerts for global map, actors, and vulnerable assets
 // // // // //     const global = [];
 // // // // //     const actors = [];
@@ -1913,13 +1913,24 @@ export const fetchAgentList = async (_req, res) => {
 // ===== Agent Health =====
 export const fetchAgentHealth = async (_req, res) => {
   try {
+    console.log("🔍 [fetchAgentHealth] Starting agent health fetch...");
+
     const agents = await wazuhService.getAgentHealth();
+    console.log("📡 [fetchAgentHealth] Raw agents from service:", agents);
+    console.log("📡 [fetchAgentHealth] Agent count:", agents.length);
+
     const mapped = agents.map((a) => ({
       name: a.name,
       status: a.status,
     }));
+
+    console.log("✅ [fetchAgentHealth] Mapped agents:", mapped);
+    console.log("✅ [fetchAgentHealth] Returning", mapped.length, "agents");
+
     res.status(200).json(mapped);
   } catch (err) {
+    console.error("❌ [fetchAgentHealth] Error:", err.message);
+    console.error("❌ [fetchAgentHealth] Stack:", err.stack);
     logger.error(`Failed to fetch agent health: ${err.message}`);
     res.status(500).json({ error: "Unable to fetch agent health" });
   }
