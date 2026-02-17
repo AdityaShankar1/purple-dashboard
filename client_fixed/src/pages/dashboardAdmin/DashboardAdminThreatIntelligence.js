@@ -790,7 +790,7 @@
 // //client/src/pages/dashboardAdmin/DashboardAdminThreatIntelligence
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ResponsiveContainer,
   XAxis,
@@ -800,7 +800,6 @@ import {
   Bar,
 } from "recharts";
 import { Card } from "../../components/Layouts/Card";
-import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import { useThreatIntelData } from "../../hooks/useThreatIntelData";
 import { useAgentDetails } from "../../hooks/useAgentDetails";
 import useAgentList from "../../hooks/useAgentList";
@@ -808,70 +807,124 @@ import { useAgentHealth } from "../../hooks/useAgentHealth";
 import { useMitreAlerts } from "../../hooks/useMitreAlerts.js";
 // import useAgentList from "../../hooks/useAgentList";
 
-const geoUrl =
-  "https://raw.githubusercontent.com/deldersveld/topojson/master/world-countries.json";
 
 export default function DashboardAdminThreatIntelligence() {
-  const { global, actors, assets } = useThreatIntelData();
+  const { actors, assets } = useThreatIntelData();
   const agentListRaw = useAgentList();
   const agentHealthRaw = useAgentHealth();
   const agentList = Array.isArray(agentListRaw)
     ? agentListRaw
     : Array.isArray(agentListRaw?.agents)
-    ? agentListRaw.agents
-    : Array.isArray(agentListRaw?.data)
-    ? agentListRaw.data
-    : [];
+      ? agentListRaw.agents
+      : Array.isArray(agentListRaw?.data)
+        ? agentListRaw.data
+        : [];
   const agentHealth = Array.isArray(agentHealthRaw)
     ? agentHealthRaw
     : Array.isArray(agentHealthRaw?.agents)
-    ? agentHealthRaw.agents
-    : Array.isArray(agentHealthRaw?.data)
-    ? agentHealthRaw.data
-    : [];
+      ? agentHealthRaw.agents
+      : Array.isArray(agentHealthRaw?.data)
+        ? agentHealthRaw.data
+        : [];
   const [selectedAgent, setSelectedAgent] = useState("all");
   const { alerts, mitre } = useAgentDetails(selectedAgent);
 
-const [selectedTechnique, setSelectedTechnique] = useState("all");
-const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
+  const [selectedTechnique, setSelectedTechnique] = useState("all");
+  const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
 
 
 
+
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const [mapError, setMapError] = useState(null);
+  const [isMapLoaded, setMapLoaded] = useState(false);
+
+  /**
+   * BUG FIX LOG:
+   * 1. Port Mismatch: Standardized all 5000/4000 port references to 5001 to match server configuration.
+   * 2. Map Race Condition: Implemented polling (setInterval) to ensure window.L is available before initialization.
+   * 3. Error Handling: Added try-catch block for robust initialization and error reporting.
+   */
+  useEffect(() => {
+    let checkInterval;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const initMap = () => {
+      try {
+        // Only initialize if L is available (from CDN) and container is ready
+        if (window.L && mapRef.current && !mapInstance.current) {
+          const collegeCoords = [12.9348, 77.5342];
+
+          mapInstance.current = window.L.map(mapRef.current).setView(collegeCoords, 17);
+
+          window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+          }).addTo(mapInstance.current);
+
+          window.L.circle(collegeCoords, {
+            radius: 100, // 100 meters radius for activity zone
+            fillColor: "#ff4d4d",
+            color: "#ff4d4d",
+            weight: 1,
+            opacity: 0.5,
+            fillOpacity: 0.2
+          }).addTo(mapInstance.current);
+
+          if (checkInterval) clearInterval(checkInterval);
+          setMapError(null);
+          setMapLoaded(true);
+        } else if (!window.L && attempts >= maxAttempts) {
+          setMapError("Leaflet JS failed to load after multiple attempts.");
+          if (checkInterval) clearInterval(checkInterval);
+        }
+        attempts++;
+      } catch (err) {
+        console.error("[CRITICAL] Failed to initialize Threat Intelligence Map:", err);
+        setMapError(`Map Init Error: ${err.message}`);
+        if (checkInterval) clearInterval(checkInterval);
+      }
+    };
+
+    initMap();
+    checkInterval = setInterval(initMap, 1000);
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+      if (mapInstance.current) {
+        try {
+          mapInstance.current.remove();
+        } catch (err) {
+          console.warn("[Map] Failed to clean up map instance:", err);
+        }
+        mapInstance.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {/* Global Threat Map */}
       <Card title="🌎 Global Threat Map">
-        {global.length === 0 ? (
-          <p className="text-purple-300">No threat locations available</p>
-        ) : (
-          <ComposableMap projectionConfig={{ scale: 140 }}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1E1B4B"
-                    stroke="#6366F1"
-                  />
-                ))
-              }
-            </Geographies>
-            {global.map((marker, i) => (
-              <Marker key={i} coordinates={marker.coordinates}>
-                <circle r={5} fill="#EF4444" stroke="#fff" strokeWidth={1} />
-                <text
-                  textAnchor="middle"
-                  y={15}
-                  className="text-xs fill-purple-300"
-                >
-                  {marker.name} ({marker.count})
-                </text>
-              </Marker>
-            ))}
-          </ComposableMap>
-        )}
+        <div
+          ref={mapRef}
+          style={{ height: '300px', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
+          className="z-0 bg-gray-900 flex items-center justify-center relative"
+        >
+          {mapError ? (
+            <div className="text-red-400 text-sm p-4 text-center">
+              ⚠ {mapError}<br />
+              <span className="text-xs text-gray-500">Check CDN connection or CSP settings.</span>
+            </div>
+          ) : !isMapLoaded && (
+            <div className="flex items-center justify-center h-full text-purple-300">
+              <div className="animate-pulse">Loading Map Infrastructure...</div>
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Threat Actor Activity */}
@@ -911,41 +964,41 @@ const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
         )}
       </Card>
 
-<Card title="🧠 Select MITRE Technique">
-  <select
-    value={selectedTechnique}
-    onChange={(e) => setSelectedTechnique(e.target.value)}
-    className="bg-purple-900 text-white px-4 py-2 rounded w-full"
-  >
-    <option value="all">All Techniques</option>
-    {[
-      "T1078", "T1059", "T1566", "T1027", "T1547", "T1036", "T1082", "T1047", "T1056"
-    ].map((tech, i) => (
-      <option key={i} value={tech}>
-        {tech}
-      </option>
-    ))}
-  </select>
-</Card>
+      <Card title="🧠 Select MITRE Technique">
+        <select
+          value={selectedTechnique}
+          onChange={(e) => setSelectedTechnique(e.target.value)}
+          className="bg-purple-900 text-white px-4 py-2 rounded w-full"
+        >
+          <option value="all">All Techniques</option>
+          {[
+            "T1078", "T1059", "T1566", "T1027", "T1547", "T1036", "T1082", "T1047", "T1056"
+          ].map((tech, i) => (
+            <option key={i} value={tech}>
+              {tech}
+            </option>
+          ))}
+        </select>
+      </Card>
 
-<Card title={`📌 Alerts for ${selectedTechnique}`}>
-  {mitreTechniqueAlerts.length === 0 ? (
-    <p className="text-purple-300">No alerts for this technique</p>
-  ) : (
-    <ul className="space-y-2 text-sm text-gray-300">
-      {mitreTechniqueAlerts.map((alert, i) => (
-        <li key={i} className="flex flex-col bg-purple-800 rounded px-4 py-2">
-          <span className="font-semibold text-blue-300">
-            {alert.rule?.description || "Unknown alert"}
-          </span>
-          <span className="text-xs text-gray-400">
-            {new Date(alert["@timestamp"]).toLocaleString()}
-          </span>
-        </li>
-      ))}
-    </ul>
-  )}
-</Card>
+      <Card title={`📌 Alerts for ${selectedTechnique}`}>
+        {mitreTechniqueAlerts.length === 0 ? (
+          <p className="text-purple-300">No alerts for this technique</p>
+        ) : (
+          <ul className="space-y-2 text-sm text-gray-300">
+            {mitreTechniqueAlerts.map((alert, i) => (
+              <li key={i} className="flex flex-col bg-purple-800 rounded px-4 py-2">
+                <span className="font-semibold text-blue-300">
+                  {alert.rule?.description || "Unknown alert"}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(alert["@timestamp"]).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
 
 
@@ -962,8 +1015,8 @@ const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
             </option>
           ))}
         </select> */}
-       
-{/*        
+
+        {/*        
        
        <select
   value={selectedAgent}
@@ -980,7 +1033,7 @@ const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
 
 
 
-{/* <select
+        {/* <select
   value={selectedAgent}
   onChange={(e) => setSelectedAgent(e.target.value)}
   className="bg-purple-900 text-white px-4 py-2 rounded w-full"
@@ -992,21 +1045,21 @@ const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
     </option>
   ))}
 </select> */}
-<select
-    value={selectedAgent}
-    onChange={(e) => setSelectedAgent(e.target.value)}
-    className="bg-purple-900 text-white px-4 py-2 rounded w-full"
-  >
-    <option value="all">All Agents</option>
-    {agentList.length === 0 && (
-      <option disabled>No active agents found</option>
-    )}
-    {agentList.map((a, i) => (
-      <option key={i} value={a.name}>
-        {a.name}
-      </option>
-    ))}
-  </select>
+        <select
+          value={selectedAgent}
+          onChange={(e) => setSelectedAgent(e.target.value)}
+          className="bg-purple-900 text-white px-4 py-2 rounded w-full"
+        >
+          <option value="all">All Agents</option>
+          {agentList.length === 0 && (
+            <option disabled>No active agents found</option>
+          )}
+          {agentList.map((a, i) => (
+            <option key={i} value={a.name}>
+              {a.name}
+            </option>
+          ))}
+        </select>
 
 
 
@@ -1027,13 +1080,12 @@ const mitreTechniqueAlerts = useMitreAlerts(selectedTechnique);
                   )}
                 </span>
                 <span
-                  className={`font-semibold ${
-                    agent.status === "Active"
-                      ? "text-green-300"
-                      : agent.status === "Disconnected"
+                  className={`font-semibold ${agent.status === "Active"
+                    ? "text-green-300"
+                    : agent.status === "Disconnected"
                       ? "text-yellow-300"
                       : "text-red-300"
-                  }`}
+                    }`}
                 >
                   {agent.status}
                 </span>

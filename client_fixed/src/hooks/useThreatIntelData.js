@@ -8,7 +8,7 @@ export const useThreatIntelData = () => {
     const fetchThreatIntel = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/wazuh/threat-intel`
+          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/threat-intel`
         );
         const json = await res.json();
         setData({

@@ -32,81 +32,6 @@
 //       }
 //     } else {
 //       socket.isAuthenticated = false
-//     }
-
-//     next() // Always allow connection
-//   })
-
-//   io.on("connection", (socket) => {
-//     if (socket.isAuthenticated) {
-//       logger.info(`✅ User ${socket.user.id} authenticated with socket ${socket.id}`)
-//       connectedUsers.set(socket.user.id, socket.id)
-//       socket.emit("welcome", {
-//         message: "Welcome to LMS Socket!",
-//         authenticated: true,
-//       })
-//     } else {
-//       logger.info(`🔓 Unauthenticated client connected: ${socket.id}`)
-//       socket.emit("welcome", {
-//         message: "Connected to LMS Socket",
-//         authenticated: false,
-//       })
-//     }
-
-//     // A specific event to handle authentication after connection
-//     socket.on("authenticate", (userId) => {
-//       if (userId) {
-//         connectedUsers.set(userId, socket.id)
-//         socket.userId = userId
-//         socket.isAuthenticated = true
-//         logger.info(`User ${userId} authenticated with socket ${socket.id}`)
-//         socket.emit("authenticated", { success: true })
-//       }
-//     })
-
-//     // Wazuh polling for authenticated 'admin' users
-//     if (socket.isAuthenticated && socket.user?.role === "admin") {
-//       const alertInterval = setInterval(async () => {
-//         try {
-//           const alerts = await wazuhService.getSecurityAlerts({
-//             size: 10,
-//             timeRange: "5m",
-//             level: 7, // High severity only
-//           })
-
-//           if (alerts.hits?.hits?.length > 0) {
-//             socket.emit("wazuh-realtime-alerts", alerts.hits.hits)
-//           }
-//         } catch (error) {
-//           logger.error("Real-time alert error:", error.message)
-//         }
-//       }, 30000) // Every 30 seconds
-
-//       socket.on("disconnect", () => {
-//         clearInterval(alertInterval)
-//       })
-//     }
-
-//     socket.on("wazuh-alert", (alert) => {
-//       socket.broadcast.emit("wazuh-alert", alert)
-//     })
-
-//     socket.on("disconnect", () => {
-//       if (socket.isAuthenticated && socket.user?.id) {
-//         connectedUsers.delete(socket.user.id)
-//         logger.info(`❌ User ${socket.user.id} disconnected`)
-//       } else if (socket.userId) {
-//         connectedUsers.delete(socket.userId)
-//         logger.info(`❌ User ${socket.userId} disconnected`)
-//       }
-//     })
-//   })
-// }
-
-// // Now, export the instances after they are created by setupSocket
-// // This allows other modules to import them only after the server has started
-// export { io, connectedUsers }
-
 
 
 
@@ -175,6 +100,7 @@ export const setupSocket = (httpServer) => {
   });
 
   // Connection event
+  // Connection event
   io.on("connection", (socket) => {
     if (socket.isAuthenticated) {
       logger.info(`✅ User ${socket.user.id} authenticated with socket ${socket.id}`);
@@ -202,24 +128,30 @@ export const setupSocket = (httpServer) => {
       }
     });
 
-    // Wazuh polling for authenticated 'admin' users
-    if (socket.isAuthenticated && socket.user?.role === "admin") {
+    // Wazuh polling for authenticated users (removed admin check to fix dashboard for all users)
+    if (socket.isAuthenticated) {
       const alertInterval = setInterval(async () => {
         try {
-          // Fetch security alerts from Wazuh every 30 seconds
+          // Fetch security alerts from Wazuh every 10 seconds (faster updates)
           const alerts = await wazuhService.getSecurityAlerts({
-            size: 10,
+            size: 50,
             timeRange: "5m",
-            level: 7, // High severity only
+            level: 1, // Get more alerts for testing/visibility
           });
 
-          if (alerts.hits?.hits?.length > 0) {
-            socket.emit("wazuh-realtime-alerts", alerts.hits.hits);
+          if (alerts.length > 0) {
+            // Emit 'wazuh:alert' to match frontend hook
+            socket.emit("wazuh:alert", alerts);
           }
+
+          // Also emit total count
+          const totalCount = await wazuhService.getTotalAlerts();
+          socket.emit("wazuh:count", totalCount);
+
         } catch (error) {
           logger.error("Real-time alert error:", error.message);
         }
-      }, 30000); // Every 30 seconds
+      }, 10000); // Every 10 seconds
 
       // Clean up when the socket disconnects
       socket.on("disconnect", () => {

@@ -32,9 +32,12 @@ export default function useAgentList() {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/wazuh/agents`);
         const json = await res.json();
-        setAgents(json);
+        // Ensure json is always an array
+        const data = Array.isArray(json) ? json : (json?.data || []);
+        setAgents(data);
       } catch (err) {
         console.error("❌ useAgentList error:", err);
+        setAgents([]);
       }
     };
     fetchAgents();
