@@ -1619,6 +1619,8 @@
 //server/controllers/dashboardController.js
 
 
+import axios from "axios";
+import https from "https";
 import { wazuhService } from "../services/wazuhService.js";
 import { createHttpError } from "../utils/errors.js";
 import { logger } from "../config/logger.js";
@@ -1877,7 +1879,7 @@ export const fetchAgentList = async (_req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: process.env.WAZUH_API_USER || "admin", password: process.env.WAZUH_API_PASS || "admin" }),
-      agent: new (require('https').Agent)({ rejectUnauthorized: false })
+      agent: new https.Agent({ rejectUnauthorized: false })
     });
 
     const authJson = await authRes.json();
@@ -1887,7 +1889,7 @@ export const fetchAgentList = async (_req, res) => {
     // Step 2: Fetch active agents
     const agentsRes = await fetch("https://192.168.31.24:55000/agents?status=active", {
       headers: { Authorization: `Bearer ${token}` },
-      agent: new (require('https').Agent)({ rejectUnauthorized: false })
+      agent: new https.Agent({ rejectUnauthorized: false })
     });
 
     const agentsJson = await agentsRes.json();
@@ -2090,7 +2092,25 @@ export async function fetchNetworking(req, res) {
 export const fetchAgentDetails = async (req, res, next) => {
   try {
     const agent = req.params.name;
-    const alerts = await wazuhService.getSecurityAlerts({ agent, size: 100 });
+    let alerts = await wazuhService.getSecurityAlerts({ agent, size: 100 });
+
+    // Fallback: if no alerts found for the exact agent name, perform a
+    // broader, case-insensitive substring match over a larger window of alerts.
+    if ((!alerts || alerts.length === 0) && agent && agent !== "all") {
+      try {
+        const allAlerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+        const normalize = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+        const needle = normalize(agent);
+        const filtered = (allAlerts || []).filter((a) => {
+          const name = normalize(a.agent?.name);
+          return name.includes(needle);
+        });
+        alerts = filtered.slice(0, 200);
+        console.warn(`⚠️ [fetchAgentDetails] Fallback matched ${alerts.length} alerts for agent=${agent}`);
+      } catch (fbErr) {
+        console.error("❌ [fetchAgentDetails] Fallback search failed:", fbErr.message);
+      }
+    }
 
     const mitre = alerts.reduce(
       (acc, a) => {
@@ -2185,8 +2205,6 @@ export const fetchUserEndpoint = async (req, res) => {
 
 // ===== MitreAlerts =====
 
-import axios from "axios";
-import https from "https";
 
 export async function fetchMitreAlerts(req, res) {
   const technique = req.query.technique;

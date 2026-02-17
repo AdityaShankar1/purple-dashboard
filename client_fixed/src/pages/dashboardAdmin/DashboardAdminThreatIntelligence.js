@@ -826,6 +826,13 @@ export default function DashboardAdminThreatIntelligence() {
       : Array.isArray(agentHealthRaw?.data)
         ? agentHealthRaw.data
         : [];
+  // If the agent list endpoint failed or returned empty, fall back to agent health
+  // which is more resilient (it extracts agents from alerts as a fallback).
+  const effectiveAgentList = agentList.length > 0
+    ? agentList
+    : (Array.isArray(agentHealth) && agentHealth.length > 0)
+      ? agentHealth.map((a) => ({ name: a.name, id: a.id || a.name }))
+      : [];
   const [selectedAgent, setSelectedAgent] = useState("all");
   const { alerts, mitre } = useAgentDetails(selectedAgent);
 
@@ -929,8 +936,10 @@ export default function DashboardAdminThreatIntelligence() {
 
       {/* Threat Actor Activity */}
       <Card title="🎭 Threat Actor Activity">
-        {actors.length === 0 ? (
-          <p className="text-purple-300">No actor activity data</p>
+        {connectionStatus === "disconnected" ? (
+          <p className="text-purple-300">Unable to connect to Wazuh or threat intelligence source</p>
+        ) : actors.length === 0 ? (
+          <p className="text-purple-300">No actor activity data (connected)</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={actors}>
@@ -1053,10 +1062,10 @@ export default function DashboardAdminThreatIntelligence() {
           className="bg-purple-900 text-white px-4 py-2 rounded w-full"
         >
           <option value="all">All Agents</option>
-          {agentList.length === 0 && (
+          {effectiveAgentList.length === 0 && (
             <option disabled>No active agents found</option>
           )}
-          {agentList.map((a, i) => (
+          {effectiveAgentList.map((a, i) => (
             <option key={i} value={a.name}>
               {a.name}
             </option>
@@ -1083,11 +1092,11 @@ export default function DashboardAdminThreatIntelligence() {
         ) : (
           <ul className="space-y-2 text-sm">
             {agentHealth.map((agent, i) => (
-              <li key={i} className="flex justify-between bg-purple-700 rounded-xl px-4 py-2">
-                <span>
+              <li key={i} className="flex justify-between bg-purple-700 rounded-xl px-4 py-2 text-white">
+                <span className="text-white">
                   {agent.name}
                   {agent.name === selectedAgent && (
-                    <span className="ml-2 text-xs text-purple-300">(selected)</span>
+                    <span className="ml-2 text-xs text-gray-200">(selected)</span>
                   )}
                 </span>
                 <span

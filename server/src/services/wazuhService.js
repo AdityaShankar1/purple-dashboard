@@ -170,80 +170,28 @@ class WazuhService {
 
   async getAgentHealth() {
     try {
+      console.log("🔍 [getAgentHealth] CODE VERSION: 2026-02-17 15:45 - JWT AUTH & ALERT EXTRACTION");
+
+      // Step 1: Get JWT Token
+      const token = await this.getToken();
+
       const url = `${process.env.WAZUH_API_URL}/agents`;
       console.log("🔍 [getAgentHealth] Fetching from:", url);
-      console.log("🔍 [getAgentHealth] Auth user:", process.env.WAZUH_API_USER);
 
+      // Step 2: Fetch agents using JWT
       const response = await axios.get(url, {
-        auth: {
-          username: process.env.WAZUH_API_USER,
-          password: process.env.WAZUH_API_PASS
-        },
+        headers: { Authorization: `Bearer ${token}` },
         httpsAgent: new https.Agent({ rejectUnauthorized: false })
       });
 
       console.log("📡 [getAgentHealth] Response status:", response.status);
-      console.log("📡 [getAgentHealth] Response data structure:", {
-        hasData: !!response.data,
-        hasDataKey: !!response.data?.data,
-        hasAffectedItems: !!response.data?.data?.affected_items
-      });
-
       const agents = response.data?.data?.affected_items || [];
       console.log("📡 [getAgentHealth] Raw agents count:", agents.length);
-      console.log("📡 [getAgentHealth] Raw agents:", agents);
 
       // If no agents from API, extract from recent alerts
       if (agents.length === 0) {
         console.warn("⚠️ [getAgentHealth] No agents from /agents endpoint, extracting from alerts...");
-
-        try {
-          // Get recent alerts to extract agent names
-          const alerts = await this.getSecurityAlerts({ size: 100, timeRange: "24h" });
-          console.log("📡 [getAgentHealth] Fetched", alerts.length, "alerts for agent extraction");
-
-          // Extract unique agent names and their last seen status
-          const agentMap = new Map();
-          alerts.forEach(alert => {
-            const agentName = alert.agent?.name;
-            if (agentName && !agentName.startsWith('MOCK_')) {
-              if (!agentMap.has(agentName)) {
-                agentMap.set(agentName, {
-                  id: alert.agent?.id || "unknown",
-                  name: agentName,
-                  status: "active", // If sending alerts, it's active
-                  version: alert.agent?.version || "unknown",
-                  ip: alert.agent?.ip || "unknown",
-                  lastSeen: alert["@timestamp"] || alert.timestamp
-                });
-              }
-            }
-          });
-
-          const extractedAgents = Array.from(agentMap.values());
-          console.log("✅ [getAgentHealth] Extracted", extractedAgents.length, "real agents from alerts");
-          console.log("✅ [getAgentHealth] Agent names:", extractedAgents.map(a => a.name));
-
-          if (extractedAgents.length > 0) {
-            return extractedAgents;
-          }
-
-          // If still no agents, use mock data as last resort
-          console.warn("⚠️ [getAgentHealth] No agents in alerts either, using MOCK data");
-          return [
-            { id: "001", name: "MOCK_web-server", status: "active", version: "4.5.0", ip: "192.168.1.10" },
-            { id: "002", name: "MOCK_db-server", status: "active", version: "4.5.0", ip: "192.168.1.11" },
-            { id: "003", name: "MOCK_app-server", status: "disconnected", version: "4.5.0", ip: "192.168.1.12" }
-          ];
-        } catch (alertError) {
-          console.error("❌ [getAgentHealth] Failed to extract from alerts:", alertError.message);
-          // Return mock data on alert extraction failure
-          return [
-            { id: "001", name: "MOCK_web-server", status: "active", version: "4.5.0", ip: "192.168.1.10" },
-            { id: "002", name: "MOCK_db-server", status: "active", version: "4.5.0", ip: "192.168.1.11" },
-            { id: "003", name: "MOCK_app-server", status: "disconnected", version: "4.5.0", ip: "192.168.1.12" }
-          ];
-        }
+        return await this._extractAgentsFromAlerts();
       }
 
       const mapped = agents.map(agent => ({
@@ -254,18 +202,58 @@ class WazuhService {
         ip: agent.ip
       }));
 
-      console.log("✅ [getAgentHealth] Returning", mapped.length, "real agents");
+      console.log("✅ [getAgentHealth] Returning", mapped.length, "real agents from API");
       return mapped;
     } catch (error) {
-      console.error("❌ [getAgentHealth] Error:", error.message);
-      console.error("❌ [getAgentHealth] Error details:", error.response?.data || error.stack);
+      console.error("❌ [getAgentHealth] API Error:", error.response?.status || error.message);
+      if (error.response?.data) console.error("❌ [getAgentHealth] Error details:", error.response.data);
 
-      // Return mock data on error as well
-      console.warn("⚠️ [getAgentHealth] Error occurred, using MOCK data");
+      // Fallback to alerts on any API failure
+      console.warn("⚠️ [getAgentHealth] API failed, attempting alert extraction fallback...");
+      return await this._extractAgentsFromAlerts();
+    }
+  }
+
+  /**
+   * Internal helper to extract unique agents from recent alerts
+   */
+  async _extractAgentsFromAlerts() {
+    try {
+      const alerts = await this.getSecurityAlerts({ size: 200, timeRange: "24h" });
+      console.log("📡 [_extractAgentsFromAlerts] Fetched", alerts.length, "alerts");
+
+      const agentMap = new Map();
+      alerts.forEach(alert => {
+        const agentName = alert.agent?.name;
+        if (agentName && !agentName.startsWith('MOCK_')) {
+          if (!agentMap.has(agentName)) {
+            agentMap.set(agentName, {
+              id: alert.agent?.id || "unknown",
+              name: agentName,
+              status: "active",
+              version: alert.agent?.version || "unknown",
+              ip: alert.agent?.ip || "unknown"
+            });
+          }
+        }
+      });
+
+      const extracted = Array.from(agentMap.values());
+      console.log("✅ [_extractAgentsFromAlerts] Extracted", extracted.length, "unique agents");
+
+      if (extracted.length > 0) return extracted;
+
+      // Final fallback to mock if everything else fails
+      console.warn("⚠️ [_extractAgentsFromAlerts] No agents found in alerts, using MOCK data");
       return [
-        { id: "001", name: "MOCK_web-server", status: "active", version: "4.5.0", ip: "192.168.1.10" },
-        { id: "002", name: "MOCK_db-server", status: "active", version: "4.5.0", ip: "192.168.1.11" },
-        { id: "003", name: "MOCK_app-server", status: "disconnected", version: "4.5.0", ip: "192.168.1.12" }
+        { id: "001", name: "MOCK_web-server", status: "active" },
+        { id: "002", name: "MOCK_db-server", status: "active" },
+        { id: "003", name: "MOCK_app-server", status: "disconnected" }
+      ];
+    } catch (err) {
+      console.error("❌ [_extractAgentsFromAlerts] Critical failure:", err.message);
+      return [
+        { id: "001", name: "MOCK_web-server", status: "active" }
       ];
     }
   }
