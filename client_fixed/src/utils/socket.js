@@ -89,7 +89,7 @@
 // Note: Install socket.io-client if not already: npm install socket.io-client
 import io from 'socket.io-client';
 
-const socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
+const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001');
 
 export const initSocket = (userId, courseId) => {
   if (userId) {

@@ -1,62 +1,25 @@
-// // //client/src/api/notificationApi.js
-// // import axios from "./axiosConfig"
-
-// // export const notificationApi = {
-// //   // Get user notifications
-// //   getUserNotifications: (params = {}) => axios.get("/notifications", { params }),
-
-// //   // Mark notification as read
-// //   markAsRead: (id) => axios.patch(`/notifications/${id}/read`),
-
-// //   // Mark all notifications as read
-// //   markAllAsRead: () => axios.patch("/notifications/read-all"),
-
-// //   // Delete notification
-// //   deleteNotification: (id) => axios.delete(`/notifications/${id}`),
-// // }
-
-
-// import axios from "./axiosConfig";
-
-// export const notificationApi = {
-//   // ✅ Get user notifications with safe pagination
-//   getUserNotifications: (params = {}) => {
-//     const rawPage = parseInt(params.page);
-//     const rawLimit = parseInt(params.limit);
-
-//     const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
-//     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 20;
-
-//     return axios.get("/notifications", {
-//       params: { ...params, page, limit },
-//     });
-//   },
-
-//   // ✅ Mark notification as read
-//   markAsRead: (id) => axios.patch(`/notifications/${id}/read`),
-
-//   // ✅ Mark all notifications as read
-//   markAllAsRead: () => axios.patch("/notifications/read-all"),
-
-//   // ✅ Delete notification
-//   deleteNotification: (id) => axios.delete(`/notifications/${id}`),
-// };
-
-
-
-
-
-
-
-
-
-
-import axios from "./axiosConfig"
+import axios from "./axiosConfig";
 
 export const notificationApi = {
-  getNotifications: (unreadOnly = false) => axios.get("/notifications", { params: { unreadOnly } }),
+  // Get user notifications with safe pagination
+  getUserNotifications: (params = {}) => {
+    const rawPage = parseInt(params.page);
+    const rawLimit = parseInt(params.limit);
 
-  markAsRead: (notificationId) => axios.patch(`/notifications/${notificationId}/read`),
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 20;
 
+    return axios.get("/notifications", {
+      params: { ...params, page, limit },
+    });
+  },
+
+  // Mark notification as read
+  markAsRead: (id) => axios.patch(`/notifications/${id}/read`),
+
+  // Mark all notifications as read
   markAllAsRead: () => axios.patch("/notifications/read-all"),
-}
+
+  // Delete notification
+  deleteNotification: (id) => axios.delete(`/notifications/${id}`),
+};

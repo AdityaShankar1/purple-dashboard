@@ -199,8 +199,6 @@
 
 
 
-// client/src/components/Layouts/Navbar.js
-
 "use client";
 
 import { useState } from "react";
@@ -214,8 +212,7 @@ export default function Navbar({ user }) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Using window.location.href to trigger a full page refresh and clear component state
-    window.location.href = "/login"; 
+    window.location.href = "/login";
   };
 
   const userName = user?.name || "User";
@@ -223,12 +220,9 @@ export default function Navbar({ user }) {
   const userRole = user?.role || "user";
 
   return (
-    // CHANGE 1: Reduced height from min-h-[72px] to min-h-[64px] (equivalent to h-16)
-    <nav className="min-h-[56px] bg-white shadow-md border-b border-indigo-200 z-50">
-      <div className="px-6 h-full flex items-center justify-between">
-        {/* Left side: Logo and title */}
+    <nav className="min-h-[56px] bg-white shadow-md border-b border-indigo-200 z-50 w-full">
+      <div className="h-full flex items-center justify-between px-0">
         <div className="flex items-center gap-0">
-          {/* NOTE: Logo is 56px (h-14). We'll keep it as is, but it might slightly exceed the 64px min-height */}
           <img
             src="/c_isfcr_logo-removebg-preview.png"
             alt="Logo ISFCR"
@@ -236,11 +230,10 @@ export default function Navbar({ user }) {
           />
           <div>
             <h1 className="text-xl font-bold text-indigo-800">PESU SOC</h1>
-            <p className="text-xs text-indigo-500 italic">Where Every Alert Tells A Story</p> 
+            <p className="text-xs text-indigo-500 italic">Where Every Alert Tells A Story</p>
           </div>
         </div>
 
-        {/* Right side: Notifications and user menu */}
         {user && (
           <div className="flex items-center gap-3">
             <NotificationDropdown className="text-indigo-600" />
@@ -248,7 +241,6 @@ export default function Navbar({ user }) {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                // CHANGE 2: Adjusted vertical padding from p-2 to py-2 px-3 for better centering
                 className="flex items-center gap-3 text-indigo-700 hover:text-indigo-500 transition-colors py-2 px-3 rounded-lg hover:bg-indigo-100"
               >
                 <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">

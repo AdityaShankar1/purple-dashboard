@@ -16,7 +16,7 @@ export const useNotifications = () => {
     const token = localStorage.getItem("token")
     if (!token) return
 
-    const socketInstance = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
+    const socketInstance = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5001", {
       auth: { token },
     })
 
