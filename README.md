@@ -135,6 +135,12 @@ NODE_ENV=development
 - **Admin**: admin@example.com / admin123
 - **User**: user@example.com / user123
 
+## Output Screenshots:
+
+### AI Assistant:
+
+<img width="1405" height="818" alt="image" src="https://github.com/user-attachments/assets/e5e1b93b-4efc-441f-8144-0fa092446041" />
+
 ## Deployment
 
 ### Frontend (Vercel)
