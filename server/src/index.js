@@ -110,26 +110,86 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message: err.message || "Server error" });
 });
 
-// Start server and connect to database
-const server = app.listen(PORT, async () => {
+// Start server with robust port conflict handling and connect to database
+let currentServer = null;
+
+const startServer = async (startPort, maxAttempts = 10) => {
+  let attempts = 0;
+
+  // Ensure database is connected before attempting to listen
   try {
     await connectDB();
-    logger.info(`Server is running on port ${PORT}`);
     logger.info(`✅ MongoDB connected`);
   } catch (err) {
     logger.error("Failed to connect to the database. Exiting...");
     process.exit(1);
   }
+
+  const tryListen = (portToTry) => {
+    const server = app.listen(portToTry, () => {
+      logger.info(`Server is running on port ${portToTry}`);
+      // Attach Socket.IO to the live server instance
+      try {
+        setupSocket(server);
+      } catch (err) {
+        logger.error("Failed to setup Socket.IO:", err);
+      }
+    });
+
+    // keep reference to the active server for global handlers
+    currentServer = server;
+
+    server.on("error", (err) => {
+      if (err && err.code === "EADDRINUSE") {
+        attempts += 1;
+        logger.warn(`Port ${portToTry} in use (${attempts}/${maxAttempts}). Trying next port...`);
+
+        // Await server.close before retrying
+        (async () => {
+          if (server && typeof server.close === "function") {
+            try {
+              await new Promise((resolve) => server.close(() => resolve()));
+            } catch (closeErr) {
+              logger.error("Error closing server after EADDRINUSE:", closeErr);
+            }
+          }
+
+          if (attempts >= maxAttempts) {
+            logger.error(`Unable to bind to a port after ${maxAttempts} attempts. Exiting.`);
+            process.exit(1);
+          }
+
+          // try the next port
+          tryListen(portToTry + 1);
+        })();
+      } else {
+        logger.error("Server error:", err);
+        process.exit(1);
+      }
+    });
+  };
+
+  tryListen(Number(startPort));
+};
+
+// Single global unhandledRejection handler that closes the active server
+process.on("unhandledRejection", (reason) => {
+  logger.error("UNHANDLED REJECTION! 💥 Shutting down...");
+  logger.error(String(reason));
+  if (currentServer && typeof currentServer.close === "function") {
+    try {
+      currentServer.close(() => {
+        process.exit(1);
+      });
+    } catch (err) {
+      process.exit(1);
+    }
+  } else {
+    process.exit(1);
+  }
 });
 
-// Setup Socket.IO
-setupSocket(server);
-
-// Handle unhandled promise rejections
-process.on("unhandledRejection", (err) => {
-  logger.error("UNHANDLED REJECTION! 💥 Shutting down...");
-  logger.error(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
+startServer(PORT).catch((err) => {
+  logger.error("Fatal error starting server:", err);
+  process.exit(1);
 });
