@@ -308,6 +308,33 @@
 
 
 
+/**
+ * BUG FIX LOG (2026-02-18):
+ * 
+ * ISSUE #1: Active Agents Not Displaying on Networking Page
+ * - SYMPTOM: Networking page showed "No active agents (connected)" while Threat Intelligence 
+ *   page correctly displayed active agents (Puneeth, soc-pc1, soc-pc2)
+ * - ROOT CAUSE: Networking page used `useWazuhAgents()` hook which fetched from `/api/wazuh/agents`
+ *   endpoint that wasn't returning data, while Threat Intelligence page used `useAgentHealth()`
+ *   which fetched from a working endpoint with proper error handling and fallback logic
+ * - SOLUTION: Changed Networking page to use the same `useAgentHealth()` hook as Threat Intelligence
+ *   page to ensure both pages display identical agent data from the same reliable source
+ * 
+ * ISSUE #2: HTTP 429 Rate Limiting Errors
+ * - SYMPTOM: Multiple simultaneous page loads triggered "HTTP 429: Too Many Requests" errors
+ * - ROOT CAUSE: Both Networking and Threat Intelligence pages were calling `useAgentHealth()`
+ *   simultaneously, creating duplicate requests to the same endpoint without deduplication
+ * - SOLUTION: Implemented request deduplication, caching (60s frontend, 30s backend), and
+ *   retry logic with exponential backoff in the hook (see useAgentHealth.js for details)
+ * 
+ * ISSUE #3: Data Normalization Failures
+ * - SYMPTOM: Agent data came in various formats depending on which endpoint returned it
+ * - SOLUTION: Added normalization logic to handle multiple response formats:
+ *   - Direct array: [{ name, status }, ...]
+ *   - Nested under .agents: { agents: [...] }
+ *   - Nested under .data: { data: [...] }
+ */
+
 //client/src/pages/dashboardAdmin/DashboardAdminNetworking.js
 
 
@@ -326,11 +353,20 @@ import {
 } from "recharts";
 import { Card } from "../../components/Layouts/Card";
 import { useNetworkingData } from "../../hooks/useNetworkingData";
-import { useWazuhAgents } from "../../hooks/useWazuhAgents";
+import { useAgentHealth } from "../../hooks/useAgentHealth";
 
 export default function DashboardAdminNetworking() {
   const { traffic, firewall, malware, connectionStatus } = useNetworkingData();
-  const { agents } = useWazuhAgents(); // ✅ Hook used properly
+  const { agents: agentHealthRaw, error: agentHealthError } = useAgentHealth();
+  
+  // Normalize agent health data to array format (handles multiple response shapes)
+  const agents = Array.isArray(agentHealthRaw)
+    ? agentHealthRaw
+    : Array.isArray(agentHealthRaw?.agents)
+      ? agentHealthRaw.agents
+      : Array.isArray(agentHealthRaw?.data)
+        ? agentHealthRaw.data
+        : [];
 
   const systemStatus = [
     { name: "Firewall", status: "healthy" },
@@ -401,19 +437,36 @@ export default function DashboardAdminNetworking() {
 
       {/* Active Wazuh Agents */}
       <Card title="🧠 Active Wazuh Agents" className="md:col-span-2">
+        {agentHealthError && (
+          <div className="bg-red-900/30 border border-red-500 rounded-lg p-3 mb-3">
+            <p className="text-red-300 text-sm font-semibold">⚠️ Error Loading Agents:</p>
+            <p className="text-red-200 text-xs mt-1">{agentHealthError}</p>
+          </div>
+        )}
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or agent source</p>
         ) : agents.length === 0 ? (
-          <p className="text-purple-300">No active agents (connected)</p>
+          <p className="text-purple-300">
+            {agentHealthError ? "Unable to load agent data" : "No active agents (connected)"}
+          </p>
         ) : (
           <ul className="space-y-2">
             {agents.map((agent, i) => (
               <li
                 key={i}
-                className="flex justify-between bg-neutral-800 rounded-xl px-4 py-2 text-sm text-white"
+                className="flex justify-between bg-purple-700 rounded-xl px-4 py-2 text-sm text-white"
               >
                 <span>{agent.name || agent.id}</span>
-                <span className="text-gray-400">{agent.status}</span>
+                <span
+                  className={`font-semibold ${agent.status === "Active"
+                    ? "text-green-300"
+                    : agent.status === "Disconnected"
+                      ? "text-yellow-300"
+                      : "text-red-300"
+                    }`}
+                >
+                  {agent.status}
+                </span>
               </li>
             ))}
           </ul>

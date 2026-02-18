@@ -1913,9 +1913,42 @@ export const fetchAgentList = async (_req, res) => {
 
 
 // ===== Agent Health =====
+/**
+ * BUG FIX LOG (2026-02-18):
+ * 
+ * ISSUE: Duplicate Simultaneous Requests Triggering Rate Limits
+ * - SYMPTOM: HTTP 429 "Too Many Requests" errors appearing frequently
+ * - ROOT CAUSE: No server-side caching. When multiple clients/components load the
+ *   Networking and Threat Intelligence pages simultaneously, both call the same
+ *   `/api/wazuh/agent-health` endpoint without caching, creating multiple simultaneous
+ *   requests to the Wazuh API which triggers its rate limiting.
+ * - SOLUTION: Implemented server-side response caching (30 second TTL):
+ *   1. Cache successful responses at module level (agentHealthCache)
+ *   2. Multiple requests within 30s window get cached response instead of new API call
+ *   3. On fetch errors, return stale cache if available (graceful degradation)
+ *   4. Combined with client-side 60s cache and request deduplication (see useAgentHealth.js)
+ */
+
+// Cache for agent health to prevent rate limiting from multiple simultaneous requests
+let agentHealthCache = {
+  data: null,
+  timestamp: 0,
+  duration: 30000, // 30 seconds cache - server-side TTL
+};
+
 export const fetchAgentHealth = async (_req, res) => {
   try {
     console.log("🔍 [fetchAgentHealth] Starting agent health fetch...");
+
+    // ============ CACHE CHECK ============
+    // If we have valid cached data, return it immediately without calling Wazuh API
+    // This prevents hammering the Wazuh API when multiple requests come in rapid succession
+    const now = Date.now();
+    if (agentHealthCache.data && (now - agentHealthCache.timestamp < agentHealthCache.duration)) {
+      console.log("✅ [fetchAgentHealth] Using cached response (", now - agentHealthCache.timestamp, "ms old)");
+      console.log("✅ [fetchAgentHealth] Returning", agentHealthCache.data.length, "cached agents");
+      return res.status(200).json(agentHealthCache.data);
+    }
 
     const agents = await wazuhService.getAgentHealth();
     console.log("📡 [fetchAgentHealth] Raw agents from service:", agents);
@@ -1929,11 +1962,25 @@ export const fetchAgentHealth = async (_req, res) => {
     console.log("✅ [fetchAgentHealth] Mapped agents:", mapped);
     console.log("✅ [fetchAgentHealth] Returning", mapped.length, "agents");
 
+    // ============ UPDATE CACHE ============
+    // Store successful response so subsequent requests within 30s get cached data
+    agentHealthCache.data = mapped;
+    agentHealthCache.timestamp = Date.now();
+
     res.status(200).json(mapped);
   } catch (err) {
     console.error("❌ [fetchAgentHealth] Error:", err.message);
     console.error("❌ [fetchAgentHealth] Stack:", err.stack);
     logger.error(`Failed to fetch agent health: ${err.message}`);
+    
+    // ============ ERROR HANDLING WITH CACHE FALLBACK ============
+    // If API call fails, return stale cached data instead of error
+    // This provides graceful degradation - better to show old data than no data
+    if (agentHealthCache.data) {
+      console.log("⚠️ [fetchAgentHealth] Error occurred, returning stale cache");
+      return res.status(200).json(agentHealthCache.data);
+    }
+    
     res.status(500).json({ error: "Unable to fetch agent health" });
   }
 };
