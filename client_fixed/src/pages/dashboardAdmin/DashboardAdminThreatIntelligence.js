@@ -881,6 +881,22 @@ export default function DashboardAdminThreatIntelligence() {
             fillOpacity: 0.2
           }).addTo(mapInstance.current);
 
+          window.L.circleMarker(collegeCoords, {
+            radius: 4,
+            fillColor: "#ff4d4d",
+            color: "#fff",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1
+          })
+            .addTo(mapInstance.current)
+            .bindTooltip("PES University", {
+              permanent: true,
+              direction: 'top',
+              className: 'small-map-label',
+              offset: [0, -5]
+            });
+
           if (checkInterval) clearInterval(checkInterval);
           setMapError(null);
           setMapLoaded(true);
@@ -916,6 +932,19 @@ export default function DashboardAdminThreatIntelligence() {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {/* Global Threat Map */}
       <Card title="🌎 Global Threat Map">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          .small-map-label {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 1px 4px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          }
+        `}} />
         <div
           ref={mapRef}
           style={{ height: '300px', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}

@@ -12,6 +12,12 @@ const router = express.Router();
  * This route fetches real-time security data from Wazuh and uses Ollama (Qwen 2.5:1.5b) 
  * to generate a structured SOC reporting summary.
  * 
+ * SUMMARIZATION FEATURE:
+ * - Triggered by the "✨ Summarize" button in the frontend.
+ * - Uses a default prompt: "Summarize the current security status and dashboard metrics."
+ * - The backend handles this just like any other prompt but is optimized (via system prompt)
+ *   to provide a high-level overview of the cumulative metrics.
+ * 
  * DESIGN PHILOSOPHY:
  * - Direct Data: Fetches alerts server-side to ensure the AI sees the same data as the Dashboard.
  * - Strict Formatting: Enforces a bracketed title and bulleted list for a "CLI/SOC Console" feel.
@@ -190,8 +196,19 @@ YOUR REPORT:`;
         });
 
     } catch (error) {
-        console.error("AI Error:", error);
-        res.status(500).json({ error: "Ollama connection failed", details: error.message });
+        console.error("Global AI Route Error:", error);
+        // Distinguish between Ollama specific errors and other errors
+        const status = error.status || 500;
+        let message = error.message || "An unexpected error occurred in the AI service";
+
+        if (status === 404 && message.includes('model')) {
+            message = "Ollama model not found. Please ensure 'qwen2.5:1.5b' is pulled.";
+        }
+
+        res.status(status).json({
+            error: message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

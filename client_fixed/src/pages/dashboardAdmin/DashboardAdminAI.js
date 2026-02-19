@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Card } from "../../components/Layouts/Card";
-import { Bot, Send, Trash2, User, Loader2, AlertCircle } from "lucide-react";
+import { Bot, Send, Trash2, User, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { useIncidentsData } from "../../hooks/useIncidentsData";
 
 export default function DashboardAdminAI() {
@@ -94,22 +94,38 @@ export default function DashboardAdminAI() {
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!input.trim()) return;
+    /**
+     * handleSummarize function
+     * 
+     * REASONING:
+     * This function provides a one-click way to get a dashboard summary.
+     * It uses a default prompt that the backend is already optimized to handle,
+     * saving the user time and providing a consistent reporting format.
+     */
+    const handleSummarize = () => {
+        const summaryPrompt = "Summarize the current security status and dashboard metrics.";
+        // We reuse handleSendMessage logic by setting input and triggering a manual-like submission
+        // Since handleSendMessage uses the 'input' state, we need to ensure it's set or passed.
+        // To avoid complex refactoring, we'll temporarily set input and call the send logic.
+        // However, handleSendMessage takes an event 'e'. We'll adjust it slightly or call a core function.
 
-        const userMsg = { id: Date.now(), role: 'user', content: input };
+        // Refactored approach: Core send logic extracted
+        executeSendMessage(summaryPrompt);
+    };
+
+    // Extracted core message sending logic
+    const executeSendMessage = async (text) => {
+        if (!text.trim()) return;
+
+        const userMsg = { id: Date.now(), role: 'user', content: text };
         setMessages(prev => [...prev, userMsg]);
-        setInput("");
+        setInput(""); // Clear input after sending
         setLoading(true);
-
-        // Removed blocking check - backend will handle mock data generation
-
 
         try {
             // Aggregating data for context - prioritize metrics over incidents
             const contextData = {
-                source: connStatus === 'wazuh' ? 'Wazuh Real-time API' : 'Dashboard Metrics Fallback',
+                source: connStatus === 'wazuh' ? 'Wazuh Real-time API' : 'Dashboard Metrics',
                 totalAlerts: metrics?.count || wazuhAlerts?.length || incidentsFromHook?.length || 0,
                 activeIncidents: (wazuhAlerts?.length || 0) + (incidentsFromHook?.length || 0),
                 riskDistribution: metrics?.alerts ? {
@@ -135,18 +151,19 @@ export default function DashboardAdminAI() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         dashboardStats: contextData,
-                        userPrompt: input,
+                        userPrompt: text,
                         history: messages.slice(-3)
                     }),
                 }
             );
 
-            if (!res.ok) throw new Error("Connection failed");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server error: ${res.status}`);
+            }
 
             const data = await res.json();
 
-            // If backend returned isMock flag, we can update status if needed, 
-            // but for now we trust the initial check or just show the message.
             if (data.isMock && connStatus !== 'mock') {
                 setConnStatus('mock');
             }
@@ -158,14 +175,20 @@ export default function DashboardAdminAI() {
             }]);
 
         } catch (err) {
+            console.error("AI Assistant Error:", err);
             setMessages(prev => [...prev, {
                 id: Date.now() + 1,
                 role: 'assistant',
-                content: "I encountered an error connecting to the AI service. Please try again later."
+                content: `Error: ${err.message || "I encountered an error connecting to the AI service. Please try again later."}`
             }]);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        executeSendMessage(input);
     };
 
     return (
@@ -187,19 +210,42 @@ export default function DashboardAdminAI() {
 
                             {connStatus === 'checking' && "Checking connectivity..."}
                             {connStatus === 'wazuh' && "Connected to Real-time Wazuh API"}
-                            {connStatus === 'dashboard' && "Using Dashboard Metrics Fallback"}
+                            {/* 
+                                REASONING: 
+                                Removed "Fallback" as per user request to make the status indicator 
+                                feel more seamless and less like a partial failure.
+                            */}
+                            {connStatus === 'dashboard' && "Using Dashboard Metrics"}
                             {connStatus === 'mock' && "Simulation Mode (Mock Data)"}
                             {connStatus === 'failed' && "No Security Data Available"}
                         </div>
                     </div>
                 </div>
-                <button
-                    onClick={handleClearChat}
-                    className="p-2.5 hover:bg-white/20 rounded-xl transition-all text-purple-100"
-                    title="Clear History"
-                >
-                    <Trash2 size={22} />
-                </button>
+
+                <div className="flex items-center space-x-3">
+                    {/* 
+                        REASONING:
+                        Added the "✨ Summarize" button as requested. It's placed in the header 
+                        for high visibility, allowing users to quickly get insights without manual prompting.
+                        Using consistent styling with other header elements but with a distinct sparkle icon.
+                    */}
+                    <button
+                        onClick={handleSummarize}
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all text-sm font-semibold backdrop-blur-md border border-white/10 disabled:opacity-50"
+                    >
+                        <Sparkles size={16} className="text-yellow-300" />
+                        <span>Summarize</span>
+                    </button>
+
+                    <button
+                        onClick={handleClearChat}
+                        className="p-2.5 hover:bg-white/20 rounded-xl transition-all text-purple-100"
+                        title="Clear History"
+                    >
+                        <Trash2 size={22} />
+                    </button>
+                </div>
             </div>
 
             {/* Chat messages */}
