@@ -480,6 +480,29 @@ class WazuhService {
     return (data.hits?.hits || []).map(h => h._source || h);
   }
 
+  async getVulnerabilityAlerts() {
+    const body = {
+      size: 5,
+      sort: [{ "@timestamp": { order: "desc" } }],
+      query: {
+        bool: {
+          should: [
+            { term: { "rule.groups": "vulnerability" } },
+            { term: { "rule.groups": "vulnerability-detector" } }
+          ],
+          minimum_should_match: 1
+        }
+      }
+    };
+    try {
+      const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
+      return (data.hits?.hits || []).map(h => h._source || h);
+    } catch (err) {
+      console.error("❌ getVulnerabilityAlerts error:", err.message);
+      return [];
+    }
+  }
+
   // You can add getMalwareData, getComplianceData, etc. here following the same pattern
   async getUserEndpointData() {
     try {

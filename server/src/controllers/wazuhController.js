@@ -1780,7 +1780,7 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
-    const alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "30d" });
 
     // Global threat map markers
     const global = alerts
@@ -1819,14 +1819,29 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .sort((a, b) => b.activity - a.activity);
 
     // Vulnerable assets
-    const assets = alerts
-      .filter((a) => a.rule?.groups?.includes("vulnerability"))
-      .slice(0, 5)
-      .map((asset) => ({
-        name: asset.agent?.name || "unknown",
-        status: "Vulnerable",
-        vulnerability: asset.rule?.description || "N/A",
-      }));
+    /*
+     * BUG FIX: Vulnerable Assets display was originally filtering from the top 1000 general alerts,
+     *          which often contained no vulnerabilities. It also strictly checked for the "vulnerability" group.
+     * FIX:     Created `getVulnerabilityAlerts()` in WazuhService to explicitly query Elasticsearch for 
+     *          "vulnerability" or "vulnerability-detector" groups. 
+     *          Additionally, we now deduplicate the assets by agent name to prevent multiple vulnerabilities 
+     *          on the same agent from cluttering the UI.
+     */
+    const vulnAlerts = await wazuhService.getVulnerabilityAlerts();
+
+    // Deduplicate by agent name
+    const uniqueAssetsMap = new Map();
+    vulnAlerts.forEach((asset) => {
+      const agentName = asset.agent?.name || "unknown";
+      if (!uniqueAssetsMap.has(agentName)) {
+        uniqueAssetsMap.set(agentName, {
+          name: agentName,
+          status: "Vulnerable",
+          vulnerability: asset.rule?.description || "N/A",
+        });
+      }
+    });
+    const assets = Array.from(uniqueAssetsMap.values()).slice(0, 5);
 
     res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
   } catch (err) {
@@ -1972,7 +1987,7 @@ export const fetchAgentHealth = async (_req, res) => {
     console.error("❌ [fetchAgentHealth] Error:", err.message);
     console.error("❌ [fetchAgentHealth] Stack:", err.stack);
     logger.error(`Failed to fetch agent health: ${err.message}`);
-    
+
     // ============ ERROR HANDLING WITH CACHE FALLBACK ============
     // If API call fails, return stale cached data instead of error
     // This provides graceful degradation - better to show old data than no data
@@ -1980,7 +1995,7 @@ export const fetchAgentHealth = async (_req, res) => {
       console.log("⚠️ [fetchAgentHealth] Error occurred, returning stale cache");
       return res.status(200).json(agentHealthCache.data);
     }
-    
+
     res.status(500).json({ error: "Unable to fetch agent health" });
   }
 };

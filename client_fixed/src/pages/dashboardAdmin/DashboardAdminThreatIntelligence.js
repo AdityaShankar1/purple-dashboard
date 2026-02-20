@@ -965,7 +965,7 @@ export default function DashboardAdminThreatIntelligence() {
                 key={i}
                 className="flex justify-between bg-purple-700 rounded-xl px-4 py-2"
               >
-                <span>{asset.name}</span>
+                <span className="text-white font-medium">{asset.name}</span>
                 <span className="text-red-300 font-semibold">
                   {asset.status || "Exposed"}
                 </span>
