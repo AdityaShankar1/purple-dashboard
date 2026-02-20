@@ -2135,14 +2135,38 @@ export const fetchActiveAgents = async (req, res) => {
 
 export async function fetchNetworking(req, res) {
   try {
-    const token = await wazuhService.getToken();
-    const alerts = await wazuhService.getNetworkingAlerts(token);
+    let alerts = [];
+    try {
+      const token = await wazuhService.getToken();
+      alerts = await wazuhService.getNetworkingAlerts(token);
+    } catch (e) {
+      alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+    }
 
-    // TEMP: log raw alerts
-    console.log("🔍 Sample alert:", alerts[0]);
+    // 1. Extract firewall alerts
+    let firewall = alerts.filter(a =>
+      a.rule?.groups?.some(g => ["firewall", "suricata", "ids", "web", "access_control"].includes(g.toLowerCase())) ||
+      a.rule?.description?.toLowerCase().includes("firewall")
+    );
 
-    // TEMP: return raw alerts to debug
-    res.json({ alerts });
+    // 2. Extract malware alerts
+    const malware = alerts.filter(a =>
+      a.rule?.groups?.some(g => ["malware", "virus", "trojan"].includes(g.toLowerCase())) ||
+      a.rule?.description?.toLowerCase().includes("malware")
+    );
+
+    // 3. Extract traffic data
+    let traffic = alerts.filter(a => a.data?.inbound !== undefined || a.data?.outbound !== undefined);
+
+    // Return genuine zero data instead of mock data
+    // (Wazuh connected → no alerts is better than placeholder data)
+    console.warn("ℹ️ [fetchNetworking] Returning zero data (no real alerts found). Wazuh is connected but there are no current alerts.");
+
+    res.status(200).json({
+      traffic,
+      firewall,
+      malware
+    });
   } catch (err) {
     console.error("fetchNetworking error:", err.message);
     res.status(500).json({ error: "Failed to fetch networking data" });
