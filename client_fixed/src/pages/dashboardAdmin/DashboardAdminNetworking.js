@@ -358,7 +358,7 @@ import { useAgentHealth } from "../../hooks/useAgentHealth";
 export default function DashboardAdminNetworking() {
   const { traffic, firewall, malware, connectionStatus } = useNetworkingData();
   const { agents: agentHealthRaw, error: agentHealthError } = useAgentHealth();
-  
+
   // Normalize agent health data to array format (handles multiple response shapes)
   const agents = Array.isArray(agentHealthRaw)
     ? agentHealthRaw
@@ -382,7 +382,7 @@ export default function DashboardAdminNetworking() {
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or networking source</p>
         ) : traffic.length === 0 ? (
-          <p className="text-purple-300">No network traffic data (connected)</p>
+          <p className="text-purple-300">No network traffic data recorded (genuinely zero logs)</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={traffic}>
@@ -401,7 +401,7 @@ export default function DashboardAdminNetworking() {
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or networking source</p>
         ) : firewall.length === 0 ? (
-          <p className="text-purple-300">No firewall alerts (connected)</p>
+          <p className="text-purple-300">No firewall alerts recorded (genuinely zero logs)</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={firewall}>
@@ -420,13 +420,12 @@ export default function DashboardAdminNetworking() {
           {systemStatus.map((sys, i) => (
             <div
               key={i}
-              className={`p-4 rounded-xl text-center font-semibold ${
-                sys.status === "healthy"
-                  ? "bg-green-700 text-green-200"
-                  : sys.status === "degraded"
+              className={`p-4 rounded-xl text-center font-semibold ${sys.status === "healthy"
+                ? "bg-green-700 text-green-200"
+                : sys.status === "degraded"
                   ? "bg-yellow-700 text-yellow-200"
                   : "bg-red-700 text-red-200"
-              }`}
+                }`}
             >
               {sys.name}
               <div className="text-sm font-normal">({sys.status})</div>
@@ -456,7 +455,7 @@ export default function DashboardAdminNetworking() {
                 key={i}
                 className="flex justify-between bg-purple-700 rounded-xl px-4 py-2 text-sm text-white"
               >
-                <span>{agent.name || agent.id}</span>
+                <span className="text-white">{agent.name || agent.id}</span>
                 <span
                   className={`font-semibold ${agent.status === "Active"
                     ? "text-green-300"
@@ -478,18 +477,18 @@ export default function DashboardAdminNetworking() {
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or malware source</p>
         ) : malware.length === 0 ? (
-          <p className="text-purple-300">No malware or phishing detected (connected)</p>
+          <p className="text-purple-300">No malware or phishing detected (genuinely zero logs)</p>
         ) : (
           <ul className="space-y-2">
             {malware.map((m, i) => (
               <li
                 key={i}
-                className="flex justify-between bg-purple-700 rounded-xl px-4 py-2 text-sm"
+                className="flex justify-between bg-purple-700 rounded-xl px-4 py-2 text-sm text-white"
               >
-                <span>
+                <span className="text-white">
                   {m.type} → <span className="font-semibold">{m.target}</span>
                 </span>
-                <span className="text-gray-400">
+                <span className="text-gray-300">
                   {new Date(m.timestamp).toLocaleString()}
                 </span>
               </li>
