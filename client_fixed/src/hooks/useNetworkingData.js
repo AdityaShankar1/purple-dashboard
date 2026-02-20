@@ -66,6 +66,5 @@ export function useNetworkingData() {
     return () => clearInterval(id);
   }, []);
 
-  return { traffic, firewall, malware };
   return { traffic, firewall, malware, connectionStatus };
 }
