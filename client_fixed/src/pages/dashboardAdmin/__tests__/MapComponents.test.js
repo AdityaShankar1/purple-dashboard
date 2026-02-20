@@ -48,7 +48,7 @@ jest.mock('../../../hooks/useAgentDetails', () => ({
 
 jest.mock('../../../hooks/useAgentHealth', () => ({
     __esModule: true,
-    useAgentHealth: () => []
+    useAgentHealth: () => ({ agents: [], error: null })
 }));
 
 jest.mock('../../../hooks/useAgentList', () => ({
@@ -146,5 +146,24 @@ describe('Map Components Robustness', () => {
         });
 
         expect(screen.getByText(/Map Init Error: Mock Map Initialization Failed/i)).toBeInTheDocument();
+    });
+    test('DashboardAdminThreatIntelligence renders Vulnerable Assets when data is provided', () => {
+        // Mock data to provide assets
+        const mockThreatIntelData = {
+            actors: [],
+            assets: [
+                { name: "Agent1", status: "Vulnerable", vulnerability: "CVE-2026-1234" },
+                { name: "Agent2", status: "Vulnerable", vulnerability: "CVE-2026-5678" }
+            ],
+            global: [],
+            loading: false,
+            error: null
+        };
+        jest.spyOn(require('../../../hooks/useThreatIntelData'), 'useThreatIntelData').mockReturnValue(mockThreatIntelData);
+
+        render(<DashboardAdminThreatIntelligence />);
+
+        expect(screen.getByText('Agent1')).toBeInTheDocument();
+        expect(screen.getByText('Agent2')).toBeInTheDocument();
     });
 });

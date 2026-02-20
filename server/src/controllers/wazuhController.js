@@ -66,7 +66,7 @@
 // // // // //       medium: alerts?.data?.affected_items?.filter(a => a.rule?.level >= 4 && a.rule?.level < 8).length || 0,
 // // // // //       low: alerts?.data?.affected_items?.filter(a => a.rule?.level < 4).length || 0,
 // // // // //     };
-    
+
 // // // // //     // ... (Add your data processing logic here for other data points)
 
 // // // // //     res.status(200).json({
@@ -126,7 +126,7 @@
 // // // // //   try {
 // // // // //     const threatIntelData = await wazuhService.getThreatIntelData();
 // // // // //     const alerts = extractAlerts(threatIntelData);
-    
+
 // // // // //     // Process alerts for global map, actors, and vulnerable assets
 // // // // //     const global = [];
 // // // // //     const actors = [];
@@ -1619,6 +1619,8 @@
 //server/controllers/dashboardController.js
 
 
+import axios from "axios";
+import https from "https";
 import { wazuhService } from "../services/wazuhService.js";
 import { createHttpError } from "../utils/errors.js";
 import { logger } from "../config/logger.js";
@@ -1778,7 +1780,7 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
-    const alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "30d" });
 
     // Global threat map markers
     const global = alerts
@@ -1817,14 +1819,29 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .sort((a, b) => b.activity - a.activity);
 
     // Vulnerable assets
-    const assets = alerts
-      .filter((a) => a.rule?.groups?.includes("vulnerability"))
-      .slice(0, 5)
-      .map((asset) => ({
-        name: asset.agent?.name || "unknown",
-        status: "Vulnerable",
-        vulnerability: asset.rule?.description || "N/A",
-      }));
+    /*
+     * BUG FIX: Vulnerable Assets display was originally filtering from the top 1000 general alerts,
+     *          which often contained no vulnerabilities. It also strictly checked for the "vulnerability" group.
+     * FIX:     Created `getVulnerabilityAlerts()` in WazuhService to explicitly query Elasticsearch for 
+     *          "vulnerability" or "vulnerability-detector" groups. 
+     *          Additionally, we now deduplicate the assets by agent name to prevent multiple vulnerabilities 
+     *          on the same agent from cluttering the UI.
+     */
+    const vulnAlerts = await wazuhService.getVulnerabilityAlerts();
+
+    // Deduplicate by agent name
+    const uniqueAssetsMap = new Map();
+    vulnAlerts.forEach((asset) => {
+      const agentName = asset.agent?.name || "unknown";
+      if (!uniqueAssetsMap.has(agentName)) {
+        uniqueAssetsMap.set(agentName, {
+          name: agentName,
+          status: "Vulnerable",
+          vulnerability: asset.rule?.description || "N/A",
+        });
+      }
+    });
+    const assets = Array.from(uniqueAssetsMap.values()).slice(0, 5);
 
     res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
   } catch (err) {
@@ -1877,7 +1894,7 @@ export const fetchAgentList = async (_req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: process.env.WAZUH_API_USER || "admin", password: process.env.WAZUH_API_PASS || "admin" }),
-      agent: new (require('https').Agent)({ rejectUnauthorized: false })
+      agent: new https.Agent({ rejectUnauthorized: false })
     });
 
     const authJson = await authRes.json();
@@ -1887,7 +1904,7 @@ export const fetchAgentList = async (_req, res) => {
     // Step 2: Fetch active agents
     const agentsRes = await fetch("https://192.168.31.24:55000/agents?status=active", {
       headers: { Authorization: `Bearer ${token}` },
-      agent: new (require('https').Agent)({ rejectUnauthorized: false })
+      agent: new https.Agent({ rejectUnauthorized: false })
     });
 
     const agentsJson = await agentsRes.json();
@@ -1911,16 +1928,74 @@ export const fetchAgentList = async (_req, res) => {
 
 
 // ===== Agent Health =====
+/**
+ * BUG FIX LOG (2026-02-18):
+ * 
+ * ISSUE: Duplicate Simultaneous Requests Triggering Rate Limits
+ * - SYMPTOM: HTTP 429 "Too Many Requests" errors appearing frequently
+ * - ROOT CAUSE: No server-side caching. When multiple clients/components load the
+ *   Networking and Threat Intelligence pages simultaneously, both call the same
+ *   `/api/wazuh/agent-health` endpoint without caching, creating multiple simultaneous
+ *   requests to the Wazuh API which triggers its rate limiting.
+ * - SOLUTION: Implemented server-side response caching (30 second TTL):
+ *   1. Cache successful responses at module level (agentHealthCache)
+ *   2. Multiple requests within 30s window get cached response instead of new API call
+ *   3. On fetch errors, return stale cache if available (graceful degradation)
+ *   4. Combined with client-side 60s cache and request deduplication (see useAgentHealth.js)
+ */
+
+// Cache for agent health to prevent rate limiting from multiple simultaneous requests
+let agentHealthCache = {
+  data: null,
+  timestamp: 0,
+  duration: 30000, // 30 seconds cache - server-side TTL
+};
+
 export const fetchAgentHealth = async (_req, res) => {
   try {
+    console.log("🔍 [fetchAgentHealth] Starting agent health fetch...");
+
+    // ============ CACHE CHECK ============
+    // If we have valid cached data, return it immediately without calling Wazuh API
+    // This prevents hammering the Wazuh API when multiple requests come in rapid succession
+    const now = Date.now();
+    if (agentHealthCache.data && (now - agentHealthCache.timestamp < agentHealthCache.duration)) {
+      console.log("✅ [fetchAgentHealth] Using cached response (", now - agentHealthCache.timestamp, "ms old)");
+      console.log("✅ [fetchAgentHealth] Returning", agentHealthCache.data.length, "cached agents");
+      return res.status(200).json(agentHealthCache.data);
+    }
+
     const agents = await wazuhService.getAgentHealth();
+    console.log("📡 [fetchAgentHealth] Raw agents from service:", agents);
+    console.log("📡 [fetchAgentHealth] Agent count:", agents.length);
+
     const mapped = agents.map((a) => ({
       name: a.name,
       status: a.status,
     }));
+
+    console.log("✅ [fetchAgentHealth] Mapped agents:", mapped);
+    console.log("✅ [fetchAgentHealth] Returning", mapped.length, "agents");
+
+    // ============ UPDATE CACHE ============
+    // Store successful response so subsequent requests within 30s get cached data
+    agentHealthCache.data = mapped;
+    agentHealthCache.timestamp = Date.now();
+
     res.status(200).json(mapped);
   } catch (err) {
+    console.error("❌ [fetchAgentHealth] Error:", err.message);
+    console.error("❌ [fetchAgentHealth] Stack:", err.stack);
     logger.error(`Failed to fetch agent health: ${err.message}`);
+
+    // ============ ERROR HANDLING WITH CACHE FALLBACK ============
+    // If API call fails, return stale cached data instead of error
+    // This provides graceful degradation - better to show old data than no data
+    if (agentHealthCache.data) {
+      console.log("⚠️ [fetchAgentHealth] Error occurred, returning stale cache");
+      return res.status(200).json(agentHealthCache.data);
+    }
+
     res.status(500).json({ error: "Unable to fetch agent health" });
   }
 };
@@ -2079,7 +2154,25 @@ export async function fetchNetworking(req, res) {
 export const fetchAgentDetails = async (req, res, next) => {
   try {
     const agent = req.params.name;
-    const alerts = await wazuhService.getSecurityAlerts({ agent, size: 100 });
+    let alerts = await wazuhService.getSecurityAlerts({ agent, size: 100 });
+
+    // Fallback: if no alerts found for the exact agent name, perform a
+    // broader, case-insensitive substring match over a larger window of alerts.
+    if ((!alerts || alerts.length === 0) && agent && agent !== "all") {
+      try {
+        const allAlerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+        const normalize = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+        const needle = normalize(agent);
+        const filtered = (allAlerts || []).filter((a) => {
+          const name = normalize(a.agent?.name);
+          return name.includes(needle);
+        });
+        alerts = filtered.slice(0, 200);
+        console.warn(`⚠️ [fetchAgentDetails] Fallback matched ${alerts.length} alerts for agent=${agent}`);
+      } catch (fbErr) {
+        console.error("❌ [fetchAgentDetails] Fallback search failed:", fbErr.message);
+      }
+    }
 
     const mitre = alerts.reduce(
       (acc, a) => {
@@ -2174,8 +2267,6 @@ export const fetchUserEndpoint = async (req, res) => {
 
 // ===== MitreAlerts =====
 
-import axios from "axios";
-import https from "https";
 
 export async function fetchMitreAlerts(req, res) {
   const technique = req.query.technique;

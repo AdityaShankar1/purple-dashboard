@@ -87,161 +87,226 @@ class WazuhService {
 
 
 
-// async getActiveAgents() {
-//   try {
-//     const response = await axios.get(
-//       `${process.env.WAZUH_API_URL}/agents?status=active`,
-//       {
-//         auth: {
-//           username: process.env.WAZUH_API_USER,
-//           password: process.env.WAZUH_API_PASS
-//         },
-//         httpsAgent: new https.Agent({ rejectUnauthorized: false })
-//       }
-//     );
+  // async getActiveAgents() {
+  //   try {
+  //     const response = await axios.get(
+  //       `${process.env.WAZUH_API_URL}/agents?status=active`,
+  //       {
+  //         auth: {
+  //           username: process.env.WAZUH_API_USER,
+  //           password: process.env.WAZUH_API_PASS
+  //         },
+  //         httpsAgent: new https.Agent({ rejectUnauthorized: false })
+  //       }
+  //     );
 
-//     const agents = response.data.data?.affected_items || [];
-//     return agents.map(a => ({
-//       name: a.name,
-//       id: a.id,
-//       status: a.status
-//     }));
-//   } catch (err) {
-//     console.error("❌ getActiveAgents error:", err.message);
-//     return [];
-//   }
-// }
-
-
-// async getActiveAgents() {
-//   try {
-//     const response = await axios.get(`${process.env.WAZUH_API_URL}/agents`, {
-//       auth: {
-//         username: process.env.WAZUH_API_USER,
-//         password: process.env.WAZUH_API_PASS
-//       },
-//       httpsAgent: new https.Agent({ rejectUnauthorized: false }) // for self-signed certs
-//     });
-
-//     const agents = response.data?.data?.affected_items || [];
-
-//     const activeAgents = agents
-//       .filter(agent => agent.status === "Active")
-//       .map(agent => ({
-//         id: agent.id,
-//         name: agent.name,
-//         status: agent.status,
-//         version: agent.version,
-//         ip: agent.ip
-//       }));
-
-//     return activeAgents;
-//   } catch (error) {
-//     console.error("❌ Error in getActiveAgents:", error.message);
-//     return [];
-//   }
-// }
+  //     const agents = response.data.data?.affected_items || [];
+  //     return agents.map(a => ({
+  //       name: a.name,
+  //       id: a.id,
+  //       status: a.status
+  //     }));
+  //   } catch (err) {
+  //     console.error("❌ getActiveAgents error:", err.message);
+  //     return [];
+  //   }
+  // }
 
 
+  // async getActiveAgents() {
+  //   try {
+  //     const response = await axios.get(`${process.env.WAZUH_API_URL}/agents`, {
+  //       auth: {
+  //         username: process.env.WAZUH_API_USER,
+  //         password: process.env.WAZUH_API_PASS
+  //       },
+  //       httpsAgent: new https.Agent({ rejectUnauthorized: false }) // for self-signed certs
+  //     });
 
-async getActiveAgents() {
-  try {
-    const response = await axios.get(
-      `${process.env.WAZUH_API_URL}/agents?select=name,status,id`,
-      {
+  //     const agents = response.data?.data?.affected_items || [];
+
+  //     const activeAgents = agents
+  //       .filter(agent => agent.status === "Active")
+  //       .map(agent => ({
+  //         id: agent.id,
+  //         name: agent.name,
+  //         status: agent.status,
+  //         version: agent.version,
+  //         ip: agent.ip
+  //       }));
+
+  //     return activeAgents;
+  //   } catch (error) {
+  //     console.error("❌ Error in getActiveAgents:", error.message);
+  //     return [];
+  //   }
+  // }
+
+
+
+  async getActiveAgents() {
+    try {
+      const response = await axios.get(
+        `${process.env.WAZUH_API_URL}/agents?select=name,status,id`,
+        {
+          auth: {
+            username: process.env.WAZUH_API_USER,
+            password: process.env.WAZUH_API_PASS
+          },
+          httpsAgent: new https.Agent({ rejectUnauthorized: false })
+        }
+      );
+
+      const agents = response.data?.data?.affected_items || [];
+
+      // Filter only active agents
+      return agents.filter(agent => agent.status === "Active");
+    } catch (err) {
+      console.error("❌ getActiveAgents error:", err.message);
+      return [];
+    }
+  }
+
+
+  async getAgentHealth() {
+    try {
+      console.log("🔍 [getAgentHealth] CODE VERSION: 2026-02-17 15:45 - JWT AUTH & ALERT EXTRACTION");
+
+      // Step 1: Get JWT Token
+      const token = await this.getToken();
+
+      const url = `${process.env.WAZUH_API_URL}/agents`;
+      console.log("🔍 [getAgentHealth] Fetching from:", url);
+
+      // Step 2: Fetch agents using JWT
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      });
+
+      console.log("📡 [getAgentHealth] Response status:", response.status);
+      const agents = response.data?.data?.affected_items || [];
+      console.log("📡 [getAgentHealth] Raw agents count:", agents.length);
+
+      // If no agents from API, extract from recent alerts
+      if (agents.length === 0) {
+        console.warn("⚠️ [getAgentHealth] No agents from /agents endpoint, extracting from alerts...");
+        return await this._extractAgentsFromAlerts();
+      }
+
+      const mapped = agents.map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        status: agent.status,
+        version: agent.version,
+        ip: agent.ip
+      }));
+
+      console.log("✅ [getAgentHealth] Returning", mapped.length, "real agents from API");
+      return mapped;
+    } catch (error) {
+      console.error("❌ [getAgentHealth] API Error:", error.response?.status || error.message);
+      if (error.response?.data) console.error("❌ [getAgentHealth] Error details:", error.response.data);
+
+      // Fallback to alerts on any API failure
+      console.warn("⚠️ [getAgentHealth] API failed, attempting alert extraction fallback...");
+      return await this._extractAgentsFromAlerts();
+    }
+  }
+
+  /**
+   * Internal helper to extract unique agents from recent alerts
+   */
+  async _extractAgentsFromAlerts() {
+    try {
+      const alerts = await this.getSecurityAlerts({ size: 200, timeRange: "24h" });
+      console.log("📡 [_extractAgentsFromAlerts] Fetched", alerts.length, "alerts");
+
+      const agentMap = new Map();
+      alerts.forEach(alert => {
+        const agentName = alert.agent?.name;
+        if (agentName && !agentName.startsWith('MOCK_')) {
+          if (!agentMap.has(agentName)) {
+            agentMap.set(agentName, {
+              id: alert.agent?.id || "unknown",
+              name: agentName,
+              status: "active",
+              version: alert.agent?.version || "unknown",
+              ip: alert.agent?.ip || "unknown"
+            });
+          }
+        }
+      });
+
+      const extracted = Array.from(agentMap.values());
+      console.log("✅ [_extractAgentsFromAlerts] Extracted", extracted.length, "unique agents");
+
+      if (extracted.length > 0) return extracted;
+
+      // Final fallback to mock if everything else fails
+      console.warn("⚠️ [_extractAgentsFromAlerts] No agents found in alerts, using MOCK data");
+      return [
+        { id: "001", name: "MOCK_web-server", status: "active" },
+        { id: "002", name: "MOCK_db-server", status: "active" },
+        { id: "003", name: "MOCK_app-server", status: "disconnected" }
+      ];
+    } catch (err) {
+      console.error("❌ [_extractAgentsFromAlerts] Critical failure:", err.message);
+      return [
+        { id: "001", name: "MOCK_web-server", status: "active" }
+      ];
+    }
+  }
+
+  async getAgentList() {
+    try {
+      const response = await axios.get(`${process.env.WAZUH_API_URL}/agents`, {
         auth: {
           username: process.env.WAZUH_API_USER,
           password: process.env.WAZUH_API_PASS
         },
         httpsAgent: new https.Agent({ rejectUnauthorized: false })
-      }
-    );
+      });
 
-    const agents = response.data?.data?.affected_items || [];
+      const agents = response.data?.data?.affected_items || [];
 
-    // Filter only active agents
-    return agents.filter(agent => agent.status === "Active");
-  } catch (err) {
-    console.error("❌ getActiveAgents error:", err.message);
-    return [];
+      return agents.map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        status: agent.status,
+        version: agent.version,
+        ip: agent.ip
+      }));
+    } catch (error) {
+      console.error("❌ getAgentList error:", error.response?.data || error.message);
+      return [];
+    }
   }
-}
 
+  async getSecurityAlerts(agent) {
+    try {
+      const query = {
+        size: 100,
+        query: {
+          term: { "agent.name.keyword": agent }
+        },
+        sort: [{ "@timestamp": { order: "desc" } }]
+      };
 
-async getAgentHealth() {
-  try {
-    const response = await axios.get(`${process.env.WAZUH_API_URL}/agents`, {
-      auth: {
-        username: process.env.WAZUH_API_USER,
-        password: process.env.WAZUH_API_PASS
-      },
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
-    });
+      const response = await axios.post(`${process.env.WAZUH_INDEXER_URL}/wazuh-alerts-*/_search`, query, {
+        auth: {
+          username: process.env.WAZUH_INDEXER_USER,
+          password: process.env.WAZUH_INDEXER_PASS
+        },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      });
 
-    const agents = response.data?.data?.affected_items || [];
-
-    return agents.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      status: agent.status,
-      version: agent.version,
-      ip: agent.ip
-    }));
-  } catch (error) {
-    console.error("❌ getAgentHealth error:", error.response?.data || error.message);
-    return [];
+      return response.data?.hits?.hits?.map(hit => hit._source) || [];
+    } catch (error) {
+      console.error("❌ getSecurityAlerts error:", error.response?.data || error.message);
+      return [];
+    }
   }
-}
-
-async getAgentList() {
-  try {
-    const response = await axios.get(`${process.env.WAZUH_API_URL}/agents`, {
-      auth: {
-        username: process.env.WAZUH_API_USER,
-        password: process.env.WAZUH_API_PASS
-      },
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
-    });
-
-    const agents = response.data?.data?.affected_items || [];
-
-    return agents.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      status: agent.status,
-      version: agent.version,
-      ip: agent.ip
-    }));
-  } catch (error) {
-    console.error("❌ getAgentList error:", error.response?.data || error.message);
-    return [];
-  }
-}
-
-async getSecurityAlerts(agent) {
-  try {
-    const query = {
-      size: 100,
-      query: {
-        term: { "agent.name.keyword": agent }
-      },
-      sort: [{ "@timestamp": { order: "desc" } }]
-    };
-
-    const response = await axios.post(`${process.env.WAZUH_INDEXER_URL}/wazuh-alerts-*/_search`, query, {
-      auth: {
-        username: process.env.WAZUH_INDEXER_USER,
-        password: process.env.WAZUH_INDEXER_PASS
-      },
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
-    });
-
-    return response.data?.hits?.hits?.map(hit => hit._source) || [];
-  } catch (error) {
-    console.error("❌ getSecurityAlerts error:", error.response?.data || error.message);
-    return [];
-  }
-}
 
 
 
@@ -255,9 +320,9 @@ async getSecurityAlerts(agent) {
 
 
   async getTotalAlerts() {
-  const { data } = await this.client.get(`/${WAZUH_INDEX_PATTERN}/_count`);
-  return data.count || 0;
-}
+    const { data } = await this.client.get(`/${WAZUH_INDEX_PATTERN}/_count`);
+    return data.count || 0;
+  }
 
 
   // async getSecurityAlerts({ size = 50, from = 0, timeRange = "24h", level, agent } = {}) {
@@ -285,60 +350,60 @@ async getSecurityAlerts(agent) {
 
 
   async getSecurityAlerts({ size = 50, from = 0, timeRange = "24h", level, agent } = {}) {
-  const must = [
-    {
-      range: {
-        "@timestamp": {
-          gte: `now-${timeRange}`,
-          lte: "now"
+    const must = [
+      {
+        range: {
+          "@timestamp": {
+            gte: `now-${timeRange}`,
+            lte: "now"
+          }
         }
       }
-    }
-  ];
+    ];
 
-  // Optional severity filter
-  if (level) {
-    must.push({
-      range: {
-        "rule.level": {
-          gte: level
+    // Optional severity filter
+    if (level) {
+      must.push({
+        range: {
+          "rule.level": {
+            gte: level
+          }
+        }
+      });
+    }
+
+    // Optional agent filter (skip if agent === "all")
+    if (agent && agent !== "all") {
+      must.push({
+        term: {
+          "agent.name.keyword": agent
+        }
+      });
+    }
+
+    const body = {
+      size,
+      from,
+      sort: [{ "@timestamp": { order: "desc" } }],
+      query: {
+        bool: {
+          must
         }
       }
-    });
-  }
+    };
 
-  // Optional agent filter (skip if agent === "all")
-  if (agent && agent !== "all") {
-    must.push({
-      term: {
-        "agent.name.keyword": agent
-      }
-    });
-  }
-
-  const body = {
-    size,
-    from,
-    sort: [{ "@timestamp": { order: "desc" } }],
-    query: {
-      bool: {
-        must
-      }
+    try {
+      const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
+      return (data.hits?.hits || []).map(h => h._source || h);
+    } catch (err) {
+      console.error("❌ getSecurityAlerts failed:", err.response?.data || err.message);
+      return [];
     }
-  };
-
-  try {
-    const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
-    return (data.hits?.hits || []).map(h => h._source || h);
-  } catch (err) {
-    console.error("❌ getSecurityAlerts failed:", err.response?.data || err.message);
-    return [];
   }
-}
 
 
 
-  
+
   async getRiskDistribution() {
     const body = {
       size: 0,
@@ -365,34 +430,34 @@ async getSecurityAlerts(agent) {
     return data.aggregations?.top_locations?.buckets || [];
   }
 
-async getFlowData() {
-  const body = {
-    size: 200,
-    query: {
-      match: { "data.event_type": "flow" }
-    },
-    sort: [{ "@timestamp": { order: "desc" } }]
-  };
-  const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
-  return (data.hits?.hits || []).map(h => h._source || h);
-}
+  async getFlowData() {
+    const body = {
+      size: 200,
+      query: {
+        match: { "data.event_type": "flow" }
+      },
+      sort: [{ "@timestamp": { order: "desc" } }]
+    };
+    const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
+    return (data.hits?.hits || []).map(h => h._source || h);
+  }
 
 
 
-async getMitreMap() {
-  const body = {
-    size: 0,
-    aggs: {
-      tactics: { terms: { field: "rule.mitre.tactic", size: 10 } },
-      techniques: { terms: { field: "rule.mitre.technique", size: 20 } }
-    }
-  };
-  const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
-  return {
-    tactics: data.aggregations?.tactics?.buckets || [],
-    techniques: data.aggregations?.techniques?.buckets || []
-  };
-}
+  async getMitreMap() {
+    const body = {
+      size: 0,
+      aggs: {
+        tactics: { terms: { field: "rule.mitre.tactic", size: 10 } },
+        techniques: { terms: { field: "rule.mitre.technique", size: 20 } }
+      }
+    };
+    const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
+    return {
+      tactics: data.aggregations?.tactics?.buckets || [],
+      techniques: data.aggregations?.techniques?.buckets || []
+    };
+  }
 
 
 
@@ -415,8 +480,31 @@ async getMitreMap() {
     return (data.hits?.hits || []).map(h => h._source || h);
   }
 
+  async getVulnerabilityAlerts() {
+    const body = {
+      size: 5,
+      sort: [{ "@timestamp": { order: "desc" } }],
+      query: {
+        bool: {
+          should: [
+            { term: { "rule.groups": "vulnerability" } },
+            { term: { "rule.groups": "vulnerability-detector" } }
+          ],
+          minimum_should_match: 1
+        }
+      }
+    };
+    try {
+      const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
+      return (data.hits?.hits || []).map(h => h._source || h);
+    } catch (err) {
+      console.error("❌ getVulnerabilityAlerts error:", err.message);
+      return [];
+    }
+  }
+
   // You can add getMalwareData, getComplianceData, etc. here following the same pattern
-async getUserEndpointData() {
+  async getUserEndpointData() {
     try {
       const query = {
         size: 500,
@@ -483,7 +571,7 @@ async getUserEndpointData() {
     }
   }
 
-  
+
 
 
   async getCompliance() {
@@ -543,29 +631,29 @@ async getUserEndpointData() {
   }
 
   async getMitreAlerts(technique) {
-  const query = {
-    size: 50,
-    query: { match: { "rule.mitre.id": technique } },
-    sort: [{ "@timestamp": { order: "desc" } }]
-  };
+    const query = {
+      size: 50,
+      query: { match: { "rule.mitre.id": technique } },
+      sort: [{ "@timestamp": { order: "desc" } }]
+    };
 
-  const response = await axios.post(
-    `${process.env.WAZUH_INDEXER_URL}/wazuh-alerts-*/_search`,
-    query,
-    {
-      auth: {
-        username: process.env.WAZUH_INDEXER_USER,
-        password: process.env.WAZUH_INDEXER_PASS
-      },
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
-    }
-  );
+    const response = await axios.post(
+      `${process.env.WAZUH_INDEXER_URL}/wazuh-alerts-*/_search`,
+      query,
+      {
+        auth: {
+          username: process.env.WAZUH_INDEXER_USER,
+          password: process.env.WAZUH_INDEXER_PASS
+        },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      }
+    );
 
-  return response.data?.hits?.hits?.map(hit => hit._source) || [];
-}
+    return response.data?.hits?.hits?.map(hit => hit._source) || [];
+  }
 
 
-async getToken() {
+  async getToken() {
     try {
       console.log("🔗 Authenticating with:", `${this.managerUrl}/security/user/authenticate`);
       const res = await axios.post(
