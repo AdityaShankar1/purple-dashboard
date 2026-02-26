@@ -122,30 +122,47 @@ export default function DashboardAdminAI() {
         setInput(""); // Clear input after sending
         setLoading(true);
 
+        let contextData;
         try {
-            // Aggregating data for context - prioritize metrics over incidents
-            const contextData = {
+            console.log("[AI DEBUG] Aggregating context data...");
+            contextData = {
                 source: connStatus === 'wazuh' ? 'Wazuh Real-time API' : 'Dashboard Metrics',
                 totalAlerts: metrics?.count || wazuhAlerts?.length || incidentsFromHook?.length || 0,
                 activeIncidents: (wazuhAlerts?.length || 0) + (incidentsFromHook?.length || 0),
-                riskDistribution: metrics?.alerts ? {
-                    critical: (metrics.alerts.filter(a => a.rule?.level >= 14) || []).length,
-                    high: (metrics.alerts.filter(a => a.rule?.level >= 8 && a.rule?.level < 14) || []).length,
-                    medium: (metrics.alerts.filter(a => a.rule?.level >= 5 && a.rule?.level < 8) || []).length,
-                    low: (metrics.alerts.filter(a => a.rule?.level < 5) || []).length,
+                riskDistribution: (metrics?.alerts && Array.isArray(metrics.alerts)) ? {
+                    critical: metrics.alerts.filter(a => a?.rule?.level >= 14).length,
+                    high: metrics.alerts.filter(a => a?.rule?.level >= 8 && a?.rule?.level < 14).length,
+                    medium: metrics.alerts.filter(a => a?.rule?.level >= 5 && a?.rule?.level < 8).length,
+                    low: metrics.alerts.filter(a => a?.rule?.level < 5).length,
                 } : {},
-                recentIncidents: (wazuhAlerts || metrics?.alerts || incidentsFromHook || []).slice(0, 5).map(i => ({
-                    level: i.rule?.level || i.level || 0,
-                    description: i.rule?.description || i.description || "Security event",
-                    agent: i.agent?.name || i.agent || "Unknown agent",
-                    timestamp: i.timestamp || new Date().toISOString()
-                })),
+                recentIncidents: (
+                    (Array.isArray(wazuhAlerts) ? wazuhAlerts :
+                        Array.isArray(metrics?.alerts) ? metrics.alerts :
+                            Array.isArray(incidentsFromHook) ? incidentsFromHook : [])
+                )
+                    .filter(i => i !== null && typeof i === 'object')
+                    .slice(0, 5)
+                    .map(i => ({
+                        level: i.rule?.level || i.level || 0,
+                        description: i.rule?.description || i.description || "Security event",
+                        agent: i.agent?.name || i.agent || "Unknown agent",
+                        timestamp: i.timestamp || new Date().toISOString()
+                    })),
                 timestamp: new Date().toISOString()
             };
+            console.log("[AI DEBUG] Context data aggregated:", contextData);
+        } catch (aggregationError) {
+            console.error("[AI DEBUG] Context aggregation failed:", aggregationError);
+            throw aggregationError;
+        }
 
+        try {
             const apiBase = getApiBase();
+            const url = `${apiBase}/ai/summarize-dashboard`;
+            console.log("[AI DEBUG] Fetching from:", url);
+
             const res = await fetch(
-                `${apiBase}/ai/summarize-dashboard`,
+                url,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -157,8 +174,10 @@ export default function DashboardAdminAI() {
                 }
             );
 
+            console.log("[AI DEBUG] Fetch response status:", res.status);
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
+                console.error("[AI DEBUG] Server returned error:", errorData);
                 throw new Error(errorData.error || `Server error: ${res.status}`);
             }
 

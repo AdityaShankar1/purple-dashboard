@@ -1,9 +1,10 @@
 import express from 'express';
-import ollama from 'ollama';
+import { Ollama } from 'ollama';
 import { getMockDashboardStats } from '../services/mockDataService.js';
 import { wazuhService } from '../services/wazuhService.js';
 
 const router = express.Router();
+const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
 
 /**
  * AI Dashboard Summarization Route
@@ -38,6 +39,7 @@ const router = express.Router();
  *    - Fix: Hardened prompt instructions to use the EXACT provided metrics without rewriting.
  */
 router.post('/summarize-dashboard', async (req, res) => {
+    console.log("[AI ROUTE] Received request for dashboard summary");
     try {
         const { userPrompt, history } = req.body;
 
@@ -180,6 +182,7 @@ YOUR REPORT:`;
             messages.splice(1, 0, ...history.slice(-2));
         }
 
+        console.log("[AI ROUTE] Sending request to Ollama (127.0.0.1:11434)...");
         const response = await ollama.chat({
             model: 'qwen2.5:1.5b',
             messages: messages,
@@ -189,6 +192,7 @@ YOUR REPORT:`;
                 num_predict: 300
             }
         });
+        console.log("[AI ROUTE] Received response from Ollama");
 
         res.json({
             summary: response.message.content.trim(),
