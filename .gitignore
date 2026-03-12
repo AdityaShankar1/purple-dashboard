@@ -12,3 +12,4 @@ client_fixed/build/
 # uploads & generated files
 server/uploads/
 *.pdf
+server/logs/*.log
