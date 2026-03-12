@@ -578,8 +578,8 @@ export default function AdminQuizzes() {
         points: Number(q.points) || 1
       }))
 
-      // Ensure courseId is set (backend expects courseId or maps course -> courseId)
-      payload.courseId = payload.course;
+      // Ensure courseId is set properly
+      payload.courseId = payload.courseId || payload.course;
 
       if (editing) {
         await quizApi.updateQuiz(editing, payload)

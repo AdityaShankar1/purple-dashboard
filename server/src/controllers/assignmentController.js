@@ -2698,35 +2698,39 @@
 import Assignment from "../models/Assignment.js"
 import AssignmentSubmission from "../models/AssignmentSubmission.js"
 import Enrollment from "../models/Enrollment.js"
+<<<<<<< Updated upstream
+=======
+import Course from "../models/Course.js"
+>>>>>>> Stashed changes
 import { createHttpError } from "../utils/errors.js"
 import * as notificationController from "./notificationController.js"
 
 // Admin: Create assignment
 export const createAssignment = async (req, res, next) => {
   try {
-    const { courseId, title, description, instructions, attachment, dueAt, isPublished, maxScore } = req.body;
+    const { title, description, instructions, attachment, dueAt, isPublished, maxScore } = req.body;
 
-    if (!courseId || !title) {
+    const actualCourseId = req.body.courseId || req.body.course;
+    if (!actualCourseId || !title) {
       return next(createHttpError(400, "Course ID and title are required"));
     }
 
     const assignment = new Assignment({
-      courseId: course,
+<<<<<<< Updated upstream
+=======
+      courseId: actualCourseId,
+>>>>>>> Stashed changes
       title,
       description,
-      instructions, // make sure schema has this or description
-      attachment, // make sure schema has this or uses different field
-      dueAt, // schema might use dueDate or dueAt - verified schema uses dueDate in one version, dueAt in another?
-      // Checking last view of Assignment.js: line 428 is dueDate. line 426 is courseId.
-      // Wait, the LAST view of Assignment.js (lines 420-437) has: dueDate, maxScore.
-      // It does NOT have instructions, attachment.
-      // I better double check Assignment.js one last time or be safe.
-      // Line 425: description: String.
-      dueDate: dueAt, // map dueAt to dueDate because schema has dueDate
-      maxScore: maxScore || 100,
+      instructions,
+      dueDate: dueAt,
+      maxGrade: maxScore || 100,
+      attachment,
       isPublished,
       createdBy: req.user._id,
     });
+
+    await assignment.save();
 
     // populate for response
     const populatedAssignment = await Assignment.findById(assignment._id)
@@ -2734,18 +2738,26 @@ export const createAssignment = async (req, res, next) => {
       .populate("createdBy", "name email");
 
     // Notify enrolled users
+<<<<<<< Updated upstream
     const enrollments = await Enrollment.find({ courseId: course })
+=======
+    const enrollments = await Enrollment.find({ courseId: actualCourseId })
+>>>>>>> Stashed changes
     for (const enrollment of enrollments) {
       await notificationController.createNotification({
         userId: enrollment.user,
         type: "assignment",
         title: `New Assignment: ${title}`,
         message: `A new assignment has been added to your course`,
-        courseId: course,
+<<<<<<< Updated upstream
+       
+=======
+        courseId: actualCourseId,
+>>>>>>> Stashed changes
       })
     }
 
-    res.status(201).json(successResponse(populatedAssignment, "Assignment created successfully"));
+    return successResponse(res, populatedAssignment, "Assignment created successfully", 201);
   } catch (error) {
     console.log("Create Assignment Error Payload:", req.body);
     next(error);
@@ -2780,13 +2792,10 @@ export const updateAssignment = async (req, res, next) => {
 
     if (title) assignment.title = title;
     if (description !== undefined) assignment.description = description;
-    // instructions/attachment not in schema? saving them might do nothing if strict mode.
-    // Schema lines 422-432: title, description, courseId, createdBy, dueDate, maxScore, isPublished.
-    // So instructions and attachment are NOT in the schema at lines 420-436.
-    // But frontend sends them. I should probably add them to schema or ignore.
-    // For now I will map passed dueAt to dueDate.
+    if (instructions !== undefined) assignment.instructions = instructions;
+    if (attachment !== undefined) assignment.attachment = attachment;
     if (dueAt !== undefined) assignment.dueDate = dueAt;
-    if (maxScore !== undefined) assignment.maxScore = maxScore;
+    if (maxScore !== undefined) assignment.maxGrade = maxScore;
     if (isPublished !== undefined) assignment.isPublished = isPublished;
 
     await assignment.save();

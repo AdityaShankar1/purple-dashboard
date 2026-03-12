@@ -428,6 +428,7 @@ const assignmentSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     dueDate: Date,
     maxGrade: { type: Number, default: 100 },
+    attachment: String,
     isPublished: { type: Boolean, default: false },
   },
   { timestamps: true }
