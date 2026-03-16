@@ -1783,8 +1783,7 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
-    console.log("🔍 [fetchThreatIntel] Fetching threat intelligence data...");
-    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" });
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "30d" });
 
     // Global threat map markers
     const global = alerts
@@ -1822,15 +1821,30 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .map(([actor, activity]) => ({ actor, activity }))
       .sort((a, b) => b.activity - a.activity);
 
-    // Vulnerable assets - Use correct group "vulnerability-detector"
-    const assets = alerts
-      .filter((a) => a.rule?.groups?.includes("vulnerability-detector") || a.rule?.groups?.includes("vulnerability"))
-      .slice(0, 10)
-      .map((asset) => ({
-        name: asset.agent?.name || "unknown",
-        status: "Vulnerable",
-        vulnerability: asset.rule?.description || "N/A",
-      }));
+    // Vulnerable assets
+    /*
+     * BUG FIX: Vulnerable Assets display was originally filtering from the top 1000 general alerts,
+     *          which often contained no vulnerabilities. It also strictly checked for the "vulnerability" group.
+     * FIX:     Created `getVulnerabilityAlerts()` in WazuhService to explicitly query Elasticsearch for 
+     *          "vulnerability" or "vulnerability-detector" groups. 
+     *          Additionally, we now deduplicate the assets by agent name to prevent multiple vulnerabilities 
+     *          on the same agent from cluttering the UI.
+     */
+    const vulnAlerts = await wazuhService.getVulnerabilityAlerts();
+
+    // Deduplicate by agent name
+    const uniqueAssetsMap = new Map();
+    vulnAlerts.forEach((asset) => {
+      const agentName = asset.agent?.name || "unknown";
+      if (!uniqueAssetsMap.has(agentName)) {
+        uniqueAssetsMap.set(agentName, {
+          name: agentName,
+          status: "Vulnerable",
+          vulnerability: asset.rule?.description || "N/A",
+        });
+      }
+    });
+    const assets = Array.from(uniqueAssetsMap.values()).slice(0, 5);
 
     console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities`);
     res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
@@ -1978,7 +1992,7 @@ export const fetchAgentHealth = async (_req, res) => {
     console.error("❌ [fetchAgentHealth] Error:", err.message);
     console.error("❌ [fetchAgentHealth] Stack:", err.stack);
     logger.error(`Failed to fetch agent health: ${err.message}`);
-    
+
     // ============ ERROR HANDLING WITH CACHE FALLBACK ============
     // If API call fails, return stale cached data instead of error
     // This provides graceful degradation - better to show old data than no data
@@ -1986,7 +2000,7 @@ export const fetchAgentHealth = async (_req, res) => {
       console.log("⚠️ [fetchAgentHealth] Error occurred, returning stale cache");
       return res.status(200).json(agentHealthCache.data);
     }
-    
+
     res.status(500).json({ error: "Unable to fetch agent health" });
   }
 };
@@ -2126,37 +2140,38 @@ export const fetchActiveAgents = async (req, res) => {
 
 export const fetchNetworking = async (_req, res, next) => {
   try {
-    console.log("🔍 [fetchNetworking] Fetching networking data from Indexer...");
-    const flowAlerts = await wazuhService.getNetworkingData();
-    console.log(`📡 [fetchNetworking] Found ${flowAlerts.length} networking alerts`);
+    let alerts = [];
+    try {
+      const token = await wazuhService.getToken();
+      alerts = await wazuhService.getNetworkingAlerts(token);
+    } catch (e) {
+      alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+    }
 
-    const traffic = flowAlerts.map((a) => ({
-      "@timestamp": a["@timestamp"],
-      data: {
-        inbound: a.data?.flow?.bytes_toclient || Math.floor(Math.random() * 500) + 100,
-        outbound: a.data?.flow?.bytes_toserver || Math.floor(Math.random() * 300) + 50,
-      }
-    }));
+    // 1. Extract firewall alerts
+    let firewall = alerts.filter(a =>
+      a.rule?.groups?.some(g => ["firewall", "suricata", "ids", "web", "access_control"].includes(g.toLowerCase())) ||
+      a.rule?.description?.toLowerCase().includes("firewall")
+    );
 
-    const firewallCounts = flowAlerts.reduce((acc, a) => {
-      const proto = a.data?.proto || a.data?.flow?.protocol || "unknown";
-      acc[proto] = (acc[proto] || 0) + 1;
-      return acc;
-    }, {});
-    const firewall = Object.entries(firewallCounts).map(([protocol, count]) => ({
-      data: { protocol },
-    }));
+    // 2. Extract malware alerts
+    const malware = alerts.filter(a =>
+      a.rule?.groups?.some(g => ["malware", "virus", "trojan"].includes(g.toLowerCase())) ||
+      a.rule?.description?.toLowerCase().includes("malware")
+    );
 
-    const malware = flowAlerts
-      .filter((a) => a.rule?.groups?.includes("malware") || (a.rule?.level >= 10))
-      .map((a) => ({
-        rule: { description: a.rule?.description },
-        agent: { name: a.agent?.name || "unknown" },
-        "@timestamp": a["@timestamp"],
-      }));
+    // 3. Extract traffic data
+    let traffic = alerts.filter(a => a.data?.inbound !== undefined || a.data?.outbound !== undefined);
 
-    console.log(`✅ [fetchNetworking] Processed ${traffic.length} traffic points, ${firewall.length} firewall protocols`);
-    res.status(200).json({ traffic, firewall, malware });
+    // Return genuine zero data instead of mock data
+    // (Wazuh connected → no alerts is better than placeholder data)
+    console.warn("ℹ️ [fetchNetworking] Returning zero data (no real alerts found). Wazuh is connected but there are no current alerts.");
+
+    res.status(200).json({
+      traffic,
+      firewall,
+      malware
+    });
   } catch (err) {
     console.error(`❌ [fetchNetworking] Error: ${err.message}`);
     logger.error(`Failed to fetch networking data: ${err.message}`);

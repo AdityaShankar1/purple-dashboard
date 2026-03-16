@@ -35,6 +35,5 @@ export const useThreatIntelData = () => {
     const interval = setInterval(fetchThreatIntel, 30000);
     return () => clearInterval(interval);
   }, []);
-
   return { ...data, connectionStatus };
 };
