@@ -426,17 +426,7 @@ class WazuhService {
     return data.aggregations?.top_locations?.buckets || [];
   }
 
-  async getFlowData() {
-    const body = {
-      size: 200,
-      query: {
-        match: { "data.event_type": "flow" }
-      },
-      sort: [{ "@timestamp": { order: "desc" } }]
-    };
-    const data = await this.indexerPost(`/${WAZUH_INDEX_PATTERN}/_search`, body);
-    return (data.hits?.hits || []).map(h => h._source || h);
-  }
+
 
 
 

@@ -1784,7 +1784,7 @@ export const fetchIncidents = async (_req, res, next) => {
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
     console.log("🔍 [fetchThreatIntel] Fetching threat intelligence data...");
-    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" });
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "90d" });
 
     // Global threat map markers
     const global = alerts

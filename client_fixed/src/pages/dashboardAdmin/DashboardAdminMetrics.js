@@ -480,7 +480,7 @@ export default function DashboardAdminMetrics() {
       }
       try {
         const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
-        const res = await fetch(`${API}/wazuh/alerts-count?timeRange=${timeRange}`);
+        const res = await fetch(`${API}/wazuh/alerts/count?timeRange=${timeRange}`);
         const data = await res.json();
         setFilteredCount(data.count);
       } catch (err) {
