@@ -1632,11 +1632,14 @@ import { logger } from "../config/logger.js";
 
 
 // ===== Alert Count =====
-export const fetchAlertsCount = async (_req, res, next) => {
+export const fetchAlertsCount = async (req, res, next) => {
   try {
-    const count = await wazuhService.getTotalAlerts();
+    const { timeRange } = req.query;
+    console.log(`🔍 [fetchAlertsCount] Querying count for timeRange: ${timeRange || 'all'}`);
+    const count = await wazuhService.getTotalAlerts(timeRange);
     res.status(200).json({ count });
   } catch (err) {
+    console.error(`❌ [fetchAlertsCount] Error: ${err.message}`);
     logger.error(`Failed to fetch alerts count: ${err.message}`);
     next(createHttpError(500, "Failed to fetch alerts count"));
   }
@@ -1843,8 +1846,10 @@ export const fetchThreatIntel = async (_req, res, next) => {
     });
     const assets = Array.from(uniqueAssetsMap.values()).slice(0, 5);
 
+    console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities`);
     res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
   } catch (err) {
+    console.error(`❌ [fetchThreatIntel] Error: ${err.message}`);
     logger.error(`Failed to fetch threat intel: ${err.message}`);
     next(createHttpError(500, "Failed to fetch threat intel"));
   }
@@ -2034,7 +2039,7 @@ export const fetchAgentHealth = async (_req, res) => {
 export const fetchSecurityAlerts = async (req, res) => {
   try {
     const agent = req.params.agent;
-    const alerts = await getSecurityAlerts(agent); // "all" supported
+    const alerts = await wazuhService.getSecurityAlerts({ agent }); // "all" supported
 
     const tactics = {};
     const techniques = {};
@@ -2133,7 +2138,7 @@ export const fetchActiveAgents = async (req, res) => {
 
 // ===== Networking =====
 
-export async function fetchNetworking(req, res) {
+export const fetchNetworking = async (_req, res, next) => {
   try {
     let alerts = [];
     try {
@@ -2168,10 +2173,11 @@ export async function fetchNetworking(req, res) {
       malware
     });
   } catch (err) {
-    console.error("fetchNetworking error:", err.message);
-    res.status(500).json({ error: "Failed to fetch networking data" });
+    console.error(`❌ [fetchNetworking] Error: ${err.message}`);
+    logger.error(`Failed to fetch networking data: ${err.message}`);
+    next(createHttpError(500, "Failed to fetch networking data"));
   }
-}
+};
 
 
 // ===== Agent Details =====

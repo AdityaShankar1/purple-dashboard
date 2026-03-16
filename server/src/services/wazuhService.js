@@ -283,30 +283,7 @@ class WazuhService {
     }
   }
 
-  async getSecurityAlerts(agent) {
-    try {
-      const query = {
-        size: 100,
-        query: {
-          term: { "agent.name.keyword": agent }
-        },
-        sort: [{ "@timestamp": { order: "desc" } }]
-      };
 
-      const response = await axios.post(`${process.env.WAZUH_INDEXER_URL}/wazuh-alerts-*/_search`, query, {
-        auth: {
-          username: process.env.WAZUH_INDEXER_USER,
-          password: process.env.WAZUH_INDEXER_PASS
-        },
-        httpsAgent: new https.Agent({ rejectUnauthorized: false })
-      });
-
-      return response.data?.hits?.hits?.map(hit => hit._source) || [];
-    } catch (error) {
-      console.error("❌ getSecurityAlerts error:", error.response?.data || error.message);
-      return [];
-    }
-  }
 
 
 
@@ -319,9 +296,28 @@ class WazuhService {
 
 
 
-  async getTotalAlerts() {
-    const { data } = await this.client.get(`/${WAZUH_INDEX_PATTERN}/_count`);
-    return data.count || 0;
+  async getTotalAlerts(timeRange) {
+    try {
+      if (!timeRange || timeRange === "all") {
+        const { data } = await this.client.get(`/${WAZUH_INDEX_PATTERN}/_count`);
+        return data.count || 0;
+      }
+      const body = {
+        query: {
+          range: {
+            "@timestamp": {
+              gte: `now-${timeRange}`,
+              lte: "now"
+            }
+          }
+        }
+      };
+      const { data } = await this.client.post(`/${WAZUH_INDEX_PATTERN}/_count`, body);
+      return data.count || 0;
+    } catch (err) {
+      logger.error(`getTotalAlerts failed: ${err.message}`);
+      return 0;
+    }
   }
 
 
