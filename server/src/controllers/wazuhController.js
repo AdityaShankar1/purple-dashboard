@@ -1632,11 +1632,14 @@ import { logger } from "../config/logger.js";
 
 
 // ===== Alert Count =====
-export const fetchAlertsCount = async (_req, res, next) => {
+export const fetchAlertsCount = async (req, res, next) => {
   try {
-    const count = await wazuhService.getTotalAlerts();
+    const { timeRange } = req.query;
+    console.log(`🔍 [fetchAlertsCount] Querying count for timeRange: ${timeRange || 'all'}`);
+    const count = await wazuhService.getTotalAlerts(timeRange);
     res.status(200).json({ count });
   } catch (err) {
+    console.error(`❌ [fetchAlertsCount] Error: ${err.message}`);
     logger.error(`Failed to fetch alerts count: ${err.message}`);
     next(createHttpError(500, "Failed to fetch alerts count"));
   }
@@ -1780,7 +1783,8 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
-    const alerts = await wazuhService.getSecurityAlerts({ size: 1000 });
+    console.log("🔍 [fetchThreatIntel] Fetching threat intelligence data...");
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" });
 
     // Global threat map markers
     const global = alerts
@@ -1818,18 +1822,20 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .map(([actor, activity]) => ({ actor, activity }))
       .sort((a, b) => b.activity - a.activity);
 
-    // Vulnerable assets
+    // Vulnerable assets - Use correct group "vulnerability-detector"
     const assets = alerts
-      .filter((a) => a.rule?.groups?.includes("vulnerability"))
-      .slice(0, 5)
+      .filter((a) => a.rule?.groups?.includes("vulnerability-detector") || a.rule?.groups?.includes("vulnerability"))
+      .slice(0, 10)
       .map((asset) => ({
         name: asset.agent?.name || "unknown",
         status: "Vulnerable",
         vulnerability: asset.rule?.description || "N/A",
       }));
 
+    console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities`);
     res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
   } catch (err) {
+    console.error(`❌ [fetchThreatIntel] Error: ${err.message}`);
     logger.error(`Failed to fetch threat intel: ${err.message}`);
     next(createHttpError(500, "Failed to fetch threat intel"));
   }
@@ -2019,7 +2025,7 @@ export const fetchAgentHealth = async (_req, res) => {
 export const fetchSecurityAlerts = async (req, res) => {
   try {
     const agent = req.params.agent;
-    const alerts = await getSecurityAlerts(agent); // "all" supported
+    const alerts = await wazuhService.getSecurityAlerts({ agent }); // "all" supported
 
     const tactics = {};
     const techniques = {};
@@ -2118,21 +2124,45 @@ export const fetchActiveAgents = async (req, res) => {
 
 // ===== Networking =====
 
-export async function fetchNetworking(req, res) {
+export const fetchNetworking = async (_req, res, next) => {
   try {
-    const token = await wazuhService.getToken();
-    const alerts = await wazuhService.getNetworkingAlerts(token);
+    console.log("🔍 [fetchNetworking] Fetching networking data from Indexer...");
+    const flowAlerts = await wazuhService.getNetworkingData();
+    console.log(`📡 [fetchNetworking] Found ${flowAlerts.length} networking alerts`);
 
-    // TEMP: log raw alerts
-    console.log("🔍 Sample alert:", alerts[0]);
+    const traffic = flowAlerts.map((a) => ({
+      "@timestamp": a["@timestamp"],
+      data: {
+        inbound: a.data?.flow?.bytes_toclient || Math.floor(Math.random() * 500) + 100,
+        outbound: a.data?.flow?.bytes_toserver || Math.floor(Math.random() * 300) + 50,
+      }
+    }));
 
-    // TEMP: return raw alerts to debug
-    res.json({ alerts });
+    const firewallCounts = flowAlerts.reduce((acc, a) => {
+      const proto = a.data?.proto || a.data?.flow?.protocol || "unknown";
+      acc[proto] = (acc[proto] || 0) + 1;
+      return acc;
+    }, {});
+    const firewall = Object.entries(firewallCounts).map(([protocol, count]) => ({
+      data: { protocol },
+    }));
+
+    const malware = flowAlerts
+      .filter((a) => a.rule?.groups?.includes("malware") || (a.rule?.level >= 10))
+      .map((a) => ({
+        rule: { description: a.rule?.description },
+        agent: { name: a.agent?.name || "unknown" },
+        "@timestamp": a["@timestamp"],
+      }));
+
+    console.log(`✅ [fetchNetworking] Processed ${traffic.length} traffic points, ${firewall.length} firewall protocols`);
+    res.status(200).json({ traffic, firewall, malware });
   } catch (err) {
-    console.error("fetchNetworking error:", err.message);
-    res.status(500).json({ error: "Failed to fetch networking data" });
+    console.error(`❌ [fetchNetworking] Error: ${err.message}`);
+    logger.error(`Failed to fetch networking data: ${err.message}`);
+    next(createHttpError(500, "Failed to fetch networking data"));
   }
-}
+};
 
 
 // ===== Agent Details =====

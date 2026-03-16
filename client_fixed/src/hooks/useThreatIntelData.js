@@ -36,6 +36,5 @@ export const useThreatIntelData = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return data;
   return { ...data, connectionStatus };
 };

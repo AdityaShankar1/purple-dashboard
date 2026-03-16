@@ -4,6 +4,7 @@ import Enrollment from "../models/Enrollment.js"
 import Course from "../models/Course.js"
 import { createHttpError } from "../utils/errors.js"
 import * as notificationController from "./notificationController.js"
+import { successResponse } from "../utils/response.js"
 
 // Admin: Create assignment
 export const createAssignment = async (req, res, next) => {
@@ -35,7 +36,6 @@ export const createAssignment = async (req, res, next) => {
       .populate("createdBy", "name email");
 
     // Notify enrolled users
-    const enrollments = await Enrollment.find({ courseId: course })
     const enrollments = await Enrollment.find({ courseId: actualCourseId })
     for (const enrollment of enrollments) {
       await notificationController.createNotification({
@@ -104,7 +104,7 @@ export const updateAssignment = async (req, res, next) => {
 
       const studentIds = enrolledStudents.map((e) => e.userId._id);
 
-      await notificationService.createNotification({
+      await notificationController.createNotification({
         users: studentIds,
         type: "assignment_created",
         title: "New Assignment",
@@ -116,7 +116,7 @@ export const updateAssignment = async (req, res, next) => {
       });
     }
 
-    res.json(successResponse(updatedAssignment, "Assignment updated successfully"));
+    return successResponse(res, updatedAssignment, "Assignment updated successfully");
   } catch (error) {
     next(error);
   }
@@ -141,7 +141,7 @@ export const deleteAssignment = async (req, res, next) => {
 
       const studentIds = enrolledStudents.map((e) => e.userId._id);
 
-      await notificationService.createNotification({
+      await notificationController.createNotification({
         users: studentIds,
         type: "assignment_deleted",
         title: "Assignment Deleted",
@@ -158,7 +158,7 @@ export const deleteAssignment = async (req, res, next) => {
     // Delete the assignment
     await Assignment.findByIdAndDelete(id);
 
-    res.json(successResponse(null, "Assignment deleted successfully"));
+    return successResponse(res, null, "Assignment deleted successfully");
   } catch (error) {
     next(error);
   }
@@ -180,7 +180,7 @@ export const getAssignmentSubmissions = async (req, res, next) => {
       .sort({ submittedAt: -1 })
       .lean();
 
-    res.json(successResponse(submissions, "Submissions fetched successfully"));
+    return successResponse(res, submissions, "Submissions fetched successfully");
   } catch (error) {
     next(error);
   }
@@ -214,7 +214,7 @@ export const gradeAssignment = async (req, res, next) => {
       .populate("assignment", "title");
 
     // Notify student about grading
-    await notificationService.createNotification({
+    await notificationController.createNotification({
       users: [submission.userId],
       type: "assignment_graded",
       title: "Assignment Graded",
@@ -225,7 +225,7 @@ export const gradeAssignment = async (req, res, next) => {
       },
     });
 
-    res.json(successResponse(populatedSubmission, "Submission graded successfully"));
+    return successResponse(res, populatedSubmission, "Submission graded successfully");
   } catch (error) {
     next(error);
   }
@@ -257,7 +257,7 @@ export const getUserAssignments = async (req, res, next) => {
       if (!courseObj) {
         // If course not found, return empty or 404?
         // Returning empty list is safe.
-        return res.json(successResponse([], "Assignments fetched successfully"));
+        return successResponse(res, [], "Assignments fetched successfully");
       }
 
       if (!enrolledCourseIds.includes(courseObj._id.toString())) {
@@ -296,7 +296,7 @@ export const getUserAssignments = async (req, res, next) => {
       dueDate: assignment.dueDate // ensure consistent naming
     }));
 
-    res.json(successResponse(assignmentsWithSubmissions, "Assignments fetched successfully"));
+    return successResponse(res, assignmentsWithSubmissions, "Assignments fetched successfully");
   } catch (error) {
     next(error);
   }
@@ -395,7 +395,7 @@ export const saveAssignmentDraft = async (req, res, next) => {
     // Usually draft creation might happen via submit with status=draft.
 
     // For now sticking to basic logic.
-    res.json(successResponse(null, "Draft saved"));
+    return successResponse(res, null, "Draft saved");
   } catch (error) {
     next(error);
   }
