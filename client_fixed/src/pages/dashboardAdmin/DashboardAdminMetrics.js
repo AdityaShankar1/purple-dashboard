@@ -490,10 +490,10 @@ export default function DashboardAdminMetrics() {
     fetchFilteredCount();
   }, [timeRange]);
 
-  // Last 24Hr Alerts (from metrics.alerts)
+  // Last 24Hr Alerts — use server-provided accurate count (not just alerts.length which is capped at 1000)
   const last24hAlertsCount = useMemo(
-    () => (Array.isArray(metrics.alerts) ? metrics.alerts.length : 0),
-    [metrics.alerts]
+    () => metrics.last24hCount ?? (Array.isArray(metrics.alerts) ? metrics.alerts.length : 0),
+    [metrics.last24hCount, metrics.alerts]
   );
 
   // Risk distribution (from last 24h alerts via backend metrics)
@@ -561,7 +561,7 @@ export default function DashboardAdminMetrics() {
 
       {/* Last 24Hr Alerts */}
       <Card title="🚨 Last 24Hr Alerts" className="md:col-span-2">
-        <div className="text-5xl font-bold text-center text-red-100">
+        <div className="text-5xl font-bold text-center text-red-400">
           {last24hAlertsCount}
         </div>
       </Card>

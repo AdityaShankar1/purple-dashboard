@@ -1652,8 +1652,13 @@ export const fetchMetrics = async (_req, res, next) => {
     const count = await wazuhService.getTotalAlerts();
     logger.info(`📊 Total alerts fetched: ${count}`);
 
-    const alerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: "24h" }) || [];
-    res.status(200).json({ count, alerts });
+    // Fetch up to 1000 recent alerts for accurate risk distribution
+    const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" }) || [];
+
+    // Accurate last-24h count (may be more than alerts.length if total > 1000)
+    const last24hCount = await wazuhService.getTotalAlerts("24h");
+
+    res.status(200).json({ count, alerts, last24hCount });
   } catch (err) {
     logger.error(`❌ Failed to fetch metrics: ${err.message}`);
     next(createHttpError(500, "Failed to fetch metrics"));
@@ -1832,8 +1837,16 @@ export const fetchThreatIntel = async (_req, res, next) => {
         vulnerability: asset.rule?.description || "N/A",
       }));
 
-    console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities`);
-    res.status(200).json({ global: globalMarkers, actors: actorsChart, assets });
+    // ===== FIX 3: Incident Severity Distribution =====
+    // Compute severity breakdown from all fetched alerts
+    const incidentSeverity = {
+      high: alerts.filter((a) => (a.rule?.level || 0) >= 8).length,
+      medium: alerts.filter((a) => (a.rule?.level || 0) >= 5 && (a.rule?.level || 0) < 8).length,
+      low: alerts.filter((a) => (a.rule?.level || 0) < 5).length,
+    };
+
+    console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities, severity: H${incidentSeverity.high}/M${incidentSeverity.medium}/L${incidentSeverity.low}`);
+    res.status(200).json({ global: globalMarkers, actors: actorsChart, assets, incidentSeverity });
   } catch (err) {
     console.error(`❌ [fetchThreatIntel] Error: ${err.message}`);
     logger.error(`Failed to fetch threat intel: ${err.message}`);
@@ -2127,35 +2140,45 @@ export const fetchActiveAgents = async (req, res) => {
 export const fetchNetworking = async (_req, res, next) => {
   try {
     console.log("🔍 [fetchNetworking] Fetching networking data from Indexer...");
-    const flowAlerts = await wazuhService.getNetworkingData();
-    console.log(`📡 [fetchNetworking] Found ${flowAlerts.length} networking alerts`);
+    let flowAlerts = await wazuhService.getNetworkingData();
+    console.log(`📡 [fetchNetworking] Found ${flowAlerts.length} suricata/ids alerts`);
+
+    // ===== FIX 6: Broaden data if suricata/ids returns nothing =====
+    // Fall back to general security alerts so the graph is never empty
+    if (flowAlerts.length === 0) {
+      console.log("⚠️ [fetchNetworking] No suricata/ids alerts, fetching broader security alerts...");
+      flowAlerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: "24h" });
+      console.log(`📡 [fetchNetworking] Fallback: got ${flowAlerts.length} general alerts`);
+    }
 
     const traffic = flowAlerts.map((a) => ({
       "@timestamp": a["@timestamp"],
       data: {
-        inbound: a.data?.flow?.bytes_toclient || Math.floor(Math.random() * 500) + 100,
-        outbound: a.data?.flow?.bytes_toserver || Math.floor(Math.random() * 300) + 50,
+        inbound: a.data?.flow?.bytes_toclient || 0,
+        outbound: a.data?.flow?.bytes_toserver || 0,
       }
     }));
 
+    // ===== FIX 6: Return {protocol, count} directly (not wrapped in .data) =====
     const firewallCounts = flowAlerts.reduce((acc, a) => {
-      const proto = a.data?.proto || a.data?.flow?.protocol || "unknown";
+      const proto = a.data?.proto || a.data?.flow?.protocol || a.rule?.groups?.[0] || "unknown";
       acc[proto] = (acc[proto] || 0) + 1;
       return acc;
     }, {});
     const firewall = Object.entries(firewallCounts).map(([protocol, count]) => ({
-      data: { protocol },
+      protocol,
+      count,
     }));
 
     const malware = flowAlerts
-      .filter((a) => a.rule?.groups?.includes("malware") || (a.rule?.level >= 10))
+      .filter((a) => a.rule?.groups?.includes("malware") || a.rule?.groups?.includes("phishing") || (a.rule?.level >= 10))
       .map((a) => ({
         rule: { description: a.rule?.description },
         agent: { name: a.agent?.name || "unknown" },
         "@timestamp": a["@timestamp"],
       }));
 
-    console.log(`✅ [fetchNetworking] Processed ${traffic.length} traffic points, ${firewall.length} firewall protocols`);
+    console.log(`✅ [fetchNetworking] Processed ${traffic.length} traffic points, ${firewall.length} firewall protocol buckets`);
     res.status(200).json({ traffic, firewall, malware });
   } catch (err) {
     console.error(`❌ [fetchNetworking] Error: ${err.message}`);
@@ -2470,5 +2493,19 @@ export const fetchTopGroups = async (_req, res, next) => {
 };
 
 
-
+// ===== MITRE Map (Fix 4: Dynamic technique list) =====
+export const fetchMitreMap = async (_req, res, next) => {
+  try {
+    console.log("🔍 [fetchMitreMap] Fetching MITRE ATT&CK map...");
+    const data = await wazuhService.getMitreMap();
+    const tactics = (data.tactics || []).map((b) => ({ key: b.key, count: b.doc_count }));
+    const techniques = (data.techniques || []).map((b) => ({ key: b.key, count: b.doc_count }));
+    console.log(`✅ [fetchMitreMap] Found ${tactics.length} tactics, ${techniques.length} techniques`);
+    res.status(200).json({ tactics, techniques });
+  } catch (err) {
+    console.error(`❌ [fetchMitreMap] Error: ${err.message}`);
+    logger.error(`Failed to fetch MITRE map: ${err.message}`);
+    next(createHttpError(500, "Failed to fetch MITRE map"));
+  }
+};
 

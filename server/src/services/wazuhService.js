@@ -469,14 +469,25 @@ class WazuhService {
   // You can add getMalwareData, getComplianceData, etc. here following the same pattern
   async getUserEndpointData() {
     try {
+      // ===== FIX 5: Broadened query to include Windows/PAM/SSH groups =====
+      // The previous query only used "authentication" group, but real Wazuh alerts
+      // for Windows logons use groups like "windows", "authentication_success", "authentication_failed"
       const query = {
         size: 500,
         query: {
           bool: {
             should: [
               { match: { "rule.groups": "authentication" } },
-              { match: { "rule.description": "login" } }
-            ]
+              { match: { "rule.groups": "authentication_success" } },
+              { match: { "rule.groups": "authentication_failed" } },
+              { match: { "rule.groups": "windows" } },
+              { match: { "rule.groups": "pam" } },
+              { match: { "rule.groups": "sshd" } },
+              { match: { "rule.groups": "win_authentication" } },
+              { match: { "rule.description": "logon" } },
+              { match: { "rule.description": "login" } },
+            ],
+            minimum_should_match: 1,
           }
         },
         sort: [{ "@timestamp": { order: "desc" } }]
@@ -495,7 +506,7 @@ class WazuhService {
       );
 
       const alerts = response.data?.hits?.hits?.map(hit => hit._source) || [];
-      console.log("📦 Raw Elasticsearch hits:", alerts);
+      console.log("📦 Raw user-endpoint alerts:", alerts.length);
 
       const logonMap = {};
       const locations = [];
@@ -503,13 +514,22 @@ class WazuhService {
       let total = 0;
 
       for (const alert of alerts) {
-        const user = alert.user?.name || alert.agent?.name || "unknown";
-        const desc = alert.rule?.description?.toLowerCase() || "";
+        // Use agent name as fallback identifier since Windows alerts often lack user.name
+        const user = alert.data?.win?.eventdata?.targetUserName
+          || alert.user?.name
+          || alert.agent?.name
+          || "unknown";
+        const desc = (alert.rule?.description || "").toLowerCase();
 
         if (!logonMap[user]) logonMap[user] = { user, success: 0, failure: 0 };
 
-        if (desc.includes("success") || desc.includes("accept")) logonMap[user].success++;
-        if (desc.includes("fail") || desc.includes("reject")) logonMap[user].failure++;
+        // ===== FIX 5: Match real Wazuh Windows logon descriptions =====
+        const isSuccess = desc.includes("success") || desc.includes("accepted") || desc.includes("logon success") || desc.includes("session opened");
+        const isFailure = desc.includes("fail") || desc.includes("invalid") || desc.includes("reject") || desc.includes("denied") || desc.includes("error");
+
+        if (isSuccess) logonMap[user].success++;
+        if (isFailure) logonMap[user].failure++;
+        if (!isSuccess && !isFailure) logonMap[user].success++; // treat neutral as logon event
 
         if (alert.location?.lat && alert.location?.lon) {
           locations.push({ lat: alert.location.lat, lon: alert.location.lon });
@@ -523,8 +543,11 @@ class WazuhService {
 
       const compliance = total > 0 ? Math.round((compliant / total) * 100) : 0;
 
+      // Filter out users with no events at all
+      const logons = Object.values(logonMap).filter(l => l.success > 0 || l.failure > 0);
+
       return {
-        logons: Object.values(logonMap),
+        logons,
         locations,
         compliance
       };
@@ -533,6 +556,7 @@ class WazuhService {
       return { logons: [], locations: [], compliance: 0 };
     }
   }
+
 
 
 
