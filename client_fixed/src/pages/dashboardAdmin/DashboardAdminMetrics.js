@@ -499,16 +499,18 @@ export default function DashboardAdminMetrics() {
   // Risk distribution (from last 24h alerts via backend metrics)
   const riskData = useMemo(() => {
     if (!Array.isArray(metrics.alerts)) return [];
-    const high = metrics.alerts.filter((a) => a.rule?.level >= 8).length;
-    const medium = metrics.alerts.filter(
-      (a) => a.rule?.level >= 5 && a.rule?.level < 8
-    ).length;
-    const low = metrics.alerts.filter((a) => a.rule?.level < 5).length;
+
+    // Wazuh Standard Severity Mapping (last 24h baseline):
+    // Low: <= 6, Medium: 7-11, High: >= 12
+    const high = metrics.alerts.filter((a) => (a.rule?.level || 0) >= 12).length;
+    const medium = metrics.alerts.filter((a) => (a.rule?.level || 0) >= 7 && (a.rule?.level || 0) <= 11).length;
+    const low = metrics.alerts.filter((a) => (a.rule?.level || 0) <= 6).length;
+
     return [
       { name: "High", value: high, color: RISK_COLORS.high },
       { name: "Medium", value: medium, color: RISK_COLORS.medium },
       { name: "Low", value: low, color: RISK_COLORS.low },
-    ];
+    ].filter(d => d.value > 0);
   }, [metrics.alerts]);
 
   // Top 5 log views (from last 24h alerts via backend metrics)

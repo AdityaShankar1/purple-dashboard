@@ -1837,12 +1837,15 @@ export const fetchThreatIntel = async (_req, res, next) => {
         vulnerability: asset.rule?.description || "N/A",
       }));
 
-    // ===== FIX 3: Incident Severity Distribution =====
-    // Compute severity breakdown from all fetched alerts
+    // ===== FIX 3: Incident Severity Distribution (Wazuh Standard, Normalized to 24h) =====
+    // We fetch a separate set for the pie chart to ensure 24h baseline as per user request
+    const recent24hAlerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" }) || [];
+
+    // Low: <= 6, Medium: 7-11, High: >= 12
     const incidentSeverity = {
-      high: alerts.filter((a) => (a.rule?.level || 0) >= 8).length,
-      medium: alerts.filter((a) => (a.rule?.level || 0) >= 5 && (a.rule?.level || 0) < 8).length,
-      low: alerts.filter((a) => (a.rule?.level || 0) < 5).length,
+      high: recent24hAlerts.filter((a) => (a.rule?.level || 0) >= 12).length,
+      medium: recent24hAlerts.filter((a) => (a.rule?.level || 0) >= 7 && (a.rule?.level || 0) <= 11).length,
+      low: recent24hAlerts.filter((a) => (a.rule?.level || 0) <= 6).length,
     };
 
     console.log(`✅ [fetchThreatIntel] Found ${globalMarkers.length} markers, ${actorsChart.length} actors, ${assets.length} vulnerabilities, severity: H${incidentSeverity.high}/M${incidentSeverity.medium}/L${incidentSeverity.low}`);
