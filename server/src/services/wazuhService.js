@@ -377,6 +377,27 @@ class WazuhService {
       return { tactics: [], techniques: [] };
     }
   }
+
+  async getRiskDistribution() {
+    const body = {
+      size: 0,
+      query: {
+        range: { "@timestamp": { gte: "now-24h", lte: "now" } }
+      },
+      aggs: {
+        levels: { terms: { field: "rule.level", size: 20 } }
+      }
+    };
+    try {
+      const data = await this.indexerPost(`/${this.indexPattern}/_search`, body);
+      return {
+        levels: data.aggregations?.levels?.buckets || []
+      };
+    } catch (err) {
+      logger.error(`getRiskDistribution failed: ${err.message}`);
+      return { levels: [] };
+    }
+  }
 }
 
 export const wazuhService = new WazuhService();
