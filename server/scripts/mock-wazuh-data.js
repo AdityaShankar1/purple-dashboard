@@ -43,7 +43,38 @@ const MOCK_ALERTS = [
             "groups": ["syslog", "user_added"]
         },
         "agent": { "name": "db-server", "id": "003" },
-        "data": { "dstuser": "john_doe" }
+    },
+    {
+        "@timestamp": new Date(Date.now() - 3600000).toISOString(),
+        "rule": {
+            "level": 8,
+            "description": "PCI DSS requirement 10.2 violated: Unauthorized access to audit trails",
+            "groups": ["pci_dss_10.2", "policy_violation"]
+        },
+        "agent": { "name": "db-server-02", "id": "004" },
+        "data": { "srcip": "10.0.0.50", "user": "guest" },
+        "compliance": { "status": "failed" }
+    },
+    {
+        "@timestamp": new Date(Date.now() - 7200000).toISOString(),
+        "rule": {
+            "level": 6,
+            "description": "User logged in outside of permitted hours",
+            "groups": ["policy_violation"]
+        },
+        "agent": { "name": "workstation-10", "id": "005" },
+        "data": { "srcip": "192.168.1.150", "user": "employee1" }
+    },
+    {
+        "@timestamp": new Date(Date.now() - 14400000).toISOString(),
+        "rule": {
+            "level": 7,
+            "description": "System audit log cleared manually",
+            "groups": ["pci_dss_10.2", "syslog"]
+        },
+        "agent": { "name": "web-server-01", "id": "001" },
+        "data": { "user": "root" },
+        "compliance": { "status": "passed" }
     }
 ];
 

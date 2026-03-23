@@ -2382,18 +2382,38 @@ export async function fetchMitreAlerts(req, res) {
 // server/src/controllers/wazuhController.js
 export const getComplianceData = async (req, res, next) => {
   try {
-    const response = await axios.get("http://localhost:55000/compliance") // or wherever your Wazuh API lives
-    const data = response.data
+    // Call the actual indexing service which gets data from WAZUH_INDEXER_URL
+    const data = await wazuhService.getCompliance();
+    
+    // Safety check just in case response is undefined or data is missing
+    const safeData = data || {};
 
     res.json({
-      auditChart: data.auditChart || [],
-      policyViolations: data.policyViolations || [],
-    })
+      auditChart: safeData.auditChart || [],
+      policyViolations: safeData.policyViolations || [],
+    });
   } catch (err) {
-    console.error("Compliance fetch error:", err)
-    res.status(500).json({ message: "Failed to fetch compliance data" })
+    // Extensive terminal logging for future debugging as requested by user
+    logger.error(`Compliance fetch error: ${err.message}`);
+    if (err.response) {
+      logger.error(`Compliance API Response Status: ${err.response.status}`);
+      logger.error(`Compliance API Response Data: ${JSON.stringify(err.response.data)}`);
+    } else if (err.request) {
+      logger.error('No response received from Compliance API. Request details:', err.request);
+    } else {
+      logger.error(`Error setting up request: ${err.message}`);
+    }
+    logger.error(`Stack trace: ${err.stack}`);
+
+    // Still return 200 with empty data to prevent frontend crashes, or 500 based on standard
+    // The frontend handles empty arrays fine. But to show an error, 500 is what was there.
+    res.status(500).json({ 
+      message: "Failed to fetch compliance data",
+      auditChart: [],
+      policyViolations: [],
+    });
   }
-}
+};
 
 
 
