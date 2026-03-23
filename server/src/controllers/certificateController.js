@@ -239,7 +239,7 @@ export const downloadCertificate = async (req, res, next) => {
         width: pageWidth,
       });
 
-    // RED HIGHLIGHT (GRADE) - Fixed Spacing
+    // RED HIGHLIGHT (GRADE) - Fixed Spacing and Overlap
     if (cert.grade && cert.grade !== "NA") {
       doc
         .fontSize(20)
@@ -249,8 +249,6 @@ export const downloadCertificate = async (req, res, next) => {
           align: "center",
           width: pageWidth
         });
-      // Color specific text part
-      doc.fillColor(colors.red).font("Helvetica-Bold").text(cert.grade, pageWidth/2 + 85, 415);
     }
 
     // ================= ADMIN SIGNATURE =================
