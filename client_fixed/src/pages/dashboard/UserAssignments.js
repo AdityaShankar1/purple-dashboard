@@ -1623,7 +1623,7 @@ export default function UserAssignments({ courseId }) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">
-                  Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                  Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : (assignment.dueAt ? new Date(assignment.dueAt).toLocaleDateString() : "No Due Date")}
                 </span>
                 <button
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${assignment.submission

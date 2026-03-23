@@ -984,14 +984,14 @@ export default function DashboardUserMetrics() {
     const fetchMetrics = async () => {
       try {
         const response = await axios.get("/dashboard/user")
-        const data = response.data
+        const payload = response.data?.data || response.data
 
         // Transform dashboard data to metrics format
         setMetrics({
-          enrolledCourses: (data.ongoing?.length || 0) + (data.completed?.length || 0),
-          ongoingCourses: data.ongoing?.length || 0,
-          completedCourses: data.completed?.length || 0,
-          certificates: data.certificates?.length || 0,
+          enrolledCourses: (payload.ongoing?.length || 0) + (payload.completed?.length || 0),
+          ongoingCourses: payload.ongoing?.length || 0,
+          completedCourses: payload.completed?.length || 0,
+          certificates: payload.certificates?.length || 0,
         })
       } catch (error) {
         console.error("Error fetching metrics:", error)

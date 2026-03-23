@@ -18,16 +18,20 @@ export default function UserQuizzes() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (courseId) {
-      loadQuizzes()
-    }
+    loadQuizzes()
   }, [courseId])
 
   const loadQuizzes = async () => {
     try {
       setLoading(true)
       const res = await quizApi.getUserQuizzes(courseId)
-      setQuizzes(res.data.data || res.data || [])
+      let fetchedQuizzes = res.data.data || res.data || []
+      
+      // If we are in the global 'Quiz History' view (no specific course), only show submitted quizzes
+      if (!courseId) {
+        fetchedQuizzes = fetchedQuizzes.filter(q => q.submission)
+      }
+      setQuizzes(fetchedQuizzes)
     } catch (error) {
       console.error(error)
       toast.error(error.response?.data?.message || "Failed to load quizzes")
@@ -200,8 +204,8 @@ export default function UserQuizzes() {
             <FileQuestion className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Course Quizzes</h1>
-            <p className="text-gray-400">Test your knowledge</p>
+            <h1 className="text-3xl font-bold">{courseId ? "Course Quizzes" : "Quiz History"}</h1>
+            <p className="text-gray-400">{courseId ? "Test your knowledge" : "Review your previous quiz scores"}</p>
           </div>
         </div>
       </div>
