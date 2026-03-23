@@ -1,38 +1,30 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "../api/axiosConfig";
 
 export const useUserEndpointData = () => {
   const [data, setData] = useState({
     logons: [],
     locations: [],
-    compliance: 0
+    compliance: 0,
   });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState("checking");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/wazuh/user-endpoint");
-        const text = await res.text();
-
-        try {
-          const json = JSON.parse(text);
-          setData(json);
-        } catch (err) {
-          console.error("❌ JSON parse error:", text);
-          setError("Invalid JSON response");
-        }
+        const res = await axios.get("/wazuh/user-endpoint");
+        setData(res.data);
+        setStatus("success");
       } catch (err) {
-        console.error("❌ useUserEndpointData error:", err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch user endpoint data:", err);
+        setStatus("error");
       }
     };
 
     fetchData();
+    const intervalId = setInterval(fetchData, 60000);
+    return () => clearInterval(intervalId);
   }, []);
 
-  return { ...data, loading, error };
+  return { ...data, status };
 };
