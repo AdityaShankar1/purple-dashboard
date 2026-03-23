@@ -1,5 +1,6 @@
 // client/src/hooks/useNetworkingData.js
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export function useNetworkingData() {
   const [traffic, setTraffic] = useState([]);
@@ -8,20 +9,10 @@ export function useNetworkingData() {
   const [connectionStatus, setConnectionStatus] = useState("connected");
 
   useEffect(() => {
-    const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
     const fetchData = async () => {
       try {
-        const res = await fetch(`${API}/wazuh/networking`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          setConnectionStatus("disconnected");
-          setTraffic([]);
-          setFirewall([]);
-          setMalware([]);
-          return;
-        }
-        const data = await res.json();
+        const res = await axiosInstance.get("/wazuh/networking");
+        const data = res.data;
 
         // Shape traffic into {time, inbound, outbound}
         const trafficData = (data.traffic || []).map((t) => ({
@@ -30,16 +21,8 @@ export function useNetworkingData() {
           outbound: t.data?.outbound || 0,
         }));
 
-        // Shape firewall into {protocol, count}
-        const firewallCounts = (data.firewall || []).reduce((acc, f) => {
-          const proto = f.data?.protocol || "unknown";
-          acc[proto] = (acc[proto] || 0) + 1;
-          return acc;
-        }, {});
-        const firewallData = Object.entries(firewallCounts).map(([protocol, count]) => ({
-          protocol,
-          count,
-        }));
+        // Backend now returns already shaped {protocol, count} for firewall
+        const firewallData = Array.isArray(data.firewall) ? data.firewall : [];
 
         // Shape malware into {type, target, timestamp}
         const malwareData = (data.malware || []).map((m) => ({
@@ -53,11 +36,12 @@ export function useNetworkingData() {
         setMalware(malwareData);
         setConnectionStatus("connected");
       } catch (err) {
-        console.error("Failed to fetch networking data", err);
+        console.error("Failed to fetch networking data:", err.message);
         setConnectionStatus("disconnected");
-        setTraffic([]);
-        setFirewall([]);
-        setMalware([]);
+        // Maintain previous state if available
+        setTraffic(prev => prev.length ? prev : []);
+        setFirewall(prev => prev.length ? prev : []);
+        setMalware(prev => prev.length ? prev : []);
       }
     };
 

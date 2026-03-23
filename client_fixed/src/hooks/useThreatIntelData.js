@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useThreatIntelData = () => {
   const [data, setData] = useState({
@@ -13,15 +14,9 @@ export const useThreatIntelData = () => {
   useEffect(() => {
     const fetchThreatIntel = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/threat-intel`
-        );
-        if (!res.ok) {
-          setConnectionStatus("disconnected");
-          setData({ global: [], actors: [], assets: [], incidentSeverity: { high: 0, medium: 0, low: 0 } });
-          return;
-        }
-        const json = await res.json();
+        const res = await axiosInstance.get("/wazuh/threat-intel");
+        const json = res.data;
+
         setData({
           global: Array.isArray(json.global) ? json.global : [],
           actors: Array.isArray(json.actors) ? json.actors : [],
@@ -30,11 +25,19 @@ export const useThreatIntelData = () => {
         });
         setConnectionStatus("connected");
       } catch (err) {
-        console.error("Failed to fetch threat intel data:", err);
+        console.error("Failed to fetch threat intel data:", err.message);
         setConnectionStatus("disconnected");
-        setData({ global: [], actors: [], assets: [], incidentSeverity: { high: 0, medium: 0, low: 0 } });
+        // Keep previous data if available, or reset to defaults if it's the first load
+        setData(prev => ({
+          ...prev,
+          global: prev.global.length ? prev.global : [],
+          actors: prev.actors.length ? prev.actors : [],
+          assets: prev.assets.length ? prev.assets : [],
+          incidentSeverity: prev.incidentSeverity || { high: 0, medium: 0, low: 0 },
+        }));
       }
     };
+
     fetchThreatIntel();
 
     // Auto-refresh every 30s

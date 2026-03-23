@@ -4,8 +4,11 @@ import User from "../models/User.js";
 import QuizSubmission from "../models/QuizSubmission.js";
 import { createHttpError } from "../utils/errors.js";
 import { sendResponse } from "../utils/response.js";
+import path from "path";
 import crypto from "crypto";
 import PDFDocument from "pdfkit";
+import fs from "fs";
+import { logger } from "../config/logger.js";
 
 const generateCertificateId = () => {
   return `CERT-${Date.now()}-${crypto
@@ -46,7 +49,7 @@ const calculateGrade = async (userId, courseId) => {
     if (averagePercentage >= 40) return "E";
     return "F";
   } catch (error) {
-    console.error("Error calculating grade:", error);
+    logger.error(`Error calculating grade: ${error.message}`);
     return "NA";
   }
 };
@@ -64,7 +67,7 @@ export const generateCertificate = async (userId, courseId) => {
     ]);
 
     if (!user || !course) {
-      console.error("User or course not found for certificate generation");
+      logger.error(`User or course not found for certificate generation: user=${userId}, course=${courseId}`);
       return null;
     }
 
@@ -87,7 +90,7 @@ export const generateCertificate = async (userId, courseId) => {
     await certificate.save();
     return certificate;
   } catch (error) {
-    console.error("Error generating certificate:", error);
+    logger.error(`Error generating certificate: ${error.message}`);
     throw error;
   }
 };
@@ -103,12 +106,14 @@ export const getUserCertificates = async (req, res, next) => {
     }));
     sendResponse(res, 200, "Certificates fetched", formattedCerts);
   } catch (err) {
+    logger.error(`Failed to fetch user certificates: ${err.message}`);
     next(err);
   }
 };
 
 // GET /api/certificates/:id/download
 export const downloadCertificate = async (req, res, next) => {
+  let doc;
   try {
     const { id } = req.params;
     const cert = await Certificate.findById(id)
@@ -117,10 +122,18 @@ export const downloadCertificate = async (req, res, next) => {
 
     if (!cert) return next(createHttpError(404, "Certificate not found"));
 
-    const doc = new PDFDocument({
+    doc = new PDFDocument({
       layout: "landscape",
       size: "A4",
       margins: { top: 100, bottom: 100, left: 100, right: 100 },
+    });
+
+    // Handle doc errors
+    doc.on('error', (err) => {
+      logger.error(`PDF generation error: ${err.message}`);
+      if (!res.headersSent) {
+        next(err);
+      }
     });
 
     res.setHeader("Content-Type", "application/pdf");
@@ -133,157 +146,85 @@ export const downloadCertificate = async (req, res, next) => {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
-    // Logos paths (Absolute paths on this Mac)
-    const basePath = "/Users/adityashankar/purpledash/purple-dashboard/client_fixed/public";
-    const socLogoPath = `${basePath}/soc_logo.png`;
-    const isfcrLogoPath = `${basePath}/c_isfcr_logo-removebg-preview.png`;
-    const pesuLogoPath = `${basePath}/logo.png`;
-    const watermarkPath = `${basePath}/logoPesu.png`;
-    // ================= REFINED SOC FRAME (P-B) =================
-    const outerPadding = 18;
-    const innerPadding = 24;
-    const outerLineWidth = 2.5;
-    const innerLineWidth = 1.0;
+    const basePath = process.env.PUBLIC_ASSETS_PATH || path.join(process.cwd(), "..", "client_fixed", "public");
 
     const colors = {
-      purple: "#3F2A8D", // Deep Purple for frame
-      blue: "#0080FE",   // SOC Blue
-      red: "#FF2829",    // SOC Red (Highlight)
+      purple: "#3F2A8D",
+      blue: "#0080FE",
+      red: "#FF2829",
       title: "#3F2A8D",
       text: "#2D2926",
       muted: "#555555"
     };
 
-    // 1. Outer Purple Line (Thicker & Farther)
-    doc.lineWidth(outerLineWidth).strokeColor(colors.purple)
+    // Frame
+    const outerPadding = 18;
+    const innerPadding = 24;
+    doc.lineWidth(2.5).strokeColor(colors.purple)
       .rect(outerPadding, outerPadding, pageWidth - (outerPadding * 2), pageHeight - (outerPadding * 2))
       .stroke();
-
-    // 2. Inner Blue Line (Thinner & Closer)
-    doc.lineWidth(innerLineWidth).strokeColor(colors.blue)
+    doc.lineWidth(1.0).strokeColor(colors.blue)
       .rect(innerPadding, innerPadding, pageWidth - (innerPadding * 2), pageHeight - (innerPadding * 2))
       .stroke();
 
-    // ================= TOP LOGOS =================
-    try {
-      const logoY = 45; 
-      const logoWidth = 75;
+    // Logos
+    const logoY = 45;
+    const logoWidth = 75;
+    const centerLogoWidth = 85;
 
-      // 1. SOC Logo (Left)
-      doc.image(socLogoPath, 65, logoY, { width: logoWidth });
+    const tryAddImage = (imgRotatePath, x, y, options) => {
+      if (fs.existsSync(imgRotatePath)) {
+        try {
+          doc.image(imgRotatePath, x, y, options);
+        } catch (e) {
+          logger.warn(`Failed to render image ${imgRotatePath}: ${e.message}`);
+        }
+      } else {
+        logger.warn(`Image not found: ${imgRotatePath}`);
+      }
+    };
 
-      // 2. ISFCR Logo (Center)
-      const centerLogoWidth = 85;
-      doc.image(isfcrLogoPath, (pageWidth - centerLogoWidth) / 2, logoY - 5, { width: centerLogoWidth });
+    tryAddImage(`${basePath}/soc_logo.png`, 65, logoY, { width: logoWidth });
+    tryAddImage(`${basePath}/c_isfcr_logo-removebg-preview.png`, (pageWidth - centerLogoWidth) / 2, logoY - 5, { width: centerLogoWidth });
+    tryAddImage(`${basePath}/logo.png`, pageWidth - 65 - logoWidth, logoY, { width: logoWidth });
 
-      // 3. PESU Logo (Right)
-      doc.image(pesuLogoPath, pageWidth - 65 - logoWidth, logoY, { width: logoWidth });
-    } catch (error) {
-      console.error("Error loading logos:", error);
-    }
+    // Watermark
+    doc.save();
+    doc.opacity(0.06);
+    const wmWidth = pageWidth * 0.45;
+    tryAddImage(`${basePath}/logoPesu.png`, (pageWidth - wmWidth) / 2, (pageHeight - wmWidth) / 2, { width: wmWidth });
+    doc.restore();
 
-    // ================= WATERMARK =================
-    try {
-      doc.save();
-      doc.opacity(0.06); // Extremely subtle
-      const wmWidth = pageWidth * 0.45;
-      const wmX = (pageWidth - wmWidth) / 2;
-      const wmY = (pageHeight - wmWidth) / 2;
-      doc.image(watermarkPath, wmX, wmY, { width: wmWidth });
-      doc.restore();
-    } catch (error) {
-      console.error("Error loading watermark:", error);
-    }
-
-    // ================= CERTIFICATE CONTENT =================
-    doc.opacity(1.0).fillColor(colors.text); 
-
-    doc
-      .fontSize(38)
-      .font("Helvetica-Bold")
-      .fillColor(colors.title)
-      .text("CERTIFICATE OF COMPLETION", 0, 145, {
-        align: "center",
-        width: pageWidth,
-      });
-    
+    // Content
+    doc.opacity(1.0).fillColor(colors.text);
+    doc.fontSize(38).font("Helvetica-Bold").fillColor(colors.title).text("CERTIFICATE OF COMPLETION", 0, 145, { align: "center", width: pageWidth });
     doc.strokeColor(colors.title).lineWidth(2).moveTo(150, 205).lineTo(pageWidth - 150, 205).stroke();
 
-    doc
-      .fontSize(20)
-      .font("Helvetica")
-      .fillColor(colors.muted)
-      .text("This is to certify that", 0, 255, { align: "center", width: pageWidth });
-    
-    doc
-      .fontSize(32)
-      .font("Helvetica-Bold")
-      .fillColor(colors.text)
-      .text(cert.userId.name || "Unknown User", 0, 290, {
-        align: "center",
-        width: pageWidth,
-      });
-    
-    doc
-      .fontSize(20)
-      .font("Helvetica")
-      .fillColor(colors.muted)
-      .text("has successfully completed the course", 0, 340, { align: "center", width: pageWidth });
-    
-    doc
-      .fontSize(26)
-      .font("Helvetica-Bold")
-      .fillColor(colors.text)
-      .text(cert.courseId.title || "Unknown Course", 0, 375, {
-        align: "center",
-        width: pageWidth,
-      });
+    doc.fontSize(20).font("Helvetica").fillColor(colors.muted).text("This is to certify that", 0, 255, { align: "center", width: pageWidth });
+    doc.fontSize(32).font("Helvetica-Bold").fillColor(colors.text).text(cert.userId?.name || "Unknown User", 0, 290, { align: "center", width: pageWidth });
 
-    // RED HIGHLIGHT (GRADE) - Fixed Spacing and Overlap
+    doc.fontSize(20).font("Helvetica").fillColor(colors.muted).text("has successfully completed the course", 0, 340, { align: "center", width: pageWidth });
+    doc.fontSize(26).font("Helvetica-Bold").fillColor(colors.text).text(cert.courseId?.title || "Unknown Course", 0, 375, { align: "center", width: pageWidth });
+
     if (cert.grade && cert.grade !== "NA") {
-      doc
-        .fontSize(20)
-        .font("Helvetica")
-        .fillColor(colors.muted)
-        .text(`and attained grade ${cert.grade}`, 0, 415, {
-          align: "center",
-          width: pageWidth
-        });
+      doc.fontSize(20).font("Helvetica").fillColor(colors.muted).text(`and attained grade ${cert.grade}`, 0, 415, { align: "center", width: pageWidth });
     }
 
-    // ================= ADMIN SIGNATURE =================
-    doc
-      .fontSize(12)
-      .font("Helvetica-Bold")
-      .fillColor(colors.text)
-      .text("Course Instructor", pageWidth - 250, 450, { align: "right" });
-
-    // Certificate ID (RED Highlight if Grade is NA, otherwise Muted)
+    doc.fontSize(12).font("Helvetica-Bold").fillColor(colors.text).text("Course Instructor", pageWidth - 250, 450, { align: "right" });
     const idColor = (cert.grade && cert.grade !== "NA") ? colors.muted : colors.red;
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .fillColor(idColor)
-      .text(`Certificate ID: ${cert.certificateId}`, 50, 450, { align: "left" });
+    doc.fontSize(12).font("Helvetica").fillColor(idColor).text(`Certificate ID: ${cert.certificateId}`, 50, 450, { align: "left" });
 
-    // Issued Date - Pulled up to avoid second page overflow
-    doc
-      .fontSize(12)
-      .fillColor(colors.muted)
-      .text(
-        `Issued on: ${new Date(cert.issuedDate).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}`,
-        0, 475,
-        { align: "center", width: pageWidth }
-      );
+    doc.fontSize(12).fillColor(colors.muted).text(`Issued on: ${new Date(cert.issuedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, 0, 475, { align: "center", width: pageWidth });
 
-    // ================= END FOOTER & ADMIN =================
     doc.end();
   } catch (err) {
-    next(err);
+    logger.error(`downloadCertificate error: ${err.message}`);
+    if (doc) {
+      try { doc.end(); } catch (e) { }
+    }
+    if (!res.headersSent) {
+      next(err);
+    }
   }
 };
 
@@ -294,6 +235,7 @@ export const getCertificateCount = async (req, res, next) => {
     const count = await Certificate.countDocuments({ userId });
     sendResponse(res, 200, "Certificate count fetched", { count });
   } catch (err) {
+    logger.error(`Failed to fetch certificate count: ${err.message}`);
     next(err);
   }
 };

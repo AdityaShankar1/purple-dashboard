@@ -1,15 +1,18 @@
-//client/src/hooks/useMetricsData
-
+// client/src/hooks/useMetricsData.js
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useMetricsData = () => {
-  const [data, setData] = useState({ count: 0, alerts: [] });
+  const [data, setData] = useState({ count: 0, alerts: [], last24hCount: 0 });
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/wazuh/metrics`);
-      const json = await res.json();
-      setData(json);
+      try {
+        const res = await axiosInstance.get("/wazuh/metrics");
+        setData(res.data);
+      } catch (err) {
+        console.error("Failed to fetch metrics data:", err.message);
+      }
     };
     fetchData();
   }, []);
