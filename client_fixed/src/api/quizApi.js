@@ -3,7 +3,7 @@ import axios from "./axiosConfig"
 export const quizApi = {
   getQuiz: (quizId) => axios.get(`/quizzes/${quizId}`),
 
-  getUserQuizzes: (courseId) => axios.get(`/quizzes/course/${courseId}`),
+  getUserQuizzes: (courseId) => courseId ? axios.get(`/quizzes/course/${courseId}`) : axios.get(`/quizzes/visible`),
 
   saveAnswer: (submissionId, questionId, answer) =>
     axios.post(`/quizzes/${submissionId}/answer`, { questionId, answer }),
