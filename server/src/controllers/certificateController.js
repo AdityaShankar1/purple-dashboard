@@ -139,49 +139,45 @@ export const downloadCertificate = async (req, res, next) => {
     const isfcrLogoPath = `${basePath}/c_isfcr_logo-removebg-preview.png`;
     const pesuLogoPath = `${basePath}/logo.png`;
     const watermarkPath = `${basePath}/logoPesu.png`;
-
-    // ================= SOC NEON FRAME (P-B-R) =================
-    const framePadding = 20;
-    const lineSpacing = 3;
-    const lineWidth = 1.5;
+    // ================= REFINED SOC FRAME (P-B) =================
+    const outerPadding = 18;
+    const innerPadding = 24;
+    const outerLineWidth = 2.5;
+    const innerLineWidth = 1.0;
 
     const colors = {
-      purple: "#BF00FF", // Fixed from "FF0FF" provided by user
-      blue: "#0080FE",
-      red: "#FF2829",
+      purple: "#3F2A8D", // Deep Purple for frame
+      blue: "#0080FE",   // SOC Blue
+      red: "#FF2829",    // SOC Red (Highlight)
       title: "#3F2A8D",
-      text: "#2D2926"
+      text: "#2D2926",
+      muted: "#555555"
     };
 
-    // 1. Purple Line (Outer)
-    doc.lineWidth(lineWidth).strokeColor(colors.purple)
-      .rect(framePadding, framePadding, pageWidth - (framePadding * 2), pageHeight - (framePadding * 2))
+    // 1. Outer Purple Line (Thicker & Farther)
+    doc.lineWidth(outerLineWidth).strokeColor(colors.purple)
+      .rect(outerPadding, outerPadding, pageWidth - (outerPadding * 2), pageHeight - (outerPadding * 2))
       .stroke();
 
-    // 2. Blue Line (Middle)
-    doc.lineWidth(lineWidth).strokeColor(colors.blue)
-      .rect(framePadding + lineSpacing, framePadding + lineSpacing, pageWidth - ((framePadding + lineSpacing) * 2), pageHeight - ((framePadding + lineSpacing) * 2))
+    // 2. Inner Blue Line (Thinner & Closer)
+    doc.lineWidth(innerLineWidth).strokeColor(colors.blue)
+      .rect(innerPadding, innerPadding, pageWidth - (innerPadding * 2), pageHeight - (innerPadding * 2))
       .stroke();
 
-    // 3. Red Line (Inner)
-    doc.lineWidth(lineWidth).strokeColor(colors.red)
-      .rect(framePadding + (lineSpacing * 2), framePadding + (lineSpacing * 2), pageWidth - ((framePadding + lineSpacing * 2) * 2), pageHeight - ((framePadding + lineSpacing * 2) * 2))
-      .stroke();
-
-    // ================= TOP LOGOS (SOC Left, ISFCR Center, PESU Right) =================
+    // ================= TOP LOGOS =================
     try {
-      const logoY = 45; // Adjusted for frame
-      const logoWidth = 70;
+      const logoY = 45; 
+      const logoWidth = 75;
 
       // 1. SOC Logo (Left)
-      doc.image(socLogoPath, 60, logoY, { width: logoWidth });
+      doc.image(socLogoPath, 65, logoY, { width: logoWidth });
 
       // 2. ISFCR Logo (Center)
-      const centerLogoWidth = 80;
+      const centerLogoWidth = 85;
       doc.image(isfcrLogoPath, (pageWidth - centerLogoWidth) / 2, logoY - 5, { width: centerLogoWidth });
 
       // 3. PESU Logo (Right)
-      doc.image(pesuLogoPath, pageWidth - 60 - logoWidth, logoY, { width: logoWidth });
+      doc.image(pesuLogoPath, pageWidth - 65 - logoWidth, logoY, { width: logoWidth });
     } catch (error) {
       console.error("Error loading logos:", error);
     }
@@ -189,7 +185,7 @@ export const downloadCertificate = async (req, res, next) => {
     // ================= WATERMARK =================
     try {
       doc.save();
-      doc.opacity(0.08); // Subtle watermark
+      doc.opacity(0.06); // Extremely subtle
       const wmWidth = pageWidth * 0.45;
       const wmX = (pageWidth - wmWidth) / 2;
       const wmY = (pageHeight - wmWidth) / 2;
@@ -200,10 +196,10 @@ export const downloadCertificate = async (req, res, next) => {
     }
 
     // ================= CERTIFICATE CONTENT =================
-    doc.opacity(1.0); 
+    doc.opacity(1.0).fillColor(colors.text); 
 
     doc
-      .fontSize(38)
+      .fontSize(40)
       .font("Helvetica-Bold")
       .fillColor(colors.title)
       .text("CERTIFICATE OF COMPLETION", 0, 160, {
@@ -211,12 +207,12 @@ export const downloadCertificate = async (req, res, next) => {
         width: pageWidth,
       });
     
-    doc.strokeColor(colors.title).lineWidth(2).moveTo(150, 220).lineTo(pageWidth - 150, 220).stroke();
+    doc.strokeColor(colors.title).lineWidth(2).moveTo(150, 225).lineTo(pageWidth - 150, 225).stroke();
 
     doc
       .fontSize(20)
       .font("Helvetica")
-      .fillColor(colors.text)
+      .fillColor(colors.muted)
       .text("This is to certify that", 0, 280, { align: "center", width: pageWidth });
     
     doc
@@ -231,7 +227,7 @@ export const downloadCertificate = async (req, res, next) => {
     doc
       .fontSize(20)
       .font("Helvetica")
-      .fillColor(colors.text)
+      .fillColor(colors.muted)
       .text("has successfully completed the course", 0, 370, { align: "center", width: pageWidth });
     
     doc
@@ -243,43 +239,50 @@ export const downloadCertificate = async (req, res, next) => {
         width: pageWidth,
       });
 
+    // RED HIGHLIGHT (GRADE)
     if (cert.grade && cert.grade !== "NA") {
       doc
         .fontSize(20)
         .font("Helvetica")
-        .fillColor(colors.text)
-        .text(`and attained grade ${cert.grade}`, 0, 450, {
+        .fillColor(colors.muted)
+        .text("and attained grade ", 0, 450, {
           align: "center",
           width: pageWidth,
-        });
+          continued: true
+        })
+        .fillColor(colors.red)
+        .font("Helvetica-Bold")
+        .text(cert.grade);
     }
 
-// ================= ADMIN SIGNATURE =================
-const adminName = cert.courseId.instructor || "Unknown Admin";
-const adminDesignation = "Course Instructor";
-doc
-  .fontSize(12)
-  .font("Helvetica-Bold")
-  .text("Course Instructor", pageWidth - 250, 470, { align: "right" });
+    // ================= ADMIN SIGNATURE =================
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .fillColor(colors.text)
+      .text("Course Instructor", pageWidth - 250, 470, { align: "right" });
 
-// Certificate ID
-doc
-  .fontSize(12)
-  .font("Helvetica")
-  .text(`Certificate ID: ${cert.certificateId}`, 50, 460, { align: "left" });
+    // Certificate ID (RED Highlight if Grade is NA, otherwise Muted)
+    const idColor = (cert.grade && cert.grade !== "NA") ? colors.muted : colors.red;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .fillColor(idColor)
+      .text(`Certificate ID: ${cert.certificateId}`, 50, 470, { align: "left" });
 
-// Issued Date
-doc
-  .fontSize(12)
-  .text(
-    `Issued on: ${new Date(cert.issuedDate).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })}`,
-    0, 480,
-    { align: "center", width: pageWidth }
-  );
+    // Issued Date
+    doc
+      .fontSize(12)
+      .fillColor(colors.muted)
+      .text(
+        `Issued on: ${new Date(cert.issuedDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}`,
+        0, 490,
+        { align: "center", width: pageWidth }
+      );
 
     // ================= END FOOTER & ADMIN =================
     doc.end();
