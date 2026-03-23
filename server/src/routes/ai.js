@@ -45,18 +45,17 @@ router.post('/summarize-dashboard', async (req, res) => {
         };
 
         try {
-            // Fetch total alerts, recent alerts (to count incidents and show logs), and risk
-            const [total, recentAlerts, risk] = await Promise.all([
-                wazuhService.getTotalAlerts('24h'),
+            // Fetch comprehensive stats for 24h
+            const [total, incidentsCount, recentAlerts, risk] = await Promise.all([
+                wazuhService.getAlertCount({ timeRange: '24h' }),
+                wazuhService.getAlertCount({ timeRange: '24h', level: 7 }),
                 wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
                 wazuhService.getRiskDistribution()
             ]);
 
             stats.totalAlerts = total;
+            stats.activeIncidents = incidentsCount;
             stats.recentIncidents = recentAlerts;
-
-            // Sync with Dashboard logic: Incidents are Level >= 7
-            stats.activeIncidents = recentAlerts.filter(a => a.rule && a.rule.level >= 7).length;
 
             // Format risk distribution
             if (risk && risk.levels) {
