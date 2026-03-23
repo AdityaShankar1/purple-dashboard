@@ -133,29 +133,27 @@ export const downloadCertificate = async (req, res, next) => {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
-    // Logos paths
-    const logoPath =
-      "/home/soc-pc2/Downloads/purple-dashboard-main/client_fixed/public/soc_logo.png";
-    const isfcrLogoPath =
-      "/home/soc-pc2/Downloads/purple-dashboard-main/client_fixed/public/c_isfcr_logo-removebg-preview.png";
-    const pesuLogoPath =
-      "/home/soc-pc2/Downloads/purple-dashboard-main/client_fixed/public/logo.png"; // top-right small logo
-    const watermarkPath =
-      "/home/soc-pc2/Downloads/purple-dashboard-main/client_fixed/public/logo.png"; // watermark
+    // Logos paths (Absolute paths on this Mac)
+    const basePath = "/Users/adityashankar/purpledash/purple-dashboard/client_fixed/public";
+    const socLogoPath = `${basePath}/soc_logo.png`;
+    const isfcrLogoPath = `${basePath}/c_isfcr_logo-removebg-preview.png`;
+    const pesuLogoPath = `${basePath}/logo.png`;
+    const watermarkPath = `${basePath}/logoPesu.png`;
 
-    // ================= TOP-LEFT & TOP-RIGHT LOGOS =================
+    // ================= TOP LOGOS (SOC Left, ISFCR Center, PESU Right) =================
     try {
-      doc.image(logoPath, 30, 30, { width: 100 });
-      const topRightWidth = 100;
-      const topRightSpacing = 20;
-      const topRightX = pageWidth - 30 - topRightWidth;
-      doc.image(isfcrLogoPath, topRightX, 30, { width: topRightWidth });
-      doc.image(
-        pesuLogoPath,
-        topRightX - topRightWidth - topRightSpacing,
-        30,
-        { width: topRightWidth }
-      );
+      const logoY = 30;
+      const logoWidth = 80;
+
+      // 1. SOC Logo (Left)
+      doc.image(socLogoPath, 50, logoY, { width: logoWidth });
+
+      // 2. ISFCR Logo (Center)
+      const centerLogoWidth = 90;
+      doc.image(isfcrLogoPath, (pageWidth - centerLogoWidth) / 2, logoY - 5, { width: centerLogoWidth });
+
+      // 3. PESU Logo (Right)
+      doc.image(pesuLogoPath, pageWidth - 50 - logoWidth, logoY, { width: logoWidth });
     } catch (error) {
       console.error("Error loading logos:", error);
     }
@@ -163,8 +161,8 @@ export const downloadCertificate = async (req, res, next) => {
     // ================= WATERMARK =================
     try {
       doc.save();
-      doc.opacity(0.15);
-      const wmWidth = pageWidth * 0.55;
+      doc.opacity(0.1); // Subtle watermark
+      const wmWidth = pageWidth * 0.45;
       const wmX = (pageWidth - wmWidth) / 2;
       const wmY = (pageHeight - wmWidth) / 2;
       doc.image(watermarkPath, wmX, wmY, { width: wmWidth });
@@ -174,42 +172,53 @@ export const downloadCertificate = async (req, res, next) => {
     }
 
     // ================= CERTIFICATE CONTENT =================
-    doc
-      .fontSize(36)
-      .font("Helvetica-Bold")
-      .text("CERTIFICATE OF COMPLETION", 0, 150, {
-        align: "center",
-        width: pageWidth,
-      });
-    doc.moveTo(150, 220).lineTo(pageWidth - 150, 220).stroke();
+    doc.fillColor("#000000").opacity(1.0); // Ensure full opacity for text
 
     doc
-      .fontSize(18)
-      .font("Helvetica")
-      .text("This is to certify that", 0, 280, { align: "center", width: pageWidth });
-    doc
-      .fontSize(28)
+      .fontSize(38)
       .font("Helvetica-Bold")
-      .text(cert.userId.name || "Unknown User", 0, 330, {
+      .text("CERTIFICATE OF COMPLETION", 0, 160, {
         align: "center",
         width: pageWidth,
       });
+    
+    doc.strokeColor("#000000").lineWidth(2).moveTo(150, 220).lineTo(pageWidth - 150, 220).stroke();
+
     doc
-      .fontSize(18)
+      .fontSize(20)
       .font("Helvetica")
-      .text("has completed the course", 0, 380, { align: "center", width: pageWidth });
+      .fillColor("#333333")
+      .text("This is to certify that", 0, 280, { align: "center", width: pageWidth });
+    
     doc
-      .fontSize(24)
+      .fontSize(32)
       .font("Helvetica-Bold")
-      .text(cert.courseId.title || "Unknown Course", 0, 420, {
+      .fillColor("#000000")
+      .text(cert.userId.name || "Unknown User", 0, 320, {
+        align: "center",
+        width: pageWidth,
+      });
+    
+    doc
+      .fontSize(20)
+      .font("Helvetica")
+      .fillColor("#333333")
+      .text("has successfully completed the course", 0, 370, { align: "center", width: pageWidth });
+    
+    doc
+      .fontSize(26)
+      .font("Helvetica-Bold")
+      .fillColor("#000000")
+      .text(cert.courseId.title || "Unknown Course", 0, 410, {
         align: "center",
         width: pageWidth,
       });
 
     if (cert.grade && cert.grade !== "NA") {
       doc
-        .fontSize(18)
+        .fontSize(20)
         .font("Helvetica")
+        .fillColor("#333333")
         .text(`and attained grade ${cert.grade}`, 0, 450, {
           align: "center",
           width: pageWidth,
