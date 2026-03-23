@@ -312,18 +312,32 @@ export const fetchTrainTest = async (_req, res, next) => {
 };
 
 // ===== Trending =====
-export const fetchTrending = async (_req, res, next) => {
+export const fetchTrending = async (req, res, next) => {
   try {
+    const { range = "7d", interval = "1h" } = req.query;
+
     const body = {
       size: 0,
+      query: {
+        range: { "@timestamp": { gte: `now-${range}`, lte: "now" } }
+      },
       aggs: {
         trend: {
-          date_histogram: { field: "@timestamp", fixed_interval: "1h" },
+          date_histogram: {
+            field: "@timestamp",
+            fixed_interval: interval,
+            min_doc_count: 0,
+            extended_bounds: {
+              min: `now-${range}`,
+              max: "now"
+            }
+          },
           aggs: { level_avg: { avg: { field: "rule.level" } } },
         },
       },
     };
-    const data = await wazuhService.indexerPost("/wazuh-alerts-*/_search", body);
+
+    const data = await wazuhService.indexerPost(`/${wazuhService.indexPattern}/_search`, body);
     const trend = data.aggregations.trend.buckets.map(b => ({
       time: b.key_as_string,
       alerts: b.doc_count,

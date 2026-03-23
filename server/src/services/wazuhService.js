@@ -172,15 +172,16 @@ class WazuhService {
   }
 
   // -------- Alerts --------
-  async getAlertCount({ timeRange = "24h", level, agent } = {}) {
+  async getAlertCount({ timeRange, level, agent } = {}) {
     try {
-      const must = [
-        { range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } }
-      ];
+      const must = [];
+      if (timeRange && timeRange !== "all") {
+        must.push({ range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } });
+      }
       if (level) must.push({ range: { "rule.level": { gte: level } } });
       if (agent && agent !== "all") must.push({ term: { "agent.name.keyword": agent } });
 
-      const body = { query: { bool: { must } } };
+      const body = must.length > 0 ? { query: { bool: { must } } } : {};
       const data = await this.indexerPost(`/${this.indexPattern}/_count`, body);
       return data.count || 0;
     } catch (err) {
@@ -189,7 +190,7 @@ class WazuhService {
     }
   }
 
-  async getTotalAlerts(timeRange) {
+  async getTotalAlerts(timeRange = "all") {
     return this.getAlertCount({ timeRange });
   }
 

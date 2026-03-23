@@ -34,28 +34,44 @@ export default function DashboardAdminMetrics() {
   const [tags, setTags] = useState([]);
   const [timeRange, setTimeRange] = useState("all");
   const [filteredCount, setFilteredCount] = useState(null);
+  const [trendRange, setTrendRange] = useState("7d");
+
+  const fetchAll = async () => {
+    try {
+      const [metricsRes, tagsRes] = await Promise.all([
+        axios.get("/wazuh/metrics"),
+        axios.get("/wazuh/threat-tags"),
+      ]);
+
+      setMetrics(metricsRes.data);
+      setTags(Array.isArray(tagsRes.data) ? tagsRes.data : tagsRes.data?.tags || []);
+    } catch (err) {
+      console.error("Failed to fetch dashboard metrics/tags:", err);
+    }
+  };
+
+  const fetchTrending = async (range) => {
+    try {
+      let interval = "1h";
+      if (range === "365d" || range === "180d" || range === "90d") {
+        interval = "1d";
+      }
+      const res = await axios.get("/wazuh/trending", { params: { range, interval } });
+      setTrending(Array.isArray(res.data) ? res.data : res.data?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch trending data:", err);
+    }
+  };
 
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [metricsRes, trendRes, tagsRes] = await Promise.all([
-          axios.get("/wazuh/metrics"),
-          axios.get("/wazuh/trending"),
-          axios.get("/wazuh/threat-tags"),
-        ]);
-
-        setMetrics(metricsRes.data);
-        setTrending(Array.isArray(trendRes.data) ? trendRes.data : trendRes.data?.data || []);
-        setTags(Array.isArray(tagsRes.data) ? tagsRes.data : tagsRes.data?.tags || []);
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-      }
-    };
-
     fetchAll();
     const id = setInterval(fetchAll, 30000); // auto-refresh every 30s
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    fetchTrending(trendRange);
+  }, [trendRange]);
 
   useEffect(() => {
     const fetchFilteredCount = async () => {
@@ -189,13 +205,45 @@ export default function DashboardAdminMetrics() {
       </Card>
 
       {/* Trending Graphs */}
-      <Card title="📈 Trending Graphs">
+      <Card
+        title={
+          <div className="flex justify-between items-center w-full">
+            <span>📈 Trending Graphs</span>
+            <select
+              value={trendRange}
+              onChange={(e) => setTrendRange(e.target.value)}
+              className="bg-gray-800 text-sm border border-gray-600 rounded px-2 py-1 text-red-100 focus:outline-none focus:ring-1 focus:ring-red-500"
+            >
+              <option value="365d">1 Year</option>
+              <option value="180d">6 Months</option>
+              <option value="90d">3 Months</option>
+              <option value="30d">1 Month</option>
+              <option value="15d">15 Days</option>
+              <option value="7d">1 Week</option>
+            </select>
+          </div>
+        }
+      >
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={trending}>
-            <XAxis dataKey="time" stroke="#aaa" />
+            <XAxis
+              dataKey="time"
+              stroke="#aaa"
+              fontSize={10}
+              tickFormatter={(tick) => {
+                if (!tick) return "";
+                const date = new Date(tick);
+                return trendRange === "7d" || trendRange === "15d"
+                  ? `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:00`
+                  : `${date.getMonth() + 1}/${date.getDate()}`;
+              }}
+            />
             <YAxis stroke="#aaa" />
-            <Tooltip />
-            <Line type="monotone" dataKey="alerts" stroke="#FF4C4C" />
+            <Tooltip
+              labelFormatter={(label) => new Date(label).toLocaleString()}
+              contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+            />
+            <Line type="monotone" dataKey="alerts" stroke="#FF4C4C" dot={false} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </Card>
