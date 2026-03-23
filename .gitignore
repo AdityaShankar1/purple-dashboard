@@ -5,7 +5,7 @@ server/.env
 
 # logs
 server/logs/
-
+*.log
 # build output
 client_fixed/build/
 
