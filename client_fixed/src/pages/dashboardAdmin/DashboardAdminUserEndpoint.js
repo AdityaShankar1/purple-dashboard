@@ -413,22 +413,6 @@ export default function DashboardAdminUserEndpoint() {
           )}
         </div>
       </Card>
-
-      {/* Endpoint Compliance */}
-      <Card title="💻 Endpoint Compliance" className="md:col-span-2">
-        <div className="flex flex-col items-center">
-          <div className="text-5xl font-bold text-purple-200">{compliance}%</div>
-          <p className="text-gray-400 mt-2">
-            Endpoints up-to-date with security patches
-          </p>
-          <div className="w-full bg-gray-700 rounded-full h-4 mt-4">
-            <div
-              className="bg-green-500 h-4 rounded-full"
-              style={{ width: `${compliance}%` }}
-            ></div>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

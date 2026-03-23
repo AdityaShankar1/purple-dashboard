@@ -172,29 +172,26 @@ class WazuhService {
   }
 
   // -------- Alerts --------
-  async getTotalAlerts(timeRange) {
+  async getAlertCount({ timeRange, level, agent } = {}) {
     try {
-      const path = `/${this.indexPattern}/_count`;
-      if (!timeRange || timeRange === "all") {
-        const { data } = await this.client.get(path);
-        return data.count || 0;
+      const must = [];
+      if (timeRange && timeRange !== "all") {
+        must.push({ range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } });
       }
-      const body = {
-        query: {
-          range: {
-            "@timestamp": {
-              gte: `now-${timeRange}`,
-              lte: "now"
-            }
-          }
-        }
-      };
-      const data = await this.indexerPost(path, body);
+      if (level) must.push({ range: { "rule.level": { gte: level } } });
+      if (agent && agent !== "all") must.push({ term: { "agent.name.keyword": agent } });
+
+      const body = must.length > 0 ? { query: { bool: { must } } } : {};
+      const data = await this.indexerPost(`/${this.indexPattern}/_count`, body);
       return data.count || 0;
     } catch (err) {
-      logger.error(`getTotalAlerts failed: ${err.message}`);
+      logger.error(`getAlertCount failed: ${err.message}`);
       return 0;
     }
+  }
+
+  async getTotalAlerts(timeRange = "all") {
+    return this.getAlertCount({ timeRange });
   }
 
   async getSecurityAlerts({ size = 50, from = 0, timeRange = "24h", level, agent } = {}) {
@@ -375,6 +372,27 @@ class WazuhService {
     } catch (err) {
       logger.error(`getMitreMap failed: ${err.message}`);
       return { tactics: [], techniques: [] };
+    }
+  }
+
+  async getRiskDistribution() {
+    const body = {
+      size: 0,
+      query: {
+        range: { "@timestamp": { gte: "now-24h", lte: "now" } }
+      },
+      aggs: {
+        levels: { terms: { field: "rule.level", size: 20 } }
+      }
+    };
+    try {
+      const data = await this.indexerPost(`/${this.indexPattern}/_search`, body);
+      return {
+        levels: data.aggregations?.levels?.buckets || []
+      };
+    } catch (err) {
+      logger.error(`getRiskDistribution failed: ${err.message}`);
+      return { levels: [] };
     }
   }
 }

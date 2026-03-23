@@ -50,7 +50,30 @@ export const fetchIncidents = async (_req, res, next) => {
 // ===== Threat Intel =====
 export const fetchThreatIntel = async (_req, res, next) => {
   try {
+    // 1. Fetch general recent alerts for map and actors
     const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "90d" });
+
+    // 2. Fetch specific vulnerability alerts (high volume of other alerts might push them out)
+    const vulnAlerts = await wazuhService.indexerPost(`/${wazuhService.indexPattern}/_search`, {
+      size: 100,
+      sort: [{ "@timestamp": { order: "desc" } }],
+      query: {
+        bool: {
+          must: [
+            { range: { "@timestamp": { gte: "now-90d", lte: "now" } } },
+            {
+              bool: {
+                should: [
+                  { match: { "rule.groups": "vulnerability-detector" } },
+                  { match: { "rule.groups": "vulnerability" } }
+                ],
+                minimum_should_match: 1
+              }
+            }
+          ]
+        }
+      }
+    }).then(d => (d.hits?.hits || []).map(h => h._source || h)).catch(() => []);
 
     const global = alerts
       .filter(a => a.agent?.geo?.latitude && a.agent?.geo?.longitude && a.agent?.geo?.country_name)
@@ -79,8 +102,14 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .map(([actor, activity]) => ({ actor, activity }))
       .sort((a, b) => b.activity - a.activity);
 
-    const assets = alerts
-      .filter(a => a.rule?.groups?.includes("vulnerability-detector") || a.rule?.groups?.includes("vulnerability"))
+    // Combine vulnerability alerts from both general search and targeted search
+    const allPotentialVulns = [...vulnAlerts, ...alerts.filter(a =>
+      a.rule?.groups?.includes("vulnerability-detector") ||
+      a.rule?.groups?.includes("vulnerability")
+    )];
+
+    // Deduplicate by ID if necessary, but slice will handle it mostly
+    const assets = allPotentialVulns
       .slice(0, 10)
       .map(asset => ({
         name: asset.agent?.name || "unknown",
@@ -283,18 +312,32 @@ export const fetchTrainTest = async (_req, res, next) => {
 };
 
 // ===== Trending =====
-export const fetchTrending = async (_req, res, next) => {
+export const fetchTrending = async (req, res, next) => {
   try {
+    const { range = "7d", interval = "1h" } = req.query;
+
     const body = {
       size: 0,
+      query: {
+        range: { "@timestamp": { gte: `now-${range}`, lte: "now" } }
+      },
       aggs: {
         trend: {
-          date_histogram: { field: "@timestamp", fixed_interval: "1h" },
+          date_histogram: {
+            field: "@timestamp",
+            fixed_interval: interval,
+            min_doc_count: 0,
+            extended_bounds: {
+              min: `now-${range}`,
+              max: "now"
+            }
+          },
           aggs: { level_avg: { avg: { field: "rule.level" } } },
         },
       },
     };
-    const data = await wazuhService.indexerPost("/wazuh-alerts-*/_search", body);
+
+    const data = await wazuhService.indexerPost(`/${wazuhService.indexPattern}/_search`, body);
     const trend = data.aggregations.trend.buckets.map(b => ({
       time: b.key_as_string,
       alerts: b.doc_count,
