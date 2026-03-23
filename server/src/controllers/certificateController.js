@@ -199,27 +199,27 @@ export const downloadCertificate = async (req, res, next) => {
     doc.opacity(1.0).fillColor(colors.text); 
 
     doc
-      .fontSize(40)
+      .fontSize(38)
       .font("Helvetica-Bold")
       .fillColor(colors.title)
-      .text("CERTIFICATE OF COMPLETION", 0, 160, {
+      .text("CERTIFICATE OF COMPLETION", 0, 145, {
         align: "center",
         width: pageWidth,
       });
     
-    doc.strokeColor(colors.title).lineWidth(2).moveTo(150, 225).lineTo(pageWidth - 150, 225).stroke();
+    doc.strokeColor(colors.title).lineWidth(2).moveTo(150, 205).lineTo(pageWidth - 150, 205).stroke();
 
     doc
       .fontSize(20)
       .font("Helvetica")
       .fillColor(colors.muted)
-      .text("This is to certify that", 0, 280, { align: "center", width: pageWidth });
+      .text("This is to certify that", 0, 255, { align: "center", width: pageWidth });
     
     doc
       .fontSize(32)
       .font("Helvetica-Bold")
       .fillColor(colors.text)
-      .text(cert.userId.name || "Unknown User", 0, 320, {
+      .text(cert.userId.name || "Unknown User", 0, 290, {
         align: "center",
         width: pageWidth,
       });
@@ -228,31 +228,29 @@ export const downloadCertificate = async (req, res, next) => {
       .fontSize(20)
       .font("Helvetica")
       .fillColor(colors.muted)
-      .text("has successfully completed the course", 0, 370, { align: "center", width: pageWidth });
+      .text("has successfully completed the course", 0, 340, { align: "center", width: pageWidth });
     
     doc
       .fontSize(26)
       .font("Helvetica-Bold")
       .fillColor(colors.text)
-      .text(cert.courseId.title || "Unknown Course", 0, 410, {
+      .text(cert.courseId.title || "Unknown Course", 0, 375, {
         align: "center",
         width: pageWidth,
       });
 
-    // RED HIGHLIGHT (GRADE)
+    // RED HIGHLIGHT (GRADE) - Fixed Spacing
     if (cert.grade && cert.grade !== "NA") {
       doc
         .fontSize(20)
         .font("Helvetica")
         .fillColor(colors.muted)
-        .text("and attained grade ", 0, 450, {
+        .text(`and attained grade ${cert.grade}`, 0, 415, {
           align: "center",
-          width: pageWidth,
-          continued: true
-        })
-        .fillColor(colors.red)
-        .font("Helvetica-Bold")
-        .text(cert.grade);
+          width: pageWidth
+        });
+      // Color specific text part
+      doc.fillColor(colors.red).font("Helvetica-Bold").text(cert.grade, pageWidth/2 + 85, 415);
     }
 
     // ================= ADMIN SIGNATURE =================
@@ -260,7 +258,7 @@ export const downloadCertificate = async (req, res, next) => {
       .fontSize(12)
       .font("Helvetica-Bold")
       .fillColor(colors.text)
-      .text("Course Instructor", pageWidth - 250, 470, { align: "right" });
+      .text("Course Instructor", pageWidth - 250, 450, { align: "right" });
 
     // Certificate ID (RED Highlight if Grade is NA, otherwise Muted)
     const idColor = (cert.grade && cert.grade !== "NA") ? colors.muted : colors.red;
@@ -268,9 +266,9 @@ export const downloadCertificate = async (req, res, next) => {
       .fontSize(12)
       .font("Helvetica")
       .fillColor(idColor)
-      .text(`Certificate ID: ${cert.certificateId}`, 50, 470, { align: "left" });
+      .text(`Certificate ID: ${cert.certificateId}`, 50, 450, { align: "left" });
 
-    // Issued Date
+    // Issued Date - Pulled up to avoid second page overflow
     doc
       .fontSize(12)
       .fillColor(colors.muted)
@@ -280,7 +278,7 @@ export const downloadCertificate = async (req, res, next) => {
           month: "long",
           day: "numeric",
         })}`,
-        0, 490,
+        0, 475,
         { align: "center", width: pageWidth }
       );
 
