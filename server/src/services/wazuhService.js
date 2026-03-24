@@ -278,8 +278,6 @@ class WazuhService {
 
       const logonMap = {};
       const locations = [];
-      let compliant = 0;
-      let total = 0;
 
       for (const alert of alerts) {
         const user = alert.data?.win?.eventdata?.targetUserName || alert.user?.name || alert.agent?.name || "unknown";
@@ -297,15 +295,41 @@ class WazuhService {
         if (alert.location?.lat && alert.location?.lon) {
           locations.push({ lat: alert.location.lat, lon: alert.location.lon });
         }
-
-        if (alert.rule?.groups?.includes("pci_dss_10.2")) {
-          total++;
-          if (alert.compliance?.status === "passed") compliant++;
-        }
       }
 
-      const compliance = total > 0 ? Math.round((compliant / total) * 100) : 0;
       const logons = Object.values(logonMap).filter(l => l.success > 0 || l.failure > 0);
+
+      // ===== FIX: Endpoint Compliance based on security patches instead of audit logs =====
+      let compliance = 100;
+      try {
+        const activeAgents = await this.getActiveAgents();
+        const totalAgents = activeAgents.length;
+
+        if (totalAgents > 0) {
+          const vulnQuery = {
+            size: 1000,
+            query: {
+              bool: {
+                must: [
+                  { match: { "rule.groups": "vulnerability-detector" } },
+                  { range: { "rule.level": { "gte": 7 } } },
+                  { range: { "@timestamp": { "gte": "now-7d" } } }
+                ]
+              }
+            },
+            _source: ["agent.name"]
+          };
+
+          const vulnRes = await this.indexerPost(`/${this.indexPattern}/_search`, vulnQuery);
+          const vulnAlerts = vulnRes.hits?.hits || [];
+          const vulnerableAgents = new Set(vulnAlerts.map(h => h._source?.agent?.name).filter(Boolean));
+
+          const compliantCount = Math.max(0, totalAgents - vulnerableAgents.size);
+          compliance = Math.round((compliantCount / totalAgents) * 100);
+        }
+      } catch (err) {
+        logger.error(`Failed to calculate real patch compliance: ${err.message}`);
+      }
 
       return { logons, locations, compliance };
     } catch (error) {
