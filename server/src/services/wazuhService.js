@@ -224,12 +224,15 @@ class WazuhService {
   }
 
   // -------- Specific Modules --------
-  async getNetworkingData() {
+  async getNetworkingData({ timeRange = "24h" } = {}) {
     const body = {
-      size: 200,
+      size: 500,
       sort: [{ "@timestamp": { order: "desc" } }],
       query: {
         bool: {
+          must: [
+            { range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } }
+          ],
           should: [
             { term: { "rule.groups": "suricata" } },
             { term: { "rule.groups": "ids" } }

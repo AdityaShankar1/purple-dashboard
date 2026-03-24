@@ -60,7 +60,7 @@ export const fetchThreatIntel = async (_req, res, next) => {
       query: {
         bool: {
           must: [
-            { range: { "@timestamp": { gte: "now-90d", lte: "now" } } },
+            { range: { "@timestamp": { gte: "now-7d", lte: "now" } } },
             {
               bool: {
                 should: [
@@ -93,7 +93,8 @@ export const fetchThreatIntel = async (_req, res, next) => {
     }));
 
     const actors = alerts.reduce((acc, a) => {
-      const tactic = Array.isArray(a.rule?.mitre?.tactic) ? a.rule.mitre.tactic[0] : (a.rule?.mitre?.tactic || "Unknown");
+      let tactic = Array.isArray(a.rule?.mitre?.tactic) ? a.rule.mitre.tactic[0] : a.rule?.mitre?.tactic;
+      if (!tactic || String(tactic).toLowerCase() === "unknown") return acc;
       acc[tactic] = (acc[tactic] || 0) + 1;
       return acc;
     }, {});
@@ -111,11 +112,14 @@ export const fetchThreatIntel = async (_req, res, next) => {
     // Deduplicate by ID if necessary, but slice will handle it mostly
     const assets = allPotentialVulns
       .slice(0, 10)
-      .map(asset => ({
-        name: asset.agent?.name || "unknown",
-        status: "Vulnerable",
-        vulnerability: asset.rule?.description || "N/A",
-      }));
+      .map(asset => {
+        const tsString = asset["@timestamp"] ? `[${new Date(asset["@timestamp"]).toLocaleString()}] ` : "";
+        return {
+          name: `${tsString}${asset.agent?.name || "unknown"}`,
+          status: "Vulnerable",
+          vulnerability: asset.rule?.description || "N/A",
+        };
+      });
 
     const recent24hAlerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" }) || [];
     const incidentSeverity = {
@@ -184,11 +188,12 @@ export const fetchActiveAgents = async (_req, res) => {
 };
 
 // ===== Networking =====
-export const fetchNetworking = async (_req, res, next) => {
+export const fetchNetworking = async (req, res, next) => {
   try {
-    let flowAlerts = await wazuhService.getNetworkingData();
+    const { range = "24h" } = req.query;
+    let flowAlerts = await wazuhService.getNetworkingData({ timeRange: range });
     if (flowAlerts.length === 0) {
-      flowAlerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: "24h" });
+      flowAlerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: range });
     }
 
     const traffic = flowAlerts.map(a => ({

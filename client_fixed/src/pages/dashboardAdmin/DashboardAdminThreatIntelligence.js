@@ -957,7 +957,7 @@ export default function DashboardAdminThreatIntelligence() {
       </Card>
 
       {/* Vulnerable Assets */}
-      <Card title="💥 Vulnerable Assets">
+      <Card title="💥 Vulnerable Assets History">
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or threat intelligence source</p>
         ) : assets.length === 0 ? (
@@ -989,17 +989,17 @@ export default function DashboardAdminThreatIntelligence() {
           <option value="all">All Techniques</option>
           {mitreTechniques.length > 0
             ? mitreTechniques.map((tech, i) => (
-                <option key={i} value={tech.key}>
-                  {tech.key} ({tech.count})
-                </option>
-              ))
+              <option key={i} value={tech.key}>
+                {tech.key} ({tech.count})
+              </option>
+            ))
             : [
-                "T1078", "T1059", "T1566", "T1027", "T1547", "T1036", "T1082", "T1047", "T1056"
-              ].map((tech, i) => (
-                <option key={i} value={tech}>
-                  {tech}
-                </option>
-              ))
+              "T1078", "T1059", "T1566", "T1027", "T1547", "T1036", "T1082", "T1047", "T1056"
+            ].map((tech, i) => (
+              <option key={i} value={tech}>
+                {tech}
+              </option>
+            ))
           }
         </select>
       </Card>
