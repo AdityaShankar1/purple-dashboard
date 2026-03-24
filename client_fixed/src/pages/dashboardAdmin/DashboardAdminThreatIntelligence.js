@@ -812,7 +812,8 @@ import { useMitreMap } from "../../hooks/useMitreMap";
 
 
 export default function DashboardAdminThreatIntelligence() {
-  const { actors, assets, incidentSeverity, connectionStatus } = useThreatIntelData();
+  const [assetRange, setAssetRange] = useState("7d");
+  const { actors, assets, incidentSeverity, connectionStatus } = useThreatIntelData(assetRange);
   const { tactics: mitreTactics, techniques: mitreTechniques } = useMitreMap();
   const agentListRaw = useAgentList();
   const { agents: agentHealthRaw, error: agentHealthError } = useAgentHealth();
@@ -957,25 +958,60 @@ export default function DashboardAdminThreatIntelligence() {
       </Card>
 
       {/* Vulnerable Assets */}
-      <Card title="💥 Vulnerable Assets History">
+      <Card
+        title={
+          <div className="flex justify-between items-center w-full">
+            <span>💥 Vulnerable Assets History</span>
+            <select
+              value={assetRange}
+              onChange={(e) => setAssetRange(e.target.value)}
+              className="bg-purple-800 text-xs border border-purple-600 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+            >
+              <option value="24h">Last 24 Hours</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="365d">Last Year</option>
+            </select>
+          </div>
+        }
+      >
         {connectionStatus === "disconnected" ? (
-          <p className="text-purple-300">Unable to connect to Wazuh or threat intelligence source</p>
+          <p className="text-red-300 bg-red-900/20 p-3 rounded-lg border border-red-500/30">
+            ⚠️ Connection Error: Failed to reach Wazuh Indexer. Please verify the backend service status.
+          </p>
         ) : assets.length === 0 ? (
-          <p className="text-purple-300">No vulnerable assets found (connected)</p>
+          <div className="text-center py-6 bg-purple-900/20 rounded-xl border border-dashed border-purple-500/30">
+            <p className="text-purple-300 font-medium text-sm">🛡️ No vulnerabilities detected</p>
+            <p className="text-purple-500 text-[11px] mt-1 italic">
+              Checked records for the {assetRange === '24h' ? 'last 24 hours' : `last ${assetRange.replace('d', ' days')}`}.
+            </p>
+          </div>
         ) : (
-          <ul className="space-y-2 text-sm">
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {assets.map((asset, i) => (
-              <li
+              <div
                 key={i}
-                className="flex justify-between bg-purple-700 rounded-xl px-4 py-2"
+                className="bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/50 rounded-xl p-3 transition-all group"
               >
-                <span>{asset.name}</span>
-                <span className="text-red-300 font-semibold">
-                  {asset.status || "Exposed"}
-                </span>
-              </li>
+                <div className="flex justify-between items-start mb-1">
+                  <span className="font-bold text-white text-xs truncate max-w-[70%]" title={asset.name}>
+                    🖥️ {asset.name}
+                  </span>
+                  <span className="text-[10px] font-medium bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-500/20 whitespace-nowrap">
+                    {asset.time}
+                  </span>
+                </div>
+                <p className="text-[11px] text-purple-200 line-clamp-2 leading-relaxed" title={asset.vulnerability}>
+                  {asset.vulnerability}
+                </p>
+                <div className="mt-2 flex items-center justify-between text-[10px] text-purple-400 font-medium">
+                  <span className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">Action Required</span>
+                  <span>ID: {i + 1}</span>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </Card>
 

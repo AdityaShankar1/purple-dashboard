@@ -48,19 +48,21 @@ export const fetchIncidents = async (_req, res, next) => {
 };
 
 // ===== Threat Intel =====
-export const fetchThreatIntel = async (_req, res, next) => {
+export const fetchThreatIntel = async (req, res, next) => {
   try {
-    // 1. Fetch general recent alerts for map and actors
+    const { assetRange = "7d" } = req.query;
+
+    // 1. Fetch general recent alerts for map and actors (using 90d for better coverage on map)
     const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "90d" });
 
-    // 2. Fetch specific vulnerability alerts (high volume of other alerts might push them out)
+    // 2. Fetch specific vulnerability alerts for the requested range
     const vulnAlerts = await wazuhService.indexerPost(`/${wazuhService.indexPattern}/_search`, {
       size: 100,
       sort: [{ "@timestamp": { order: "desc" } }],
       query: {
         bool: {
           must: [
-            { range: { "@timestamp": { gte: "now-7d", lte: "now" } } },
+            { range: { "@timestamp": { gte: `now-${assetRange}`, lte: "now" } } },
             {
               bool: {
                 should: [
@@ -103,20 +105,40 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .map(([actor, activity]) => ({ actor, activity }))
       .sort((a, b) => b.activity - a.activity);
 
-    // Combine vulnerability alerts from both general search and targeted search
-    const allPotentialVulns = [...vulnAlerts, ...alerts.filter(a =>
-      a.rule?.groups?.includes("vulnerability-detector") ||
-      a.rule?.groups?.includes("vulnerability")
-    )];
+    // Filter general alerts for vulnerabilities in the requested assetRange as well
+    const rangeThreshold = new Date();
+    if (assetRange.endsWith('d')) rangeThreshold.setDate(rangeThreshold.getDate() - parseInt(assetRange));
+    else if (assetRange.endsWith('m')) rangeThreshold.setMonth(rangeThreshold.getMonth() - parseInt(assetRange));
+    else rangeThreshold.setHours(rangeThreshold.getHours() - parseInt(assetRange));
 
-    // Deduplicate by ID if necessary, but slice will handle it mostly
+    const generalVulns = alerts.filter(a => {
+      const isVuln = a.rule?.groups?.includes("vulnerability-detector") || a.rule?.groups?.includes("vulnerability");
+      const inRange = new Date(a["@timestamp"]) >= rangeThreshold;
+      return isVuln && inRange;
+    });
+
+    const allPotentialVulns = [...vulnAlerts, ...generalVulns];
+
     const assets = allPotentialVulns
-      .slice(0, 10)
+      .slice(0, 15)
       .map(asset => {
-        const tsString = asset["@timestamp"] ? `[${new Date(asset["@timestamp"]).toLocaleString()}] ` : "";
+        const timestamp = asset["@timestamp"];
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+
+        let ago = "";
+        if (diffDays > 0) ago = `${diffDays}d ago`;
+        else if (diffHours > 0) ago = `${diffHours}h ago`;
+        else ago = "just now";
+
         return {
-          name: `${tsString}${asset.agent?.name || "unknown"}`,
+          name: asset.agent?.name || "unknown",
           status: "Vulnerable",
+          time: ago,
+          timestamp: timestamp,
           vulnerability: asset.rule?.description || "N/A",
         };
       });
