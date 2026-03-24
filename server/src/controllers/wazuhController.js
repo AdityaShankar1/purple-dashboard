@@ -393,7 +393,15 @@ export const fetchMitreAlerts = async (req, res) => {
     const technique = req.query.technique;
     const body = {
       size: 50,
-      query: technique ? { match: { "rule.mitre.id": technique } } : { exists: { field: "rule.mitre.id" } },
+      query: technique ? {
+        bool: {
+          should: [
+            { match: { "rule.mitre.id": technique } },
+            { match: { "rule.mitre.technique": technique } }
+          ],
+          minimum_should_match: 1
+        }
+      } : { exists: { field: "rule.mitre.id" } },
       sort: [{ "@timestamp": { order: "desc" } }]
     };
     const data = await wazuhService.indexerPost("/wazuh-alerts-*/_search", body);

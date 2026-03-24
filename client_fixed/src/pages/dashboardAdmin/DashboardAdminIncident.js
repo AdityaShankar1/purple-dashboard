@@ -391,7 +391,7 @@ export default function DashboardAdminIncident() {
       let detectionTime =
         new Date(alert["@timestamp"]).getTime() -
         new Date(alert.ingestionTime || alert["@timestamp"]).getTime();
-      
+
       // If ingestionTime is missing or identical to timestamp, provide a realistic lag (10-45s)
       if (detectionTime === 0) {
         detectionTime = (Math.floor(Math.random() * 35) + 10) * 1000;
@@ -460,8 +460,8 @@ export default function DashboardAdminIncident() {
         </div>
       </Card>
 
-      {/* Top 5 Alert Sources */}
-      <Card title="💻 Top 5 Alert Sources" className="md:col-span-2 lg:col-span-3">
+      {/* Top Alert Sources */}
+      <Card title="💻 Top Alert Sources" className="md:col-span-2 lg:col-span-3">
         {topSources.length === 0 ? (
           <p className="text-blue-700">No sources available</p>
         ) : (
