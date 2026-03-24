@@ -9,6 +9,10 @@ import crypto from "crypto";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { logger } from "../config/logger.js";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const generateCertificateId = () => {
   return `CERT-${Date.now()}-${crypto
@@ -146,7 +150,9 @@ export const downloadCertificate = async (req, res, next) => {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
 
-    const basePath = process.env.PUBLIC_ASSETS_PATH || path.join(process.cwd(), "..", "client_fixed", "public");
+    const basePathFallback = path.join(process.cwd(), "..", "client_fixed", "public");
+    const basePathRelative = path.resolve(__dirname, '..', '..', '..', 'client_fixed', 'public');
+    const basePath = process.env.PUBLIC_ASSETS_PATH || (fs.existsSync(basePathRelative) ? basePathRelative : basePathFallback);
 
     const colors = {
       purple: "#3F2A8D",
