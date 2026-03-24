@@ -340,7 +340,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -356,9 +356,10 @@ import { useNetworkingData } from "../../hooks/useNetworkingData";
 import { useAgentHealth } from "../../hooks/useAgentHealth";
 
 export default function DashboardAdminNetworking() {
-  const { traffic, firewall, malware, connectionStatus } = useNetworkingData();
+  const [timeRange, setTimeRange] = useState("24h");
+  const { traffic, firewall, malware, connectionStatus } = useNetworkingData(timeRange);
   const { agents: agentHealthRaw, error: agentHealthError } = useAgentHealth();
-  
+
   // Normalize agent health data to array format (handles multiple response shapes)
   const agents = Array.isArray(agentHealthRaw)
     ? agentHealthRaw
@@ -378,7 +379,26 @@ export default function DashboardAdminNetworking() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
       {/* Network Traffic Volume */}
-      <Card title="🌐 Network Traffic Volume">
+      <Card
+        title={
+          <div className="flex justify-between items-center w-full">
+            <span>🌐 Network Traffic Volume</span>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="bg-gray-800 text-sm border border-gray-600 rounded px-2 py-1 text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="365d">1 Year</option>
+              <option value="180d">6 Months</option>
+              <option value="90d">3 Months</option>
+              <option value="30d">1 Month</option>
+              <option value="15d">15 Days</option>
+              <option value="7d">1 Week</option>
+              <option value="24h">Last 24 Hours</option>
+            </select>
+          </div>
+        }
+      >
         {connectionStatus === "disconnected" ? (
           <p className="text-purple-300">Unable to connect to Wazuh or networking source</p>
         ) : traffic.length === 0 ? (
@@ -420,13 +440,12 @@ export default function DashboardAdminNetworking() {
           {systemStatus.map((sys, i) => (
             <div
               key={i}
-              className={`p-4 rounded-xl text-center font-semibold ${
-                sys.status === "healthy"
+              className={`p-4 rounded-xl text-center font-semibold ${sys.status === "healthy"
                   ? "bg-green-700 text-green-200"
                   : sys.status === "degraded"
-                  ? "bg-yellow-700 text-yellow-200"
-                  : "bg-red-700 text-red-200"
-              }`}
+                    ? "bg-yellow-700 text-yellow-200"
+                    : "bg-red-700 text-red-200"
+                }`}
             >
               {sys.name}
               <div className="text-sm font-normal">({sys.status})</div>

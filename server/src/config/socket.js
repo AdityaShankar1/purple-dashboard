@@ -72,7 +72,7 @@ export const setupSocket = (httpServer) => {
   // Initialize the socket.io server with CORS and credentials
   io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000",  // Make sure the frontend URL is correct
+      origin: process.env.CLIENT_URL || "http://localhost:3000",  // Make sure the frontend URL is correct
       methods: ["GET", "POST"],
       credentials: true,
     },

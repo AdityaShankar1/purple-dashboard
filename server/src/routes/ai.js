@@ -45,18 +45,17 @@ router.post('/summarize-dashboard', async (req, res) => {
         };
 
         try {
-            // Fetch total alerts, recent alerts (to count incidents and show logs), and risk
-            const [total, recentAlerts, risk] = await Promise.all([
-                wazuhService.getTotalAlerts(),
+            // Fetch comprehensive stats for 24h
+            const [total, incidentsCount, recentAlerts, risk] = await Promise.all([
+                wazuhService.getAlertCount({ timeRange: '24h' }),
+                wazuhService.getAlertCount({ timeRange: '24h', level: 7 }),
                 wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
                 wazuhService.getRiskDistribution()
             ]);
 
             stats.totalAlerts = total;
+            stats.activeIncidents = incidentsCount;
             stats.recentIncidents = recentAlerts;
-
-            // Sync with Dashboard logic: Incidents are Level >= 7
-            stats.activeIncidents = recentAlerts.filter(a => a.rule && a.rule.level >= 7).length;
 
             // Format risk distribution
             if (risk && risk.levels) {
@@ -112,55 +111,47 @@ router.post('/summarize-dashboard', async (req, res) => {
         }).join('\n');
 
         const contextInfo = `
-DATA SOURCE: ${isMock ? "SIMULATED" : "LIVE WAZUH"}
-TOTAL ALERTS: ${stats.totalAlerts}
-ACTIVE INCIDENTS (Level>=7): ${activeInc}
+DATA SOURCE: ${isMock ? "SIMULATED / NO RECENT LOGS" : "LIVE WAZUH"}
+TOTAL ALERTS IN PERIOD: ${stats.totalAlerts}
+ACTIVE INCIDENTS (Level >= 7): ${activeInc}
 RISK LEVELS: ${JSON.stringify(stats.riskDistribution)}
 RECENT LOG ENTRIES:
-${recentLogs}
+${recentLogs || "No recent high-level alerts found."}
 `;
 
         // 4. Improved System Prompt (Balanced & Structured)
-        const systemPrompt = `ROLE: You are an expert SOC Security Auditor.
-GOAL: Provide a balanced security summary. It must be descriptive enough for a user to understand the threat but strictly formatted.
-AUDIENCE: Security analysts.
+        const isSimpleRequested = (userPrompt || "").toLowerCase().includes("simple") || (userPrompt || "").toLowerCase().includes("suggest");
+
+        const systemPrompt = `ROLE: You are an expert SOC Security Auditor and Assistant.
+GOAL: Provide a clear, actionable security summary based on the provided logs. 
+${isSimpleRequested ? "IMPORTANT: The user wants an answer in SIMPLE WORDS. Avoid overly technical jargon where possible, but stay accurate." : "STYLE: Professional, concise, and technical."}
 
 DATA CONTEXT:
 ${contextInfo}
 
 OUTPUT FORMAT RULES (STRICT):
-1. START with the title in brackets: [SECURITY STATUS]: or [LOG ANALYSIS]:
-2. Next line: EXACTLY 2-3 DESCRIPTIVE SENTENCES explaining the current situation. 
-   - Mention specific logs (e.g. "failed login attempts", "Apparmor DENIED").
-   - Explain the impact (e.g. "potential brute force attack").
+1. START with the title in brackets: [LOG ANALYSIS]: or [SECURITY STATUS]:
+2. Next line: EXACTLY 2-3 SENTENCES explaining what the logs suggest in simple, clear language.
+   - Mention the primary threat if any (e.g. "We see multiple login failures", "System files were accessed").
+   - Explain what this means for the user (e.g. "This suggests someone is trying to guess a password").
 3. EACH detail MUST be on a NEW LINE starting with a dash (-).
-4. USE THE EXACT VALUES PROVIDED BELOW FOR SEVERITY, INCIDENTS, AND MITRE. DO NOT REWRITE OR HALLUCINATE MITRE CODES.
+4. USE THE EXACT VALUES PROVIDED BELOW for Severity, Incidents, and MITRE.
 5. NO pipes (|), NO markdown bold (**), NO horizontal lines.
 
-STRICT TEMPLATE (Must use NEW LINES for every item):
+STRICT TEMPLATE (Use NEW LINES for every item):
 [TITLE]:
-[2-3 sentence summary]
+[2-3 sentence summary in simple words]
 
 - Severity: ${baseSeverity}
 - Incidents: ${activeInc}
 - MITRE: ${mitreText}
-- Action: [Step 1]
-- Action: [Step 2]
+- Action: [Simple, clear step 1]
+- Action: [Simple, clear step 2]
 
-7. DO NOT repeat the User Query. DO NOT include "User Query" or "Response" labels.
-8. START directly with [SECURITY STATUS]: or [LOG ANALYSIS]:.
+7. DO NOT repeat the User Query. 
+8. START directly with the Title.
 
-EXAMPLE OUTPUT:
-[SECURITY STATUS]:
-We have detected a significantly high volume of failed authentication attempts on the domain controller. This pattern suggests an active brute force attack targeting the administrator account, although current safeguards are holding.
-
-- Severity: Critical
-- Incidents: 37
-- MITRE: T1110 - Brute Force
-- Action: Enable multi-factor authentication immediately.
-- Action: Block the suspicious source IPs found in the logs.
-
-THE USER QUERY IS: "${userPrompt || "Status report"}"
+THE USER QUERY IS: "${userPrompt || "What do the logs suggest?"}"
 YOUR REPORT:`;
 
         // 5. Ollama Chat
