@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosConfig";
 
-export const useThreatIntelData = () => {
+export const useThreatIntelData = (assetRange = "7d") => {
   const [data, setData] = useState({
     global: [],
     actors: [],
@@ -14,7 +14,9 @@ export const useThreatIntelData = () => {
   useEffect(() => {
     const fetchThreatIntel = async () => {
       try {
-        const res = await axiosInstance.get("/wazuh/threat-intel");
+        const res = await axiosInstance.get("/wazuh/threat-intel", {
+          params: { assetRange }
+        });
         const json = res.data;
 
         setData({
@@ -43,7 +45,7 @@ export const useThreatIntelData = () => {
     // Auto-refresh every 30s
     const interval = setInterval(fetchThreatIntel, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [assetRange]);
 
   return { ...data, connectionStatus };
 };

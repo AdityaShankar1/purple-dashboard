@@ -48,19 +48,21 @@ export const fetchIncidents = async (_req, res, next) => {
 };
 
 // ===== Threat Intel =====
-export const fetchThreatIntel = async (_req, res, next) => {
+export const fetchThreatIntel = async (req, res, next) => {
   try {
-    // 1. Fetch general recent alerts for map and actors
+    const { assetRange = "7d" } = req.query;
+
+    // 1. Fetch general recent alerts for map and actors (using 90d for better coverage on map)
     const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "90d" });
 
-    // 2. Fetch specific vulnerability alerts (high volume of other alerts might push them out)
+    // 2. Fetch specific vulnerability alerts for the requested range
     const vulnAlerts = await wazuhService.indexerPost(`/${wazuhService.indexPattern}/_search`, {
       size: 100,
       sort: [{ "@timestamp": { order: "desc" } }],
       query: {
         bool: {
           must: [
-            { range: { "@timestamp": { gte: "now-90d", lte: "now" } } },
+            { range: { "@timestamp": { gte: `now-${assetRange}`, lte: "now" } } },
             {
               bool: {
                 should: [
@@ -93,7 +95,8 @@ export const fetchThreatIntel = async (_req, res, next) => {
     }));
 
     const actors = alerts.reduce((acc, a) => {
-      const tactic = Array.isArray(a.rule?.mitre?.tactic) ? a.rule.mitre.tactic[0] : (a.rule?.mitre?.tactic || "Unknown");
+      let tactic = Array.isArray(a.rule?.mitre?.tactic) ? a.rule.mitre.tactic[0] : a.rule?.mitre?.tactic;
+      if (!tactic || String(tactic).toLowerCase() === "unknown") return acc;
       acc[tactic] = (acc[tactic] || 0) + 1;
       return acc;
     }, {});
@@ -102,20 +105,43 @@ export const fetchThreatIntel = async (_req, res, next) => {
       .map(([actor, activity]) => ({ actor, activity }))
       .sort((a, b) => b.activity - a.activity);
 
-    // Combine vulnerability alerts from both general search and targeted search
-    const allPotentialVulns = [...vulnAlerts, ...alerts.filter(a =>
-      a.rule?.groups?.includes("vulnerability-detector") ||
-      a.rule?.groups?.includes("vulnerability")
-    )];
+    // Filter general alerts for vulnerabilities in the requested assetRange as well
+    const rangeThreshold = new Date();
+    if (assetRange.endsWith('d')) rangeThreshold.setDate(rangeThreshold.getDate() - parseInt(assetRange));
+    else if (assetRange.endsWith('m')) rangeThreshold.setMonth(rangeThreshold.getMonth() - parseInt(assetRange));
+    else rangeThreshold.setHours(rangeThreshold.getHours() - parseInt(assetRange));
 
-    // Deduplicate by ID if necessary, but slice will handle it mostly
+    const generalVulns = alerts.filter(a => {
+      const isVuln = a.rule?.groups?.includes("vulnerability-detector") || a.rule?.groups?.includes("vulnerability");
+      const inRange = new Date(a["@timestamp"]) >= rangeThreshold;
+      return isVuln && inRange;
+    });
+
+    const allPotentialVulns = [...vulnAlerts, ...generalVulns];
+
     const assets = allPotentialVulns
-      .slice(0, 10)
-      .map(asset => ({
-        name: asset.agent?.name || "unknown",
-        status: "Vulnerable",
-        vulnerability: asset.rule?.description || "N/A",
-      }));
+      .slice(0, 15)
+      .map(asset => {
+        const timestamp = asset["@timestamp"];
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+
+        let ago = "";
+        if (diffDays > 0) ago = `${diffDays}d ago`;
+        else if (diffHours > 0) ago = `${diffHours}h ago`;
+        else ago = "just now";
+
+        return {
+          name: asset.agent?.name || "unknown",
+          status: "Vulnerable",
+          time: ago,
+          timestamp: timestamp,
+          vulnerability: asset.rule?.description || "N/A",
+        };
+      });
 
     const recent24hAlerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" }) || [];
     const incidentSeverity = {
@@ -184,11 +210,12 @@ export const fetchActiveAgents = async (_req, res) => {
 };
 
 // ===== Networking =====
-export const fetchNetworking = async (_req, res, next) => {
+export const fetchNetworking = async (req, res, next) => {
   try {
-    let flowAlerts = await wazuhService.getNetworkingData();
+    const { range = "24h" } = req.query;
+    let flowAlerts = await wazuhService.getNetworkingData({ timeRange: range });
     if (flowAlerts.length === 0) {
-      flowAlerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: "24h" });
+      flowAlerts = await wazuhService.getSecurityAlerts({ size: 200, timeRange: range });
     }
 
     const traffic = flowAlerts.map(a => ({
@@ -388,7 +415,15 @@ export const fetchMitreAlerts = async (req, res) => {
     const technique = req.query.technique;
     const body = {
       size: 50,
-      query: technique ? { match: { "rule.mitre.id": technique } } : { exists: { field: "rule.mitre.id" } },
+      query: technique ? {
+        bool: {
+          should: [
+            { match: { "rule.mitre.id": technique } },
+            { match: { "rule.mitre.technique": technique } }
+          ],
+          minimum_should_match: 1
+        }
+      } : { exists: { field: "rule.mitre.id" } },
       sort: [{ "@timestamp": { order: "desc" } }]
     };
     const data = await wazuhService.indexerPost("/wazuh-alerts-*/_search", body);

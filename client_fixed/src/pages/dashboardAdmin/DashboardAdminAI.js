@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Card } from "../../components/Layouts/Card";
-import { Bot, Send, Trash2, User, Loader2, AlertCircle } from "lucide-react";
+import { Bot, Send, Trash2, User, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { useIncidentsData } from "../../hooks/useIncidentsData";
 import axios from "../../api/axiosConfig";
 
@@ -76,13 +76,14 @@ export default function DashboardAdminAI() {
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!input.trim()) return;
+    const handleSendMessage = async (e, forcedPrompt = null) => {
+        if (e) e.preventDefault();
+        const promptToUse = forcedPrompt || input;
+        if (!promptToUse.trim()) return;
 
-        const userMsg = { id: Date.now(), role: 'user', content: input };
+        const userMsg = { id: Date.now(), role: 'user', content: promptToUse };
         setMessages(prev => [...prev, userMsg]);
-        setInput("");
+        if (!forcedPrompt) setInput("");
         setLoading(true);
 
         try {
@@ -108,7 +109,7 @@ export default function DashboardAdminAI() {
 
             const res = await axios.post("/ai/summarize-dashboard", {
                 dashboardStats: contextData,
-                userPrompt: input,
+                userPrompt: promptToUse,
                 history: messages.slice(-3)
             });
 
@@ -160,13 +161,24 @@ export default function DashboardAdminAI() {
                         </div>
                     </div>
                 </div>
-                <button
-                    onClick={handleClearChat}
-                    className="p-2.5 hover:bg-white/20 rounded-xl transition-all text-purple-100"
-                    title="Clear History"
-                >
-                    <Trash2 size={22} />
-                </button>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => handleSendMessage(null, "What do the logs suggest?")}
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 rounded-xl transition-all text-sm font-bold text-purple-100 border border-white/10"
+                        title="Quick Summary"
+                    >
+                        <Sparkles size={18} />
+                        <span>Summarize</span>
+                    </button>
+                    <button
+                        onClick={handleClearChat}
+                        className="p-2.5 hover:bg-white/20 rounded-xl transition-all text-purple-100"
+                        title="Clear History"
+                    >
+                        <Trash2 size={22} />
+                    </button>
+                </div>
             </div>
 
             {/* Chat messages */}

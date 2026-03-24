@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosConfig";
 
-export function useNetworkingData() {
+export function useNetworkingData(timeRange = "24h") {
   const [traffic, setTraffic] = useState([]);
   const [firewall, setFirewall] = useState([]);
   const [malware, setMalware] = useState([]);
@@ -11,7 +11,9 @@ export function useNetworkingData() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axiosInstance.get("/wazuh/networking");
+        const res = await axiosInstance.get("/wazuh/networking", {
+          params: { range: timeRange }
+        });
         const data = res.data;
 
         // Shape traffic into {time, inbound, outbound}
@@ -48,7 +50,7 @@ export function useNetworkingData() {
     fetchData();
     const id = setInterval(fetchData, 10000); // auto-refresh every 10s
     return () => clearInterval(id);
-  }, []);
+  }, [timeRange]);
 
   return { traffic, firewall, malware, connectionStatus };
 }
