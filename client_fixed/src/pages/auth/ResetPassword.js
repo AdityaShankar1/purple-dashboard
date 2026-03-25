@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: Tight Theme Coupling
+ * - The auth component depended on a global ThemeBackground wrapper, resulting in inherited Admin gap colors.
+ * SOLUTION:
+ * - Used a standalone wrapper (`<div className="bg-[#ddeeff]">`) to fully decouple the Auth view styling.
+ * ============================================================================
+ */
 // import React, { useState } from "react";
 // import { useParams, useNavigate } from "react-router-dom";
 
@@ -154,7 +164,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <ThemeBackground className="flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-[#ddeeff] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -227,6 +237,6 @@ export default function ResetPassword() {
           </form>
         </motion.div>
       </motion.div>
-    </ThemeBackground>
+    </div>
   );
 }

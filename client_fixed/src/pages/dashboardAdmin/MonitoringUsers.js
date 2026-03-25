@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: Low Contrast Header and Glassmorphism issues
+ * - The header elements had white text on a purple background that lacked sufficient contrast and uniformity.
+ * SOLUTION:
+ * - Stripped `glass-purple-theme` wrapper in favor of plain `bg-white` container.
+ * - Reshaded header titles to `text-blue-900` and labels to `text-black`.
+ * ============================================================================
+ */
 // "use client"
 
 // import { useState, useEffect } from "react"
@@ -442,11 +453,11 @@ export default function MonitoringUsers() {
   }
 
   return (
-    <div className="glass-purple-theme p-8 space-y-8">
+    <div className="bg-white dark:bg-gray-900 min-h-screen p-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">User Monitoring</h1>
-        <p className="text-[var(--text-secondary)] font-medium">Monitor user enrollments and course progress</p>
+        <h1 className="text-3xl font-extrabold text-blue-900 dark:text-blue-400 tracking-tight">User Monitoring</h1>
+        <p className="text-black dark:text-gray-300 font-medium">Monitor user enrollments and course progress</p>
       </div>
 
       {/* Stats Cards */}
@@ -454,12 +465,12 @@ export default function MonitoringUsers() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--card-bg)]/60 backdrop-blur-md rounded-2xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md transition-all group"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-wider">Total Users</p>
-              <p className="text-2xl font-black text-[var(--text-primary)] mt-1">{users.length}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Total Users</p>
+              <p className="text-2xl font-black text-gray-900 dark:text-gray-100 mt-1">{users.length}</p>
             </div>
             <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <Users className="text-purple-500" size={24} />
@@ -471,12 +482,12 @@ export default function MonitoringUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           delay={0.1}
-          className="bg-[var(--card-bg)]/60 backdrop-blur-md rounded-2xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md transition-all group"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-wider">Total Enrollments</p>
-              <p className="text-2xl font-black text-[var(--text-primary)] mt-1">{enrollments.length}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Total Enrollments</p>
+              <p className="text-2xl font-black text-gray-900 dark:text-gray-100 mt-1">{enrollments.length}</p>
             </div>
             <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <BookOpen className="text-blue-500" size={24} />
@@ -488,12 +499,12 @@ export default function MonitoringUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           delay={0.2}
-          className="bg-[var(--card-bg)]/60 backdrop-blur-md rounded-2xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md transition-all group"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-wider">Completed Courses</p>
-              <p className="text-2xl font-black text-[var(--text-primary)] mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Completed Courses</p>
+              <p className="text-2xl font-black text-gray-900 dark:text-gray-100 mt-1">
                 {enrollments.filter((e) => e.status === "completed").length}
               </p>
             </div>
@@ -507,12 +518,12 @@ export default function MonitoringUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           delay={0.3}
-          className="bg-[var(--card-bg)]/60 backdrop-blur-md rounded-2xl p-6 border border-[var(--card-border)] shadow-sm hover:shadow-md transition-all group"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-wider">Active Enrollments</p>
-              <p className="text-2xl font-black text-[var(--text-primary)] mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Active Enrollments</p>
+              <p className="text-2xl font-black text-gray-900 dark:text-gray-100 mt-1">
                 {enrollments.length - enrollments.filter((e) => e.status === "completed").length}
               </p>
             </div>
@@ -526,21 +537,21 @@ export default function MonitoringUsers() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]" size={20} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
           <input
             type="text"
             placeholder="Search users by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--card-border)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--accent-purple)] transition-all outline-none"
+            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-transparent rounded-xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:border-purple-500 transition-all outline-none shadow-sm"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter className="text-[var(--text-secondary)]" size={20} />
+          <Filter className="text-gray-500" size={20} />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--card-border)] rounded-xl text-[var(--text-primary)] font-semibold focus:border-[var(--accent-purple)] transition-all outline-none appearance-none cursor-pointer"
+            className="px-4 py-3 bg-white dark:bg-gray-800 border-2 border-transparent rounded-xl text-gray-900 dark:text-gray-100 font-semibold focus:border-purple-500 transition-all outline-none appearance-none cursor-pointer shadow-sm"
           >
             <option value="all">All Users</option>
             <option value="active">Active Enrollments</option>
@@ -551,11 +562,11 @@ export default function MonitoringUsers() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-[var(--card-bg)]/40 backdrop-blur-xl border border-[var(--card-border)] rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+              <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
                 <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">User</th>
                 <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                   Total Courses
@@ -574,7 +585,7 @@ export default function MonitoringUsers() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--card-border)]">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.map((user) => {
                 const stats = getUserStats(user._id)
                 return (
@@ -582,7 +593,7 @@ export default function MonitoringUsers() {
                     key={user._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="hover:bg-[var(--bg-secondary)] transition-colors group"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -592,12 +603,12 @@ export default function MonitoringUsers() {
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-bold text-[var(--text-primary)]">{user.name}</div>
-                          <div className="text-sm text-[var(--text-secondary)] font-medium">{user.email}</div>
+                          <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{user.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">{user.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-[var(--text-primary)]">{stats.total}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100">{stats.total}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {stats.completed}
@@ -608,12 +619,12 @@ export default function MonitoringUsers() {
                         {stats.active}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)] font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button 
-                        onClick={() => setSelectedUser(user)} 
+                      <button
+                        onClick={() => setSelectedUser(user)}
                         className="text-purple-600 hover:text-purple-800 font-bold transition-colors"
                       >
                         View Details
@@ -705,13 +716,12 @@ export default function MonitoringUsers() {
                         <td className="py-2 text-gray-900">{enrollment.courseId.title}</td>
                         <td className="py-2">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              enrollment.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : enrollment.status === "active"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${enrollment.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : enrollment.status === "active"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {enrollment.status}
                           </span>

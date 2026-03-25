@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: AI Chat Theme Colors
+ * - The chat window had a dark brown background, and tailwind injected dark mode overrides.
+ * SOLUTION:
+ * - Changed chat background definitively to light blue #ddeeff.
+ * - Removed `dark:` tailwind classes that were overriding the light blue theme.
+ * - Changed chat bubbles to solid white with black text for readability.
+ * ============================================================================
+ */
 import React, { useState, useEffect, useRef } from "react";
 
 import { Bot, Send, Trash2, User, Loader2, AlertCircle, Sparkles } from "lucide-react";
@@ -182,14 +194,14 @@ export default function DashboardAdminAI() {
             </div>
 
             {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[var(--bg-secondary)]/50">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#ddeeff]">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`flex max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-3`}>
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-purple-600'}`}>
                                 {msg.role === 'user' ? <User size={20} className="text-white" /> : <Bot size={20} className="text-white" />}
                             </div>
-                            <div className={`p-4 rounded-2xl shadow-sm border whitespace-pre-line ${msg.role === 'user' ? 'bg-indigo-600 text-white border-transparent rounded-tr-none' : 'bg-[var(--card-bg)]/80 text-[var(--text-primary)] border-[var(--card-border)] rounded-tl-none text-[15px] leading-relaxed backdrop-blur-sm'}`}>
+                            <div className={`p-4 rounded-2xl shadow-sm border border-gray-200 bg-white text-black whitespace-pre-line ${msg.role === 'user' ? 'rounded-tr-none' : 'rounded-tl-none'} text-[15px] leading-relaxed`}>
                                 {msg.content}
                             </div>
                         </div>
@@ -197,9 +209,9 @@ export default function DashboardAdminAI() {
                 ))}
                 {loading && (
                     <div className="flex justify-start">
-                        <div className="flex items-center space-x-3 bg-[var(--card-bg)]/80 p-4 rounded-2xl rounded-tl-none shadow-sm border border-[var(--card-border)] backdrop-blur-sm">
+                        <div className="flex items-center space-x-3 bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-200 backdrop-blur-sm">
                             <Loader2 className="animate-spin text-purple-600" size={20} />
-                            <span className="text-sm font-medium text-[var(--text-secondary)] animate-pulse">Thinking...</span>
+                            <span className="text-sm font-medium text-black animate-pulse">Thinking...</span>
                         </div>
                     </div>
                 )}

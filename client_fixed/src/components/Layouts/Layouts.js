@@ -1,5 +1,16 @@
 /**
  * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: Undifferentiated Admin/User Global Gaps
+ * - The user and admin dashobards shared a rigid background color that couldn't be decoupled.
+ * SOLUTION:
+ * - Added a dynamic check logic `isUser = user?.role === "user"`.
+ * - Passes `bg-[#ddeeff]` to ThemeBackground for User mode, leaving Admin gaps `bg-purple-900`.
+ * ============================================================================
+ */
+/**
+ * ============================================================================
  * LATEST VERSION - Modified by GitHub Copilot
  * ============================================================================
  * 
@@ -25,17 +36,20 @@
 
 import React from 'react';
 import Navbar from "./Navbar";
-import Watermark from "./Watermark"; 
+import Watermark from "./Watermark";
 import ThemeBackground from "../../context/ThemeBackground";
 
 // This component wraps protected routes, providing the Navbar structure.
 export default function DashboardLayout({ children, user }) {
+  const isUser = user?.role === "user";
+  const bgColor = isUser ? "bg-[#ddeeff]" : "bg-purple-900";
+
   return (
-    <ThemeBackground className="relative min-h-screen">
+    <ThemeBackground bgColor={bgColor} className="relative min-h-screen">
       <Watermark />
-      
+
       {/* Navbar always visible at the top */}
-      <Navbar 
+      <Navbar
         user={user}
       />
 
