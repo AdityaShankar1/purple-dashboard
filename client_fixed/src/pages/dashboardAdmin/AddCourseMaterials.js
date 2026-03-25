@@ -300,7 +300,6 @@ import {
   Star,
   FileText,
   Link as LinkIcon,
-  Edit,
   Eye,
   X,
   Upload,
@@ -390,7 +389,7 @@ export default function AddMaterialCourse() {
         formData.append("url", newMaterial.url);
       }
 
-      const response = await axios.post("/materials", formData, {
+      await axios.post("/materials", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -474,7 +473,7 @@ export default function AddMaterialCourse() {
       <ToastContainer position="bottom-right" theme="colored" />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-8">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
             <BookOpen className="w-6 h-6 text-white" />

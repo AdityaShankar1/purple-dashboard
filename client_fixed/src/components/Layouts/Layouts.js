@@ -40,7 +40,7 @@ export default function DashboardLayout({ children, user }) {
       />
 
       {/* Main content area */}
-      <main className="overflow-y-auto p-6">
+      <main className="overflow-y-auto px-6 pb-6 pt-2">
         {children}
       </main>
     </ThemeBackground>
