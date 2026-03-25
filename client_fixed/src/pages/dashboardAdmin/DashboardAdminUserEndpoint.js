@@ -363,7 +363,7 @@ export default function DashboardAdminUserEndpoint() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* User Logon Activity */}
       <Card title="👤 User Logon Activity">
         {logons.length === 0 ? (

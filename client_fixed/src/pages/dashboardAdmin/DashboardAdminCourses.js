@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "../../api/axiosConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { TextField, Button, Collapse } from "@mui/material";
+import { Button, Collapse } from "@mui/material";
 import {
   BookOpen,
   Plus,
@@ -178,29 +178,29 @@ export default function DashboardAdminCourses() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-8 bg-slate-50 space-y-8">
       <ToastContainer position="bottom-right" theme="colored" />
 
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto mb-8">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-tight">
             Course Management
           </h1>
         </div>
-        <p className="text-slate-400 ml-15">Create, edit, and manage your course catalog</p>
+        <p className="text-slate-600">Create, edit, and manage your course catalog</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium">Total Courses</p>
+                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Courses</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
               </div>
               <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
@@ -209,10 +209,10 @@ export default function DashboardAdminCourses() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium">Categories</p>
+                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Categories</p>
                 <p className="text-3xl font-bold text-purple-600 mt-1">{stats.categories}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -221,10 +221,10 @@ export default function DashboardAdminCourses() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium">Avg Duration</p>
+                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Avg Duration</p>
                 <p className="text-3xl font-bold text-blue-600 mt-1">{stats.avgDuration}h</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -233,10 +233,10 @@ export default function DashboardAdminCourses() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium">Filtered</p>
+                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Filtered</p>
                 <p className="text-3xl font-bold text-green-600 mt-1">{stats.filtered}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -248,8 +248,8 @@ export default function DashboardAdminCourses() {
       </div>
 
       {/* Search and Filter Section */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Category Filter */}
             <div className="flex-1">
@@ -258,7 +258,7 @@ export default function DashboardAdminCourses() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer bg-white"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none appearance-none cursor-pointer"
                 >
                   {COURSE_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
@@ -278,7 +278,7 @@ export default function DashboardAdminCourses() {
                   placeholder="Search by title or course ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
                 />
               </div>
             </div>
@@ -308,10 +308,10 @@ export default function DashboardAdminCourses() {
       {/* Create or Edit Form - Collapsible */}
       <Collapse in={showCreateForm} timeout={400}>
         <div className="max-w-7xl mx-auto mb-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className={`w-10 h-10 ${editCourse ? 'bg-blue-100' : 'bg-green-100'} rounded-lg flex items-center justify-center`}>
-                {editCourse ? <Edit className="w-5 h-5 text-blue-600" /> : <Plus className="w-5 h-5 text-green-600" />}
+              <div className={`w-10 h-10 ${editCourse ? 'bg-indigo-100' : 'bg-green-100'} rounded-lg flex items-center justify-center`}>
+                {editCourse ? <Edit className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-green-600" />}
               </div>
               <h2 className="text-2xl font-bold text-slate-900">
                 {editCourse ? "Edit Course" : "Create New Course"}
@@ -336,7 +336,7 @@ export default function DashboardAdminCourses() {
                           : setNewCourse({ ...newCourse, courseId: e.target.value })
                       }
                       disabled={!!editCourse}
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="e.g., CS101"
                     />
                   </div>
@@ -511,7 +511,7 @@ export default function DashboardAdminCourses() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">All Courses</h2>
-          <span className="px-4 py-2 bg-white text-slate-700 font-semibold rounded-xl text-sm shadow-md">
+          <span className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm shadow-sm">
             {filteredCourses.length} {filteredCourses.length === 1 ? 'Course' : 'Courses'}
           </span>
         </div>
@@ -539,7 +539,7 @@ export default function DashboardAdminCourses() {
             {filteredCourses.map((course) => (
               <div
                 key={course._id}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden group"
+                className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden group"
               >
                 {/* Course Header with Category Gradient */}
                 <div className={`bg-gradient-to-r ${CATEGORY_COLORS[course.category] || 'from-gray-500 to-gray-600'} p-4`}>

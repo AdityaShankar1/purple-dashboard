@@ -1002,46 +1002,74 @@ export default function DashboardUserMetrics() {
   }, [])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="p-6">
-        <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Enrolled Courses - Highlight Card */}
+      <Card className="md:col-span-2 bg-gradient-to-br from-[var(--card-bg)] to-blue-500/10 border-blue-500/20">
+        <div className="flex items-center justify-between h-full py-2">
           <div>
-            <p className="text-gray-600 text-sm">Enrolled Courses</p>
-            <p className="text-3xl font-bold mt-2">{metrics.enrolledCourses}</p>
+            <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Total Enrolled Courses</p>
+            <p className="text-6xl font-black mt-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
+              {metrics.enrolledCourses}
+            </p>
+            <p className="mt-4 text-xs text-blue-400 font-semibold flex items-center gap-1">
+              <span>View all courses</span>
+              <span className="text-[10px]">→</span>
+            </p>
           </div>
-          <BookOpen className="text-blue-500" size={32} />
+          <div className="p-6 bg-blue-500/10 rounded-2xl">
+            <BookOpen className="text-blue-500" size={48} />
+          </div>
         </div>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 text-sm">Ongoing Courses</p>
-            <p className="text-3xl font-bold mt-2">{metrics.ongoingCourses}</p>
+      {/* Ongoing Courses */}
+      <Card className="md:col-span-1 border-yellow-500/20">
+        <div className="flex flex-col h-full justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-[var(--text-secondary)] text-sm font-medium">Ongoing</p>
+            <div className="p-2 bg-yellow-500/10 rounded-lg">
+              <Clock className="text-yellow-500" size={20} />
+            </div>
           </div>
-          <Clock className="text-yellow-500" size={32} />
+          <p className="text-5xl font-black mt-4 text-[var(--text-primary)]">{metrics.ongoingCourses}</p>
+          <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 h-1 rounded-full">
+            <div className="bg-yellow-500 h-full rounded-full" style={{ width: '40%' }} />
+          </div>
         </div>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 text-sm">Completed Courses</p>
-            <p className="text-3xl font-bold mt-2">{metrics.completedCourses}</p>
+      {/* Completed Courses */}
+      <Card className="border-green-500/20">
+        <div className="flex flex-col h-full justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-[var(--text-secondary)] text-sm font-medium">Completed</p>
+            <div className="p-2 bg-green-500/10 rounded-lg">
+              <CheckCircle className="text-green-500" size={20} />
+            </div>
           </div>
-          <CheckCircle className="text-green-500" size={32} />
+          <p className="text-5xl font-black mt-4 text-[var(--text-primary)]">{metrics.completedCourses}</p>
+          <p className="mt-2 text-xs text-green-500 font-medium">Successfully finished</p>
         </div>
       </Card>
 
-      <Card className="p-6">
+      {/* Certificates */}
+      <Card className="md:col-span-2 border-purple-500/20 bg-gradient-to-br from-[var(--card-bg)] to-purple-500/5">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 text-sm">Certificates</p>
-            <p className="text-3xl font-bold mt-2">{metrics.certificates}</p>
+          <div className="flex-1">
+            <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Achievements</p>
+            <div className="flex items-baseline gap-3 mt-2">
+              <p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-600">
+                {metrics.certificates}
+              </p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">Certificates Earned</p>
+            </div>
           </div>
-          <Award className="text-purple-500" size={32} />
+          <div className="p-6 bg-purple-500/10 rounded-2xl">
+            <Award className="text-purple-500" size={48} />
+          </div>
         </div>
       </Card>
     </div>
   )
 }
+

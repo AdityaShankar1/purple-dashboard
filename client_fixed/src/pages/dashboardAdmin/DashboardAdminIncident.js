@@ -411,7 +411,7 @@ export default function DashboardAdminIncident() {
   }, [incidents]);
 
   return (
-    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-blue-900">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-blue-900 grid-flow-row-dense">
       {/* Total Alerts */}
       <Card title="🔔 Total Alerts">
         <div className="text-5xl font-bold text-center text-blue-600">
@@ -426,24 +426,35 @@ export default function DashboardAdminIncident() {
         </div>
       </Card>
 
-      {/* Incidents by Severity */}
-      <Card title="🚨 Incidents by Severity">
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie
-              data={severityData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={90}
-              label
-            >
-              {severityData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+      {/* Incidents by Severity - Extended vertical span */}
+      <Card title="🚨 Incidents by Severity" className="lg:row-span-2">
+        <div className="flex-1 flex flex-col justify-center">
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={severityData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={140}
+                innerRadius={90}
+                paddingAngle={4}
+                label
+              >
+                {severityData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex justify-around text-xs mt-4">
+            {severityData.map((s, i) => (
+              <span key={i} style={{ color: s.color }} className="font-bold uppercase tracking-wider">
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
       </Card>
 
       {/* Mean Time to Detect */}
