@@ -379,8 +379,6 @@
 
 
 
-
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -640,56 +638,69 @@ export default function MonitoringUsers() {
 
       {/* User Details Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 sm:p-6 lg:p-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+            style={{ backgroundColor: "rgba(238, 221, 255, 0.7)" }} // #eedbff @ 70% opacity
+            className="backdrop-blur-2xl border border-white/50 dark:border-gray-700/60 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">User Details: {selectedUser.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900">User Details: {selectedUser.name}</h2>
               <button onClick={() => setSelectedUser(null)} className="text-gray-500 hover:text-gray-700">
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">User Information</h3>
-                <div className="space-y-2 text-gray-700">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="text-purple-500" size={18} />
+                  User Information
+                </h3>
+                <div className="space-y-3 text-gray-800">
                   <p>
-                    <span className="font-medium">Email:</span> {selectedUser.email}
+                    <span className="font-semibold text-gray-600">Email:</span> {selectedUser.email}
                   </p>
                   <p>
-                    <span className="font-medium">Role:</span> {selectedUser.role}
+                    <span className="font-semibold text-gray-600">Role:</span> <span className="capitalize">{selectedUser.role}</span>
                   </p>
                   <p>
-                    <span className="font-medium">Joined:</span> {new Date(selectedUser.createdAt).toLocaleDateString()}
+                    <span className="font-semibold text-gray-600">Joined:</span> {new Date(selectedUser.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
-                  <p>
-                    <span className="font-medium">Status:</span> {selectedUser.isActive ? "Active" : "Inactive"}
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-600">Status:</span> 
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${selectedUser.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {selectedUser.isActive ? "Active" : "Inactive"}
+                    </span>
                   </p>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Course Statistics</h3>
-                <div className="space-y-2 text-gray-700">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <BookOpen className="text-blue-500" size={18} />
+                  Course Statistics
+                </h3>
+                <div className="space-y-3 text-gray-800">
                   {(() => {
                     const stats = getUserStats(selectedUser._id)
                     return (
                       <>
                         <p>
-                          <span className="font-medium">Total Enrollments:</span> {stats.total}
+                          <span className="font-semibold text-gray-600">Total Enrollments:</span> {stats.total}
                         </p>
-                        <p>
-                          <span className="font-medium">Completed:</span> {stats.completed}
+                        <p className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-600">Completed:</span> 
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{stats.completed}</span>
                         </p>
-                        <p>
-                          <span className="font-medium">Active:</span> {stats.active}
+                        <p className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-600">Active:</span> 
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{stats.active}</span>
                         </p>
-                        <p>
-                          <span className="font-medium">Dropped:</span> {stats.dropped}
+                        <p className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-600">Dropped:</span> 
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{stats.dropped}</span>
                         </p>
                       </>
                     )
@@ -698,25 +709,28 @@ export default function MonitoringUsers() {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Enrollments</h3>
+            <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <BookOpen className="text-purple-500" size={18} />
+                Course Enrollments
+              </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 text-gray-500">Course</th>
-                      <th className="text-left py-2 text-gray-500">Status</th>
-                      <th className="text-left py-2 text-gray-500">Progress</th>
-                      <th className="text-left py-2 text-gray-500">Enrolled</th>
+                      <th className="text-left py-3 text-sm font-semibold text-gray-600 uppercase tracking-wider">Course</th>
+                      <th className="text-left py-3 text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                      <th className="text-left py-3 text-sm font-semibold text-gray-600 uppercase tracking-wider">Progress</th>
+                      <th className="text-left py-3 text-sm font-semibold text-gray-600 uppercase tracking-wider">Enrolled</th>
                     </tr>
                   </thead>
                   <tbody>
                     {getUserEnrollments(selectedUser._id).map((enrollment) => (
-                      <tr key={enrollment._id} className="border-b border-gray-200">
-                        <td className="py-2 text-gray-900">{enrollment.courseId.title}</td>
-                        <td className="py-2">
+                      <tr key={enrollment._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3 text-gray-900 font-medium">{enrollment.courseId?.title || "Deleted/Unknown Course"}</td>
+                        <td className="py-3">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${enrollment.status === "completed"
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${enrollment.status === "completed"
                               ? "bg-green-100 text-green-800"
                               : enrollment.status === "active"
                                 ? "bg-blue-100 text-blue-800"
@@ -726,8 +740,8 @@ export default function MonitoringUsers() {
                             {enrollment.status}
                           </span>
                         </td>
-                        <td className="py-2 text-gray-700">{enrollment.progress}%</td>
-                        <td className="py-2 text-gray-700">{new Date(enrollment.enrolledAt).toLocaleDateString()}</td>
+                        <td className="py-3 text-gray-800 font-medium">{enrollment.progress}%</td>
+                        <td className="py-3 text-gray-700">{new Date(enrollment.enrolledAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                       </tr>
                     ))}
                   </tbody>

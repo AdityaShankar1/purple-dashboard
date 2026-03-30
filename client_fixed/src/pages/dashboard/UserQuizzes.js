@@ -107,26 +107,26 @@ export default function UserQuizzes() {
   // Quiz Taking View
   if (selectedQuiz) {
     return (
-      <div className="min-h-screen p-6 text-white">
+      <div className="min-h-screen p-6 text-[var(--text-primary)] bg-[var(--bg-primary)] transition-colors">
         <ToastContainer position="bottom-right" theme="colored" />
         <button
           onClick={() => setSelectedQuiz(null)}
-          className="mb-6 flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+          className="mb-6 flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft size={20} /> Back to Quizzes
         </button>
 
-        <div className="max-w-4xl mx-auto bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-700">
+        <div className="max-w-4xl mx-auto bg-[var(--card-bg)] rounded-2xl shadow-xl p-8 border border-[var(--card-border)]">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">{selectedQuiz.title}</h1>
-            <p className="text-gray-400">{selectedQuiz.description}</p>
+            <h1 className="text-3xl font-bold mb-2 text-[var(--text-primary)]">{selectedQuiz.title}</h1>
+            <p className="text-[var(--text-secondary)]">{selectedQuiz.description}</p>
           </div>
 
           <div className="space-y-8">
             {selectedQuiz.questions.map((question, idx) => (
-              <div key={question._id} className="bg-gray-700/50 rounded-xl p-6 border border-gray-600">
-                <h3 className="text-lg font-semibold mb-4 flex gap-3">
-                  <span className="text-purple-400">{idx + 1}.</span>
+              <div key={question._id} className="bg-[var(--bg-primary)] rounded-xl p-6 border border-[var(--card-border)]">
+                <h3 className="text-lg font-semibold mb-4 flex gap-3 text-[var(--text-primary)]">
+                  <span className="text-purple-600">{idx + 1}.</span>
                   {question.questionText || question.question}
                 </h3>
 
@@ -135,7 +135,7 @@ export default function UserQuizzes() {
                     type="text"
                     value={answers[question._id] || ""}
                     onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full bg-[var(--bg-secondary)] border border-[var(--card-border)] text-[var(--text-primary)] rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors"
                     placeholder="Type your answer here..."
                   />
                 ) : (
@@ -144,8 +144,8 @@ export default function UserQuizzes() {
                       <label
                         key={optIdx}
                         className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition-all ${answers[question._id] === option
-                          ? "bg-purple-600/20 border-purple-500 border"
-                          : "bg-gray-800 border border-transparent hover:bg-gray-700"
+                          ? "bg-purple-600/10 border-purple-500 border"
+                          : "bg-[var(--bg-secondary)] border border-[var(--card-border)] hover:bg-[var(--bg-primary)]"
                           }`}
                       >
                         <input
@@ -189,13 +189,13 @@ export default function UserQuizzes() {
 
   // Quiz List View
   return (
-    <div className="p-6 md:p-10 min-h-screen text-white">
+    <div className="p-6 md:p-10 min-h-screen text-[var(--text-primary)] bg-[var(--bg-primary)] transition-colors">
       <ToastContainer position="bottom-right" theme="colored" />
 
       <div className="max-w-7xl mx-auto mb-8">
         <button
           onClick={() => navigate('/user')} // Navigate back to courses
-          className="mb-4 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="mb-4 flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft size={20} /> Back to Courses
         </button>
@@ -204,35 +204,35 @@ export default function UserQuizzes() {
             <FileQuestion className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">{courseId ? "Course Quizzes" : "Quiz History"}</h1>
-            <p className="text-gray-400">{courseId ? "Test your knowledge" : "Review your previous quiz scores"}</p>
+            <h1 className="text-3xl font-bold text-[var(--text-primary)]">{courseId ? "Course Quizzes" : "Quiz History"}</h1>
+            <p className="text-[var(--text-secondary)]">{courseId ? "Test your knowledge" : "Review your previous quiz scores"}</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto">
         {quizzes.length === 0 ? (
-          <div className="bg-gray-800 rounded-2xl p-12 text-center border border-gray-700">
-            <FileQuestion className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-300 mb-2">No quizzes available</h3>
-            <p className="text-gray-500">There are no quizzes for this course yet.</p>
+          <div className="bg-[var(--card-bg)] rounded-2xl p-12 text-center border border-[var(--card-border)] transition-colors">
+            <FileQuestion className="w-16 h-16 text-[var(--text-secondary)] opacity-20 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No quizzes available</h3>
+            <p className="text-[var(--text-secondary)]">There are no quizzes for this course yet.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {quizzes.map((quiz) => (
-              <div key={quiz._id} className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-lg hover:border-purple-500/50 transition-all group">
+              <div key={quiz._id} className="bg-[var(--card-bg)] rounded-2xl p-6 border border-[var(--card-border)] shadow-lg hover:border-purple-500/50 transition-all group">
                 <div className="mb-4">
-                  <h3 className="text-xl font-bold mb-2 text-white group-hover:text-purple-400 transition-colors">{quiz.title}</h3>
-                  <p className="text-gray-400 text-sm line-clamp-2">{quiz.description}</p>
+                  <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)] group-hover:text-purple-600 transition-colors">{quiz.title}</h3>
+                  <p className="text-[var(--text-secondary)] text-sm line-clamp-2">{quiz.description}</p>
                 </div>
 
-                <div className="flex items-center gap-4 mb-6 text-sm text-gray-500">
+                <div className="flex items-center gap-4 mb-6 text-sm text-[var(--text-secondary)]">
                   <div className="flex items-center gap-1">
                     <Clock size={16} />
                     <span>{quiz.questions?.length || 0} Questions</span>
                   </div>
                   {quiz.submission && (
-                    <div className="flex items-center gap-1 text-green-400">
+                    <div className="flex items-center gap-1 text-green-600 font-semibold">
                       <CheckCircle size={16} />
                       <span>{quiz.submission.percentage}% Score</span>
                     </div>

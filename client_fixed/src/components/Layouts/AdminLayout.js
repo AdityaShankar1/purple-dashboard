@@ -686,7 +686,7 @@ export default function AdminLayout({ children, activePage, setActivePage, menuI
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full text-white border-white/20 hover:bg-red-500/20 hover:border-red-500/50 bg-transparent flex items-center justify-center gap-2"
+            className="w-full !text-white border-white/20 hover:bg-red-500/20 hover:border-red-500/50 !hover:text-white bg-transparent flex items-center justify-center gap-2"
           >
             <LogOut size={16} />
             {sidebarOpen && "Logout"}
@@ -699,7 +699,7 @@ export default function AdminLayout({ children, activePage, setActivePage, menuI
         <header className="bg-[var(--bg-secondary)] border-b border-[var(--card-border)] py-4 px-8 flex items-center justify-between shadow-sm z-10 transition-colors">
           <div className="flex items-center gap-4">
             <div className="h-8 w-1 bg-[var(--accent-purple)] rounded-full" />
-            <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">
+            <h2 className="text-xl font-black text-[var(--page-title-text)] tracking-tight uppercase">
               {activePage.replace(/_/g, ' ')}
             </h2>
           </div>

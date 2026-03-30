@@ -31,35 +31,43 @@ code {
   --purple-500: #a855f7;
   --purple-600: #9333ea;
   --purple-700: #7c3aed;
-  --purple-800: #6b21a8;
-  --purple-900: #581c87;
+  --purple-800: #9227e0;
+  --purple-900: #7a1fb8;
 
   /* Theme variables - Light Mode */
   --bg-primary: #f0f7ff; /* Light Blue 50 */
   --bg-secondary: #ffffff;
   --bg-header: #e0f2fe; /* Sky Blue 100 */
   --text-primary: #1e3a8a; /* Blue-900 */
-  --text-secondary: #64748b; 
+  --text-secondary: #6B7280; 
   --text-header: #1e40af; /* Blue-800 */
   --card-bg: #ffffff;
   --card-border: #e5e7eb;
-  --accent-purple: #7c3aed;
+  --accent-purple: #9227e0;
   --glass-purple: #fdf4ff; /* Extremely light purple/pink for glass background */
   --glass-purple-border: #f5d0fe;
+
+  --page-title-text: #1e3a8a; /* Blue-900 in light mode */
+  --alert-highlight-text: #2563eb; /* Blue-600 in light mode */
+  --alert-critical-text: #dc2626; /* Red-600 in light mode for critical alerts */
 }
 
 .dark {
   --bg-primary: #0f172a; /* Slate-900 (Deep Navy) */
   --bg-secondary: #1e293b; /* Slate-800 */
-  --bg-header: #0ea5e9; /* Sky Blue 500 */
+  --bg-header: #020617; /* Close to black for dark mode header */
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-header: #e0f2fe; 
   --card-bg: #1e293b;
   --card-border: #334155;
-  --accent-purple: #3b82f6; /* Use Blue in dark mode for user/login */
+  --accent-purple: #9227e0; /* Updated for WCAG Active state */
   --glass-purple: #2a2438; /* Darker version for dark mode */
   --glass-purple-border: #4a3b5a;
+
+  --page-title-text: #f4ecf5; /* Subtle purple tinted white */
+  --alert-highlight-text: #ef4444; /* Red-500 in dark mode */
+  --alert-critical-text: #ef4444; /* Red-500 in dark mode */
 }
 
 body {

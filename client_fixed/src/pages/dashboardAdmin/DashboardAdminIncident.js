@@ -411,10 +411,10 @@ export default function DashboardAdminIncident() {
   }, [incidents]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-blue-900 grid-flow-row-dense">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-[var(--text-primary)] grid-flow-row-dense">
       {/* Total Alerts */}
       <Card title="🔔 Total Alerts">
-        <div className="text-5xl font-bold text-center text-blue-600">
+        <div className="text-5xl font-bold text-center text-[var(--alert-highlight-text)]">
           {totalAlerts}
         </div>
       </Card>
@@ -474,7 +474,7 @@ export default function DashboardAdminIncident() {
       {/* Top Alert Sources */}
       <Card title="💻 Top Alert Sources" className="md:col-span-2 lg:col-span-3">
         {topSources.length === 0 ? (
-          <p className="text-blue-700">No sources available</p>
+          <p className="text-[var(--text-secondary)]">No sources available</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topSources}>

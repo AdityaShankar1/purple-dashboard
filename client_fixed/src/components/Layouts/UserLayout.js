@@ -625,9 +625,9 @@ export default function UserLayout({ children, activePage, setActivePage, menuIt
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[var(--text-secondary)] text-sm font-medium">
-            <span className="opacity-50">User</span>
-            <span>/</span>
-            <span className="text-blue-500 capitalize">{activePage}</span>
+            <span className="opacity-80">User</span>
+            <span className="opacity-60">/</span>
+            <span className="text-blue-600 dark:text-blue-400 capitalize">{activePage.replace(/_/g, ' ')}</span>
           </div>
         </header>
 

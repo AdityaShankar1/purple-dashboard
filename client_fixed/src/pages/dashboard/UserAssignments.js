@@ -46,12 +46,12 @@ export default function UserAssignments() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-purple-100">Your Assignments</h1>
+    <div className="p-6 space-y-6 text-[var(--text-primary)] transition-colors">
+      <h1 className="text-3xl font-bold text-[var(--text-primary)]">Your Assignments</h1>
       {loading ? (
-        <div className="text-purple-300">Loading assignments...</div>
+        <div className="text-[var(--text-secondary)]">Loading assignments...</div>
       ) : items.length === 0 ? (
-        <div className="text-gray-400 italic">No assignments available.</div>
+        <div className="text-[var(--text-secondary)] italic">No assignments available.</div>
       ) : (
         items.map(a => {
           const now = Date.now();
@@ -59,19 +59,19 @@ export default function UserAssignments() {
           const expired = now > dueMs;
 
           return (
-            <div key={a._id} className="bg-gray-900 rounded-lg border border-gray-800 p-4 shadow-lg">
+            <div key={a._id} className="bg-[var(--card-bg)] rounded-lg border border-[var(--card-border)] p-4 shadow-lg transition-colors">
               <div className="flex justify-between">
                 <div>
-                  <div className="text-lg font-semibold text-purple-200">{a.title}</div>
-                  <div className="text-sm text-gray-400 mt-1">{a.description}</div>
-                  <div className="text-sm mt-3 text-gray-500">
+                  <div className="text-lg font-semibold text-[var(--text-primary)]">{a.title}</div>
+                  <div className="text-sm text-[var(--text-secondary)] mt-1">{a.description}</div>
+                  <div className="text-sm mt-3 text-[var(--text-secondary)] opacity-80">
                     Starts: {new Date(a.startAt).toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-[var(--text-secondary)] opacity-80">
                     Due: {new Date(a.dueAt).toLocaleString()}
                   </div>
                 </div>
-                <div className="text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded-full h-fit">
+                <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-primary)] px-3 py-1 rounded-full h-fit border border-[var(--card-border)]">
                   Files: {a.questionFiles?.length || 0}
                 </div>
               </div>
