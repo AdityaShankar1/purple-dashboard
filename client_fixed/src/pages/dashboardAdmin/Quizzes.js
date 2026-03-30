@@ -437,16 +437,16 @@ function QuestionEditor({ value, onChange }) {
   }
 
   return (
-    <div className="border rounded p-3 space-y-3 bg-white text-black">
+    <div className="border rounded-xl p-4 space-y-3 bg-white dark:bg-gray-800 text-black dark:text-white border-transparent dark:border-gray-700 shadow-sm transition-colors">
       <div className="flex flex-col md:flex-row gap-2">
         <input
-          className="border rounded px-3 py-2 flex-1 text-black placeholder:text-neutral-500"
+          className="border rounded-lg px-3 py-2 flex-1 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 placeholder:text-neutral-500 dark:placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           placeholder="Question prompt"
           value={local.prompt}
           onChange={(e) => update({ prompt: e.target.value })}
         />
         <select
-          className="border rounded px-3 py-2 text-black"
+          className="border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           value={local.type}
           onChange={(e) => update({ type: e.target.value })}
         >
@@ -456,9 +456,9 @@ function QuestionEditor({ value, onChange }) {
         </select>
       </div>
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-black">Points</label>
+        <label className="text-sm font-medium text-black dark:text-gray-300">Points</label>
         <select
-          className="border rounded px-2 py-1 w-24 text-black"
+          className="border rounded-lg px-2 py-1 w-24 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           value={local.points || 1}
           onChange={(e) => update({ points: Number(e.target.value || 1) })}
         >
@@ -471,11 +471,11 @@ function QuestionEditor({ value, onChange }) {
       </div>
       {(local.type === "single" || local.type === "multiple") && (
         <div className="space-y-1">
-          <div className="text-sm font-medium text-black">Options</div>
+          <div className="text-sm font-medium text-black dark:text-gray-300">Options</div>
           {(local.options || []).map((opt, i) => (
             <div key={i} className="flex gap-2">
               <input
-                className="border rounded px-3 py-2 flex-1 text-black"
+                className="border rounded-lg px-3 py-2 flex-1 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 value={opt.text}
                 onChange={(e) => {
                   const next = [...(local.options || [])]
@@ -500,10 +500,10 @@ function QuestionEditor({ value, onChange }) {
         </div>
       )}
       <div className="space-y-1">
-        <div className="text-sm font-medium text-black">Correct Answer(s)</div>
+        <div className="text-sm font-medium text-black dark:text-gray-300">Correct Answer(s)</div>
         {local.type === "single" || local.type === "fill" ? (
           <input
-            className="border rounded px-3 py-2 w-full text-black"
+            className="border rounded-lg px-3 py-2 w-full bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
             value={local.correctAnswers?.[0] || ""}
             onChange={(e) => update({ correctAnswers: [e.target.value] })}
           />
@@ -562,10 +562,11 @@ export default function AdminQuizzes() {
       questions: [],
     })
 
-  const save = async () => {    if (!form.courseId || form.courseId.trim() === "" || form.courseId === "undefined") {
+  const save = async () => {
+    if (!form.courseId || form.courseId.trim() === "" || form.courseId === "undefined") {
       setError("Course ID is required and must be valid")
       return
-    }    try {
+    } try {
       const payload = { ...form }
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString()
       if (payload.dueAt) payload.dueAt = new Date(payload.dueAt).toISOString()
@@ -637,7 +638,7 @@ export default function AdminQuizzes() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-neutral-50 text-black">
+    <div className="min-h-screen p-6 bg-neutral-50 dark:bg-gray-900 text-black dark:text-white transition-colors duration-300">
       <ToastContainer position="bottom-right" theme="colored" />
       {error && (
         <div className="border border-red-300 bg-red-50 text-red-800 rounded p-3 max-w-6xl mx-auto mb-4">{error}</div>
@@ -645,29 +646,29 @@ export default function AdminQuizzes() {
       <section className="space-y-4 max-w-6xl mx-auto">
         <h1 className="text-3xl font-semibold text-indigo-700">Quizzes</h1>
         <div className="grid grid-cols-1 gap-4">
-          <div className="border rounded p-4 space-y-3 bg-white">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4 bg-white dark:bg-gray-800 shadow-sm transition-colors">
             <h2 className="font-semibold text-lg text-indigo-600">{editing ? "Edit Quiz" : "Create Quiz"}</h2>
             <input
-              className="border rounded px-3 py-2 w-full text-black"
+              className="border rounded-lg px-4 py-2.5 w-full bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="Course name or ID"
               value={form.courseId}
               onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
               required
             />
             <input
-              className="border rounded px-3 py-2 w-full text-black"
+              className="border rounded-lg px-4 py-2.5 w-full bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="Title"
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             />
             <textarea
-              className="border rounded px-3 py-2 w-full text-black"
+              className="border rounded-lg px-4 py-2.5 w-full bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="Description"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
             <div className="flex items-center gap-2">
-              <label className="text-sm text-black">Published</label>
+              <label className="text-sm font-medium text-black dark:text-gray-300">Published</label>
               <input
                 type="checkbox"
                 checked={form.isPublished}
@@ -685,8 +686,10 @@ export default function AdminQuizzes() {
                       fullWidth: true,
                       size: "small",
                       sx: {
-                        "& .MuiInputBase-input": { color: "black" },
-                        "& .MuiInputLabel-root": { color: "rgb(79 70 229)" },
+                        "& .MuiInputBase-input": { color: "var(--text-primary, black)" },
+                        "& .MuiInputLabel-root": { color: "var(--text-primary, rgb(79 70 229))" },
+                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-primary, #ccc)" },
+                        "& .MuiSvgIcon-root": { color: "var(--text-primary, #666)" },
                       },
                     },
                   }}
@@ -700,8 +703,10 @@ export default function AdminQuizzes() {
                       fullWidth: true,
                       size: "small",
                       sx: {
-                        "& .MuiInputBase-input": { color: "black" },
-                        "& .MuiInputLabel-root": { color: "rgb(79 70 229)" },
+                        "& .MuiInputBase-input": { color: "var(--text-primary, black)" },
+                        "& .MuiInputLabel-root": { color: "var(--text-primary, rgb(79 70 229))" },
+                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-primary, #ccc)" },
+                        "& .MuiSvgIcon-root": { color: "var(--text-primary, #666)" },
                       },
                     },
                   }}
@@ -710,12 +715,12 @@ export default function AdminQuizzes() {
             </LocalizationProvider>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="font-medium text-black">Questions</div>
+                <div className="font-medium text-black dark:text-white">Questions</div>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-black">Add Question</label>
+                <label className="text-sm font-medium text-black dark:text-gray-300">Add Question</label>
                 <select
-                  className="border rounded px-3 py-2 text-black"
+                  className="border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
                   defaultValue=""
                   onChange={(e) => {
                     const type = e.target.value

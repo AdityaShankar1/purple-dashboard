@@ -444,12 +444,21 @@ export default function DashboardAdminIncident() {
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: 'none',
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                  backgroundColor: 'var(--bg-primary, #fff)',
+                  color: 'var(--text-primary, #000)'
+                }}
+                itemStyle={{ color: 'var(--text-primary, #000)' }}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-around text-xs mt-4">
             {severityData.map((s, i) => (
-              <span key={i} style={{ color: s.color }} className="font-bold uppercase tracking-wider">
+              <span key={i} style={{ color: s.color }} className="font-bold uppercase tracking-wider dark:text-opacity-90">
                 {s.name}
               </span>
             ))}

@@ -1013,61 +1013,75 @@ export default function DashboardUserMetrics() {
   }, [])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Enrolled Courses */}
-      <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-        <div className="flex flex-col justify-between py-4 px-6">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600 text-sm font-semibold uppercase tracking-wider">Total Enrolled</p>
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <BookOpen className="text-slate-800" size={22} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <BookOpen className="text-indigo-600 dark:text-indigo-400" size={24} />
             </div>
           </div>
-          <p className="text-4xl font-bold my-2 text-black">
-            {metrics.enrolledCourses}
-          </p>
+          <div className="space-y-1">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Total Enrolled</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{metrics.enrolledCourses}</p>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Card>
 
-      {/* Ongoing Courses */}
-      <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-        <div className="flex flex-col justify-between py-4 px-6">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600 text-sm font-semibold uppercase tracking-wider">Ongoing</p>
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <Clock className="text-slate-800" size={22} />
+
+      {/* Ongoing */}
+      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <Clock className="text-amber-600 dark:text-amber-400" size={24} />
+            </div>
+            <div className="flex -space-x-2">
+              <div className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700" />
+              <div className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-800 bg-slate-300 dark:bg-slate-600" />
             </div>
           </div>
-          <p className="text-4xl font-bold my-2 text-black">{metrics.ongoingCourses}</p>
+          <div className="space-y-1">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Ongoing</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{metrics.ongoingCourses}</p>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Card>
 
-      {/* Completed Courses */}
-      <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-        <div className="flex flex-col justify-between py-4 px-6">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600 text-sm font-semibold uppercase tracking-wider">Completed</p>
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <CheckCircle className="text-slate-800" size={22} />
+      {/* Completed */}
+      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={24} />
             </div>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full uppercase tracking-tighter">Verified</span>
           </div>
-          <p className="text-4xl font-bold my-2 text-black">{metrics.completedCourses}</p>
+          <div className="space-y-1">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Completed</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{metrics.completedCourses}</p>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Card>
 
       {/* Certificates */}
-      <Card className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-        <div className="flex flex-col justify-between py-4 px-6">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600 text-sm font-semibold uppercase tracking-wider">Certificates</p>
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <Award className="text-slate-800" size={22} />
+      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-rose-50 dark:bg-rose-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <Award className="text-rose-600 dark:text-rose-400" size={24} />
             </div>
           </div>
-          <p className="text-4xl font-bold my-2 text-black">{metrics.certificates}</p>
+          <div className="space-y-1">
+            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Certificates</h3>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{metrics.certificates}</p>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Card>
     </div>
   )
 }
-
