@@ -646,7 +646,7 @@ export default function AdminQuizzes() {
       <section className="space-y-4 max-w-6xl mx-auto">
         <h1 className="text-3xl font-semibold text-indigo-700">Quizzes</h1>
         <div className="grid grid-cols-1 gap-4">
-          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4 bg-white dark:bg-gray-800 shadow-sm transition-colors">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4 bg-white dark:bg-gray-800 shadow-sm transition-colors premium-hover-glow">
             <h2 className="font-semibold text-lg text-indigo-600">{editing ? "Edit Quiz" : "Create Quiz"}</h2>
             <input
               className="border rounded-lg px-4 py-2.5 w-full bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"

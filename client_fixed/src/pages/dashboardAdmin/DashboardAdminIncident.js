@@ -364,9 +364,9 @@ export default function DashboardAdminIncident() {
     });
     return [
       { name: "Critical", value: critical, color: "#DC2626" },
-      { name: "High", value: high, color: "#F97316" },
-      { name: "Medium", value: medium, color: "#FACC15" },
-      { name: "Low", value: low, color: "#4ade80" },
+      { name: "High", value: high, color: "#ef4444" },
+      { name: "Medium", value: medium, color: "#facc15" },
+      { name: "Low", value: low, color: "#22c55e" },
     ];
   }, [incidents]);
 
@@ -427,7 +427,7 @@ export default function DashboardAdminIncident() {
       </Card>
 
       {/* Incidents by Severity - Extended vertical span */}
-      <Card title="🚨 Incidents by Severity" className="lg:row-span-2">
+      <Card title="🚨 Incidents by Severity" className="lg:row-span-2 premium-hover-glow">
         <div className="flex-1 flex flex-col justify-center">
           <ResponsiveContainer width="100%" height={400}>
             <PieChart>
@@ -438,7 +438,21 @@ export default function DashboardAdminIncident() {
                 outerRadius={140}
                 innerRadius={90}
                 paddingAngle={4}
-                label
+                label={({ name, value, x, cx, y, fill }) => {
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill={fill}
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
+                      className="text-[12px] font-black drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]"
+                    >
+                      {`${name} (${value})`}
+                    </text>
+                  );
+                }}
+                labelLine={{ stroke: 'var(--text-secondary, #666)', strokeWidth: 1.5 }}
               >
                 {severityData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
@@ -448,11 +462,11 @@ export default function DashboardAdminIncident() {
                 contentStyle={{
                   borderRadius: '12px',
                   border: 'none',
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                  backgroundColor: 'var(--bg-primary, #fff)',
-                  color: 'var(--text-primary, #000)'
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                  color: 'var(--text-primary, #f8fafc)'
                 }}
-                itemStyle={{ color: 'var(--text-primary, #000)' }}
+                itemStyle={{ color: 'var(--text-primary, #f8fafc)' }}
               />
             </PieChart>
           </ResponsiveContainer>

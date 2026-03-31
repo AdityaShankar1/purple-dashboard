@@ -169,7 +169,7 @@ export default function DashboardAdminMetrics() {
       </Card>
 
       {/* Last 24Hr Alerts - Smaller Highlight */}
-      <Card 
+      <Card
         title={
           <span className="flex items-center gap-2">
             <span className="p-1.5 bg-red-500/10 rounded-lg text-red-500">🚨</span>
@@ -189,7 +189,7 @@ export default function DashboardAdminMetrics() {
       </Card>
 
       {/* Risk Distribution */}
-      <Card 
+      <Card
         title={
           <span className="flex items-center gap-2">
             <span className="p-1.5 bg-purple-500/10 rounded-lg text-purple-500">📈</span>
@@ -208,19 +208,32 @@ export default function DashboardAdminMetrics() {
                 outerRadius={80}
                 innerRadius={60}
                 paddingAngle={5}
-                label={false}
+                label={({ name, percent, x, y, cx, fill }) => (
+                  <text
+                    x={x}
+                    y={y}
+                    fill={fill}
+                    textAnchor={x > cx ? 'start' : 'end'}
+                    dominantBaseline="central"
+                    className="text-[11px] font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
+                  >
+                    {`${name} ${(percent * 100).toFixed(0)}%`}
+                  </text>
+                )}
               >
                 {riskData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'var(--bg-secondary)', 
-                  borderColor: 'var(--card-border)',
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                  borderColor: 'var(--card-border, #334155)',
                   borderRadius: '12px',
-                  color: 'var(--text-primary)' 
+                  color: 'var(--text-primary, #f8fafc)',
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)'
                 }}
+                itemStyle={{ color: 'var(--text-primary, #f8fafc)' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -236,7 +249,7 @@ export default function DashboardAdminMetrics() {
       </Card>
 
       {/* Top 5 Log Views - Moved Up */}
-      <Card 
+      <Card
         title={
           <span className="flex items-center gap-2">
             <span className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">👁</span>
@@ -253,7 +266,7 @@ export default function DashboardAdminMetrics() {
                 <span className="font-bold text-[var(--accent-purple)]">{log.value}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="bg-gradient-to-r from-indigo-500 to-[var(--accent-purple)] h-full rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${log.value}%` }}
                 />
@@ -264,7 +277,7 @@ export default function DashboardAdminMetrics() {
       </Card>
 
       {/* Threat Intel Tags - Moved Up */}
-      <Card 
+      <Card
         title={
           <span className="flex items-center gap-2">
             <span className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-500">🛡️</span>
@@ -318,8 +331,8 @@ export default function DashboardAdminMetrics() {
             <LineChart data={trending}>
               <defs>
                 <linearGradient id="colorAlerts" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -339,18 +352,18 @@ export default function DashboardAdminMetrics() {
               <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
               <Tooltip
                 labelFormatter={(label) => new Date(label).toLocaleString()}
-                contentStyle={{ 
-                  backgroundColor: 'var(--bg-secondary)', 
+                contentStyle={{
+                  backgroundColor: 'var(--bg-secondary)',
                   borderColor: 'var(--card-border)',
                   borderRadius: '12px',
-                  color: 'var(--text-primary)' 
+                  color: 'var(--text-primary)'
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="alerts" 
-                stroke="#ef4444" 
-                strokeWidth={3} 
+              <Line
+                type="monotone"
+                dataKey="alerts"
+                stroke="#ef4444"
+                strokeWidth={3}
                 dot={false}
                 activeDot={{ r: 6, strokeWidth: 0 }}
               />
@@ -358,7 +371,7 @@ export default function DashboardAdminMetrics() {
           </ResponsiveContainer>
         </div>
       </Card>
-      
+
     </div>
   );
 }

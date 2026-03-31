@@ -1014,7 +1014,7 @@ export default function DashboardUserMetrics() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+      <Card className="premium-hover-glow relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group transition-all duration-300">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
@@ -1031,7 +1031,7 @@ export default function DashboardUserMetrics() {
 
 
       {/* Ongoing */}
-      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+      <Card className="premium-hover-glow relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group transition-all duration-300">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
@@ -1051,7 +1051,7 @@ export default function DashboardUserMetrics() {
       </Card>
 
       {/* Completed */}
-      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+      <Card className="premium-hover-glow relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group transition-all duration-300">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
@@ -1068,7 +1068,7 @@ export default function DashboardUserMetrics() {
       </Card>
 
       {/* Certificates */}
-      <Card className="relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group hover:translate-y-[-4px] transition-all duration-300">
+      <Card className="premium-hover-glow relative overflow-hidden bg-white dark:bg-slate-800 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl group transition-all duration-300">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-rose-50 dark:bg-rose-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">

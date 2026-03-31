@@ -652,7 +652,7 @@ export default function MonitoringUsers() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
+              <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm transition-all premium-hover-glow">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                   <Users className="text-purple-500" size={18} />
                   User Information
@@ -676,7 +676,7 @@ export default function MonitoringUsers() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
+              <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm transition-all premium-hover-glow">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                   <BookOpen className="text-blue-500" size={18} />
                   Course Statistics
@@ -708,7 +708,7 @@ export default function MonitoringUsers() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-100 dark:border-gray-600 shadow-sm transition-all premium-hover-glow">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <BookOpen className="text-purple-500" size={18} />
                 Course Enrollments

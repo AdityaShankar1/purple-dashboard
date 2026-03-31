@@ -194,7 +194,7 @@ export default function DashboardAdminAI() {
             </div>
 
             {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#ddeeff]">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[var(--bg-primary)]">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`flex max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-3`}>
