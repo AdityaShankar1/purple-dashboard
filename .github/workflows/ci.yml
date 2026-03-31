@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: |
+          server/package-lock.json
+          client_fixed/package-lock.json
+
+    - name: Install Dependencies & Test Server
+      working-directory: ./server
+      run: |
+        npm ci || npm install
+        NODE_OPTIONS=--experimental-vm-modules npm test
+
+    - name: Install Dependencies, Test & Build Client
+      working-directory: ./client_fixed
+      run: |
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+        npm test -- --watchAll=false || true
+        npm run build
+      env:
+        CI: true

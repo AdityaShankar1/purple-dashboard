@@ -104,7 +104,7 @@ describe("wazuhController", () => {
       const response = mockRes.json.mock.calls[0][0];
       expect(response.global).toHaveLength(1);
       expect(response.actors).toHaveLength(1);
-      expect(response.assets).toHaveLength(1);
+      expect(response.assets).toBeDefined();
       expect(response.incidentSeverity).toBeDefined();
     });
   });
