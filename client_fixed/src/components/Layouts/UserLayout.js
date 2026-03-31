@@ -554,8 +554,8 @@ export default function UserLayout({ children, activePage, setActivePage, menuIt
       {/* Sidebar */}
       <div
         className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-to-b from-blue-700 to-blue-900 text-white transition-all duration-300 flex flex-col shadow-2xl border-r border-white/5 z-20`}
+          sidebarOpen ? "w-64" : "w-0"
+        } bg-gradient-to-b from-blue-700 to-blue-900 text-white transition-all duration-300 flex flex-col shadow-2xl border-r border-white/5 z-20 overflow-hidden`}
       >
         <div className="p-4 flex items-center justify-between border-b border-white/10 min-h-[64px]">
           {sidebarOpen && <h1 className="text-lg font-bold tracking-tight text-blue-50">Learning Hub</h1>}
@@ -617,8 +617,16 @@ export default function UserLayout({ children, activePage, setActivePage, menuIt
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-[var(--bg-secondary)] border-b border-[var(--card-border)] py-4 px-8 flex items-center justify-between shadow-sm z-10 transition-colors">
+        <header className="bg-[var(--bg-secondary)] border-b border-[var(--card-border)] py-4 px-4 flex items-center justify-between shadow-sm z-10 transition-colors">
           <div className="flex items-center gap-4">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-blue-500"
+              >
+                <Menu size={20} />
+              </button>
+            )}
             <div className="h-8 w-1 bg-blue-500 rounded-full" />
             <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">
               {activePage.replace(/_/g, ' ')}
@@ -631,8 +639,8 @@ export default function UserLayout({ children, activePage, setActivePage, menuIt
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 md:px-8 pb-8 pt-2 bg-[var(--bg-primary)] custom-scrollbar">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto px-4 pb-8 pt-2 bg-[var(--bg-primary)] custom-scrollbar">
+          <div className="w-full">
             {children}
           </div>
         </main>
