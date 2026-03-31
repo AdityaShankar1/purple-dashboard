@@ -178,7 +178,7 @@ export default function DashboardAdminCourses() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-slate-50 space-y-8">
+    <div className="min-h-screen p-8 bg-[var(--bg-primary)] space-y-8 text-[var(--text-primary)]">
       <ToastContainer position="bottom-right" theme="colored" />
 
       {/* Header Section */}
@@ -197,50 +197,50 @@ export default function DashboardAdminCourses() {
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Courses</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
+                <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Total Courses</p>
+                <p className="text-3xl font-bold text-[var(--text-primary)] mt-1">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-indigo-600" />
+              <div className="w-12 h-12 bg-indigo-100/10 rounded-xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-indigo-500" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Categories</p>
-                <p className="text-3xl font-bold text-purple-600 mt-1">{stats.categories}</p>
+                <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Categories</p>
+                <p className="text-3xl font-bold text-purple-500 mt-1">{stats.categories}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Award className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-purple-100/10 rounded-xl flex items-center justify-center">
+                <Award className="w-6 h-6 text-purple-500" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Avg Duration</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.avgDuration}h</p>
+                <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Avg Duration</p>
+                <p className="text-3xl font-bold text-blue-500 mt-1">{stats.avgDuration}h</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-blue-100/10 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-blue-500" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-[var(--card-bg)] rounded-xl p-6 shadow-sm border border-[var(--card-border)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm font-medium uppercase tracking-wider">Filtered</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.filtered}</p>
+                <p className="text-[var(--text-secondary)] text-sm font-medium uppercase tracking-wider">Filtered</p>
+                <p className="text-3xl font-bold text-green-500 mt-1">{stats.filtered}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-green-100/10 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-500" />
               </div>
             </div>
           </div>
@@ -249,16 +249,16 @@ export default function DashboardAdminCourses() {
 
       {/* Search and Filter Section */}
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl shadow-sm p-6">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Category Filter */}
             <div className="flex-1">
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]" />
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none appearance-none cursor-pointer"
+                  className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border border-[var(--card-border)] rounded-lg text-[var(--text-primary)] focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none appearance-none cursor-pointer"
                 >
                   {COURSE_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
@@ -272,13 +272,13 @@ export default function DashboardAdminCourses() {
             {/* Search Input */}
             <div className="flex-[2]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]" />
                 <input
                   type="text"
                   placeholder="Search by title or course ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border border-[var(--card-border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none"
                 />
               </div>
             </div>
@@ -308,12 +308,12 @@ export default function DashboardAdminCourses() {
       {/* Create or Edit Form - Collapsible */}
       <Collapse in={showCreateForm} timeout={400}>
         <div className="max-w-7xl mx-auto mb-8">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+          <div className="bg-[var(--card-bg)] rounded-2xl shadow-xl border border-[var(--card-border)] p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className={`w-10 h-10 ${editCourse ? 'bg-indigo-100' : 'bg-green-100'} rounded-lg flex items-center justify-center`}>
-                {editCourse ? <Edit className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-green-600" />}
+              <div className={`w-10 h-10 ${editCourse ? 'bg-indigo-500/10' : 'bg-green-500/10'} rounded-lg flex items-center justify-center`}>
+                {editCourse ? <Edit className="w-5 h-5 text-indigo-500" /> : <Plus className="w-5 h-5 text-green-500" />}
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
                 {editCourse ? "Edit Course" : "Create New Course"}
               </h2>
             </div>
@@ -323,7 +323,7 @@ export default function DashboardAdminCourses() {
                 <div className="space-y-5">
                   {/* Course ID */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Course ID *
                     </label>
                     <input
@@ -336,14 +336,14 @@ export default function DashboardAdminCourses() {
                           : setNewCourse({ ...newCourse, courseId: e.target.value })
                       }
                       disabled={!!editCourse}
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="e.g., CS101"
                     />
                   </div>
 
                   {/* Course Title */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Course Title *
                     </label>
                     <input
@@ -355,14 +355,14 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, title: e.target.value })
                           : setNewCourse({ ...newCourse, title: e.target.value })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                       placeholder="Enter course title"
                     />
                   </div>
 
                   {/* Category */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Category
                     </label>
                     <select
@@ -372,7 +372,7 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, category: e.target.value })
                           : setNewCourse({ ...newCourse, category: e.target.value })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer bg-white"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer"
                     >
                       {COURSE_CATEGORIES.filter(c => c !== "All Categories").map((category) => (
                         <option key={category} value={category}>
@@ -384,7 +384,7 @@ export default function DashboardAdminCourses() {
 
                   {/* Difficulty */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Difficulty Level
                     </label>
                     <select
@@ -394,7 +394,7 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, difficulty: e.target.value })
                           : setNewCourse({ ...newCourse, difficulty: e.target.value })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer bg-white"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer"
                     >
                       <option>Beginner</option>
                       <option>Intermediate</option>
@@ -406,7 +406,7 @@ export default function DashboardAdminCourses() {
                 <div className="space-y-5">
                   {/* Duration */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Duration (hours)
                     </label>
                     <input
@@ -418,13 +418,13 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, duration: Number(e.target.value) })
                           : setNewCourse({ ...newCourse, duration: Number(e.target.value) })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                     />
                   </div>
 
                   {/* Instructor */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Instructor Name *
                     </label>
                     <input
@@ -436,14 +436,14 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, instructor: e.target.value })
                           : setNewCourse({ ...newCourse, instructor: e.target.value })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                       placeholder="Enter instructor name"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                       Course Description *
                     </label>
                     <textarea
@@ -455,7 +455,7 @@ export default function DashboardAdminCourses() {
                           ? setEditCourse({ ...editCourse, description: e.target.value })
                           : setNewCourse({ ...newCourse, description: e.target.value })
                       }
-                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none"
                       placeholder="Brief description of the course"
                     />
                   </div>
@@ -464,7 +464,7 @@ export default function DashboardAdminCourses() {
 
               {/* Content */}
               <div className="mt-5">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   Course Content
                 </label>
                 <textarea
@@ -475,7 +475,7 @@ export default function DashboardAdminCourses() {
                       ? setEditCourse({ ...editCourse, content: e.target.value })
                       : setNewCourse({ ...newCourse, content: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 border-2 border-[var(--card-border)] bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none"
                   placeholder="Detailed course content and syllabus"
                 />
               </div>
@@ -496,7 +496,7 @@ export default function DashboardAdminCourses() {
                     setEditCourse(null);
                     setShowCreateForm(false);
                   }}
-                  className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all"
+                  className="flex items-center justify-center gap-2 px-8 py-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl hover:bg-[var(--bg-primary)] transition-all"
                 >
                   <X className="w-5 h-5" />
                   Cancel
@@ -510,24 +510,24 @@ export default function DashboardAdminCourses() {
       {/* Courses Grid */}
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">All Courses</h2>
-          <span className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm shadow-sm">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">All Courses</h2>
+          <span className="px-4 py-2 bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--text-primary)] font-semibold rounded-xl text-sm shadow-sm">
             {filteredCourses.length} {filteredCourses.length === 1 ? 'Course' : 'Courses'}
           </span>
         </div>
 
         {filteredCourses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-slate-400" />
+          <div className="bg-[var(--card-bg)] rounded-2xl shadow-lg p-12 text-center border border-[var(--card-border)]">
+            <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-[var(--text-secondary)]" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
               {searchTerm || selectedCategory !== "All Categories"
                 ? "No courses match your filters"
                 : "No courses yet"
               }
             </h3>
-            <p className="text-slate-500">
+            <p className="text-[var(--text-secondary)]">
               {searchTerm || selectedCategory !== "All Categories"
                 ? "Try adjusting your search or filters"
                 : "Click 'Add Course' to create your first course"
@@ -539,7 +539,7 @@ export default function DashboardAdminCourses() {
             {filteredCourses.map((course) => (
               <div
                 key={course._id}
-                className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden group"
+                className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden group"
               >
                 {/* Course Header with Category Gradient */}
                 <div className={`bg-gradient-to-r ${CATEGORY_COLORS[course.category] || 'from-gray-500 to-gray-600'} p-4`}>
@@ -555,42 +555,42 @@ export default function DashboardAdminCourses() {
 
                 {/* Course Content */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2 line-clamp-2 group-hover:text-indigo-500 transition-colors">
                     {course.title}
                   </h3>
 
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-3">
+                  <p className="text-sm text-[var(--text-secondary)] mb-4 line-clamp-3">
                     {course.description}
                   </p>
 
                   {/* Course Meta Info */}
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-slate-600 text-sm">
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
                       <BookOpen size={16} className="text-indigo-500" />
                       <span className="font-mono font-medium">{course.courseId}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-600 text-sm">
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
                       <Users size={16} className="text-purple-500" />
                       <span>{course.instructor}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-600 text-sm">
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
                       <Clock size={16} className="text-blue-500" />
                       <span>{course.duration} hours</span>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-slate-200">
+                  <div className="flex gap-3 pt-4 border-t border-[var(--card-border)]">
                     <button
                       onClick={() => handleEditClick(course)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors font-semibold text-sm"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-500 rounded-xl hover:bg-indigo-500/20 transition-colors font-semibold text-sm"
                     >
                       <Edit size={16} />
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteCourse(course._id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-colors font-semibold text-sm"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-colors font-semibold text-sm"
                     >
                       <Trash2 size={16} />
                       Delete
