@@ -638,11 +638,11 @@ export default function MonitoringUsers() {
 
       {/* User Details Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 sm:p-6 lg:p-8">
+        <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-4 sm:p-6 lg:p-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar transition-colors"
+            className="liquid-glass rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar transition-colors"
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">User Details: {selectedUser.name}</h2>
