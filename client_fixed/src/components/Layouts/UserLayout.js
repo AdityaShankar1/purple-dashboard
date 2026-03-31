@@ -639,7 +639,7 @@ export default function UserLayout({ children, activePage, setActivePage, menuIt
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 pb-8 pt-2 bg-[var(--bg-primary)] custom-scrollbar">
+        <main className="flex-1 overflow-y-auto pl-4 pr-0 pb-8 pt-2 bg-[var(--bg-primary)] custom-scrollbar">
           <div className="w-full">
             {children}
           </div>
