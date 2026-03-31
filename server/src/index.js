@@ -50,7 +50,7 @@ app.use((req, res, next) => {
   console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
   next();
 });
-app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
+app.use(cors({ origin: [process.env.CLIENT_URL || "http://localhost:3000"], credentials: true }));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(compression());

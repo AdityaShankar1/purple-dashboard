@@ -2971,49 +2971,49 @@ export default function AdminAssignments() {
         <>
           <div className="max-w-7xl mx-auto mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Total Assignments</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
+                    <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">{stats.total}</p>
                   </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-purple-600" />
+                  <div className="w-12 h-12 bg-indigo-100/10 rounded-xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-indigo-500" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Published</p>
-                    <p className="text-3xl font-bold text-green-600 mt-1">{stats.published}</p>
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{stats.published}</p>
                   </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-green-100/10 rounded-xl flex items-center justify-center">
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Drafts</p>
-                    <p className="text-3xl font-bold text-orange-600 mt-1">{stats.draft}</p>
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">{stats.draft}</p>
                   </div>
-                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-orange-100/10 rounded-xl flex items-center justify-center">
                     <Edit className="w-6 h-6 text-orange-600" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Total Enrollments</p>
-                    <p className="text-3xl font-bold text-blue-600 mt-1">{stats.totalEnrollments}</p>
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{stats.totalEnrollments}</p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-100/10 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
@@ -3248,7 +3248,7 @@ export default function AdminAssignments() {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {list.map((a) => (
-                  <div key={a._id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all p-6">
+                  <div key={a._id} className="bg-[#c3eac1] rounded-2xl shadow-lg hover:shadow-xl transition-all p-6 text-slate-900">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">

@@ -3053,24 +3053,29 @@ export const getUserQuizzes = async (req, res, next) => {
     // Assuming courseId param is passed.
     const Course = (await import("../models/Course.js")).default;
 
-    let courseObjectId = courseId;
-    // Check if it's a valid ObjectId, if not, try to look it up as a string id
-    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
-      console.log("DEBUG: Resolving Quiz courseId string...");
-      const courseDoc = await Course.findOne({ courseId: courseId });
-      if (courseDoc) {
-        courseObjectId = courseDoc._id;
-        console.log(`DEBUG: Resolved to ${courseObjectId}`);
-      } else {
-        // If not found by string ID and not a valid ObjectId, we can't find quizzes.
-        // But let's proceed with original value in case it's some other format logic I missed, or return empty.
-        // Better to return empty list or 404.
-        console.log("DEBUG: Course not found for quiz lookup");
-        return next(createHttpError(404, "Course not found"));
+    let courseObjectId = null;
+    if (courseId && courseId !== "undefined") {
+      courseObjectId = courseId;
+      // Check if it's a valid ObjectId, if not, try to look it up as a string id
+      if (typeof courseId === "string" && !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+        console.log("DEBUG: Resolving Quiz courseId string...");
+        const courseDoc = await Course.findOne({ courseId: courseId });
+        if (courseDoc) {
+          courseObjectId = courseDoc._id;
+          console.log(`DEBUG: Resolved to ${courseObjectId}`);
+        } else {
+          console.log("DEBUG: Course not found for quiz lookup");
+          return next(createHttpError(404, "Course not found"));
+        }
       }
     }
 
-    const quizzes = await Quiz.find({ courseId: courseObjectId, isPublished: true })
+    const query = { isPublished: true };
+    if (courseObjectId) {
+      query.courseId = courseObjectId;
+    }
+
+    const quizzes = await Quiz.find(query)
     console.log(`DEBUG: Found ${quizzes.length} quizzes`);
     // Note: checking 'courseId' field in Quiz. 
     // My createQuiz implementation saved 'courseId: courseDoc._id' (created as ObjectId ref).

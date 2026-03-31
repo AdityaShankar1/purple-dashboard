@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useAgentDetails = (agentName) => {
   const [data, setData] = useState({
@@ -14,16 +15,8 @@ export const useAgentDetails = (agentName) => {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/agent/${agentName}`
-        );
-
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid JSON response");
-        }
-
-        const json = await res.json();
+        const res = await axiosInstance.get(`/wazuh/agent/${agentName}`);
+        const json = res.data;
 
         setData({
           alerts: Array.isArray(json.alerts) ? json.alerts : [],
@@ -33,14 +26,14 @@ export const useAgentDetails = (agentName) => {
           },
         });
       } catch (err) {
-        console.error("❌ Failed to fetch agent details:", err);
-        setData({
-          alerts: [],
+        console.error("❌ Failed to fetch agent details:", err.message);
+        setData(prev => ({
+          alerts: prev.alerts.length ? prev.alerts : [],
           mitre: {
-            tactics: [],
-            techniques: [],
+            tactics: prev.mitre?.tactics?.length ? prev.mitre.tactics : [],
+            techniques: prev.mitre?.techniques?.length ? prev.mitre.techniques : [],
           },
-        });
+        }));
       }
     };
 

@@ -70,6 +70,6 @@ describe('DashboardAdminMetrics UI Enhancements', () => {
         
         fireEvent.change(select, { target: { value: '7d' } });
         expect(screen.getByText(/Past 7d/i)).toBeInTheDocument();
-        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('timeRange=7d'));
+        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/alerts/count?timeRange=7d'));
     });
 });

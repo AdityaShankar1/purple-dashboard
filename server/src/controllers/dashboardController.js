@@ -16,11 +16,17 @@ export const userDashboard = async (req, res, next) => {
       Enrollment.find({
         $or: [{ userId }, { user: userId }],
         status: { $in: ["active", "ongoing", "completed"] }
-      }).populate("courseId").populate("course").lean(),
+      })
+        .populate({ path: "courseId", strictPopulate: false })
+        .populate({ path: "course", strictPopulate: false })
+        .lean(),
 
       Certificate.find({
         $or: [{ userId }, { user: userId }]
-      }).populate("courseId").populate("course").lean(),
+      })
+        .populate({ path: "courseId", strictPopulate: false })
+        .populate({ path: "course", strictPopulate: false })
+        .lean(),
     ]);
 
     // Import progress updater

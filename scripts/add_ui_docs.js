@@ -1,0 +1,35 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const clientSrcDir = path.join(__dirname, '../client_fixed/src');
+
+const docs = {
+    [path.join(clientSrcDir, 'pages/dashboardAdmin/DashboardAdminAI.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: AI Chat Theme Colors\n * - The chat window had a dark brown background, and tailwind injected dark mode overrides.\n * SOLUTION:\n * - Changed chat background definitively to light blue #ddeeff.\n * - Removed \`dark:\` tailwind classes that were overriding the light blue theme.\n * - Changed chat bubbles to solid white with black text for readability.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'context/ThemeBackground.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Tight Coupling in ThemeBackground Styles\n * - ThemeBackground had hardcoded purple gradients, forcing login/auth pages to match admin UI gaps.\n * SOLUTION:\n * - Refactored to accept an optional \`bgColor\` prop (defaults to \`bg-purple-900\`).\n * - Removed system dark mode class overrides that turned the background almost black.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'components/Layouts/Layouts.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Undifferentiated Admin/User Global Gaps\n * - The user and admin dashobards shared a rigid background color that couldn't be decoupled.\n * SOLUTION:\n * - Added a dynamic check logic \`isUser = user?.role === "user"\`.\n * - Passes \`bg-[#ddeeff]\` to ThemeBackground for User mode, leaving Admin gaps \`bg-purple-900\`.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'App.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Hidden Global Wrapper on Auth Pages\n * - App.js was wrapping all Route instances for Login, Signup, ResetPassword inside <ThemeBackground>.\n * - This forced the admin gap theme onto the login page regardless of internal component logic.\n * SOLUTION:\n * - Stripped <ThemeBackground> wrapper from all auth routes, allowing them to style their own backgrounds.\n * - Updated <ThemeBackground> dependency in the loading skeleton to a plain styled div.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'pages/auth/Login.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Tight Theme Coupling\n * - The auth component depended on a global ThemeBackground wrapper, resulting in inherited Admin gap colors.\n * SOLUTION:\n * - Used a standalone wrapper (\`<div className="bg-[#ddeeff]">\`) to fully decouple the Auth view styling.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'pages/auth/Signup.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Tight Theme Coupling\n * - The auth component depended on a global ThemeBackground wrapper, resulting in inherited Admin gap colors.\n * SOLUTION:\n * - Used a standalone wrapper (\`<div className="bg-[#ddeeff]">\`) to fully decouple the Auth view styling.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'pages/auth/ResetPassword.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Tight Theme Coupling\n * - The auth component depended on a global ThemeBackground wrapper, resulting in inherited Admin gap colors.\n * SOLUTION:\n * - Used a standalone wrapper (\`<div className="bg-[#ddeeff]">\`) to fully decouple the Auth view styling.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'pages/dashboardAdmin/MonitoringUsers.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Low Contrast Header and Glassmorphism issues\n * - The header elements had white text on a purple background that lacked sufficient contrast and uniformity.\n * SOLUTION:\n * - Stripped \`glass-purple-theme\` wrapper in favor of plain \`bg-white\` container.\n * - Reshaded header titles to \`text-blue-900\` and labels to \`text-black\`.\n * ============================================================================\n */\n`,
+    [path.join(clientSrcDir, 'pages/dashboard/DashboardUserMetrics.js')]: `/**\n * ============================================================================\n * LATEST VERSION - UI/UX Consistency Fix\n * ============================================================================\n * BUG FIXED: Irregular Component Sizing and Clutter\n * - Metric cards were perfect squarish and displayed non-actionable subtexts (e.g. "View all courses ->").\n * SOLUTION:\n * - Stripped unnecessary subtexts to reduce visual clutter.\n * - Remodelled card dimensions to slightly rounded horizontal rectangles (\`rounded-lg\`, reduced vertical padding \`py-4\`).\n * ============================================================================\n */\n`
+};
+
+for (const [file, comment] of Object.entries(docs)) {
+    if (fs.existsSync(file)) {
+        let content = fs.readFileSync(file, 'utf8');
+        if (!content.includes('LATEST VERSION - UI/UX Consistency Fix')) {
+            content = comment + content;
+            fs.writeFileSync(file, content);
+            console.log(`Updated ${path.basename(file)}`);
+        } else {
+            console.log(`Already updated ${path.basename(file)}`);
+        }
+    } else {
+        console.log(`File missing: ${path.basename(file)}`);
+    }
+}

@@ -2,6 +2,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useComplianceData = () => {
   const [data, setData] = useState({
@@ -13,16 +14,13 @@ export const useComplianceData = () => {
   useEffect(() => {
     const fetchCompliance = async () => {
       try {
-        const baseUrl =
-          process.env.REACT_APP_API_URL || "http://localhost:5001/api";
-
         // Fetch compliance data
-        const complianceRes = await fetch(`${baseUrl}/wazuh/compliance`);
-        const complianceJson = await complianceRes.json();
+        const complianceRes = await axiosInstance.get('/wazuh/compliance');
+        const complianceJson = complianceRes.data;
 
         // Fetch MITRE T1078 alerts
-        const mitreRes = await fetch(`${baseUrl}/wazuh/alerts?technique=T1078`);
-        const mitreJson = await mitreRes.json();
+        const mitreRes = await axiosInstance.get('/wazuh/alerts?technique=T1078');
+        const mitreJson = mitreRes.data;
 
         setData({
           auditChart: complianceJson.auditChart || [],

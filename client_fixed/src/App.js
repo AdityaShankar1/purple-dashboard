@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: Hidden Global Wrapper on Auth Pages
+ * - App.js was wrapping all Route instances for Login, Signup, ResetPassword inside <ThemeBackground>.
+ * - This forced the admin gap theme onto the login page regardless of internal component logic.
+ * SOLUTION:
+ * - Stripped <ThemeBackground> wrapper from all auth routes, allowing them to style their own backgrounds.
+ * - Updated <ThemeBackground> dependency in the loading skeleton to a plain styled div.
+ * ============================================================================
+ */
 
 
 // // "use client";
@@ -457,21 +469,21 @@ function AppContent() {
 
   if (loading) {
     return (
-      <ThemeBackground className="flex items-center justify-center p-4">
+      <div className="min-h-screen w-full bg-purple-900 flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </ThemeBackground>
+      </div>
     );
   }
 
   return (
     <>
       <Routes>
-        {/* Auth Pages (Wrapped only in ThemeBackground) */}
-        <Route path="/login" element={<ThemeBackground><Login setUser={setUser} /></ThemeBackground>} />
-        <Route path="/signup" element={<ThemeBackground><Signup /></ThemeBackground>} />
-        <Route path="/forgot-password" element={<ThemeBackground><ForgotPassword /></ThemeBackground>} />
-        <Route path="/reset-password/:token" element={<ThemeBackground><ResetPassword /></ThemeBackground>} />
-        <Route path="/check-email" element={<ThemeBackground><CheckEmail /></ThemeBackground>} />
+        {/* Auth Pages (no global wrapper needed as they style themselves) */}
+        <Route path="/login" element={<Login setUser={setUser} />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/check-email" element={<CheckEmail />} />
 
         {/* Dashboard Pages (Protected and use Layout) */}
         {/* Admin Routes */}

@@ -300,7 +300,6 @@ import {
   Star,
   FileText,
   Link as LinkIcon,
-  Edit,
   Eye,
   X,
   Upload,
@@ -390,7 +389,7 @@ export default function AddMaterialCourse() {
         formData.append("url", newMaterial.url);
       }
 
-      const response = await axios.post("/materials", formData, {
+      await axios.post("/materials", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -470,20 +469,20 @@ export default function AddMaterialCourse() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-300">
       <ToastContainer position="bottom-right" theme="colored" />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-8">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-indigo-400">
               Course Materials Manager
             </h1>
-            <p className="text-slate-600">Add and manage materials for your courses</p>
+            <p className="text-slate-600 dark:text-slate-400 transition-colors">Add and manage materials for your courses</p>
           </div>
         </div>
       </div>
@@ -491,12 +490,12 @@ export default function AddMaterialCourse() {
       {/* Courses Grid */}
       <div className="max-w-7xl mx-auto">
         {courses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-purple-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center transition-all">
+            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No courses available</h3>
-            <p className="text-slate-600">Create courses first to add materials</p>
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2 transition-colors">No courses available</h3>
+            <p className="text-slate-600 dark:text-slate-400">Create courses first to add materials</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -506,7 +505,7 @@ export default function AddMaterialCourse() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden group"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl dark:shadow-purple-900/10 transition-all overflow-hidden group border border-transparent dark:border-gray-700"
               >
                 {/* Course Header */}
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
@@ -523,12 +522,12 @@ export default function AddMaterialCourse() {
                 <div className="p-6">
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="flex items-center gap-2 text-sm">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Calendar size={16} className="text-blue-600" />
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500">Duration</p>
-                        <p className="font-semibold text-slate-900">{course.duration}h</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Duration</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 transition-colors">{course.duration}h</p>
                       </div>
                     </div>
 
@@ -588,7 +587,7 @@ export default function AddMaterialCourse() {
                         fetchCourseMaterials(course._id);
                         setShowViewMaterialsModal(true);
                       }}
-                      className="px-4 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                      className="px-4 py-2.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
                     >
                       <Eye size={16} />
                       View
@@ -596,7 +595,7 @@ export default function AddMaterialCourse() {
 
                     <button
                       onClick={() => handleDeleteCourse(course._id)}
-                      className="px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-semibold text-sm flex items-center justify-center transition-all"
+                      className="px-4 py-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl font-semibold text-sm flex items-center justify-center transition-all"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -616,7 +615,7 @@ export default function AddMaterialCourse() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent dark:border-gray-700"
             >
               <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-2xl">
                 <div className="flex items-center justify-between">
@@ -636,7 +635,7 @@ export default function AddMaterialCourse() {
               <form onSubmit={handleAddMaterial} className="p-6 space-y-5">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 transition-colors">
                     Title *
                   </label>
                   <input
@@ -646,20 +645,20 @@ export default function AddMaterialCourse() {
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, title: e.target.value })
                     }
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
+                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none"
                     placeholder="e.g., Introduction to Python"
                   />
                 </div>
 
                 {/* Type */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Type</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Type</label>
                   <select
                     value={newMaterial.type}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, type: e.target.value })
                     }
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-900 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none appearance-none cursor-pointer bg-white"
+                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none appearance-none cursor-pointer"
                   >
                     <option value="video">Video</option>
                     <option value="pdf">PDF Document</option>

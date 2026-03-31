@@ -2,6 +2,7 @@
 
 
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useMitreMap = () => {
   const [data, setData] = useState({ tactics: [], techniques: [] });
@@ -9,17 +10,18 @@ export const useMitreMap = () => {
   useEffect(() => {
     const fetchMitreData = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/mitre-map`
-        );
-        const json = await res.json();
+        const res = await axiosInstance.get("/wazuh/mitre-map");
+        const json = res.data;
         setData({
           tactics: Array.isArray(json.tactics) ? json.tactics : [],
           techniques: Array.isArray(json.techniques) ? json.techniques : [],
         });
       } catch (err) {
-        console.error("Failed to fetch MITRE map:", err);
-        setData({ tactics: [], techniques: [] });
+        console.error("Failed to fetch MITRE map:", err.message);
+        setData(prev => ({
+          tactics: prev.tactics.length ? prev.tactics : [],
+          techniques: prev.techniques.length ? prev.techniques : [],
+        }));
       }
     };
 

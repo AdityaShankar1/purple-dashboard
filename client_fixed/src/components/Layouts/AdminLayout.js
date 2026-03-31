@@ -628,74 +628,101 @@ export default function AdminLayout({ children, activePage, setActivePage, menuI
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
       {/* Sidebar */}
       <div
         className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-to-b from-purple-600 to-purple-800 text-white transition-all duration-300 flex flex-col`}
+          sidebarOpen ? "w-64" : "w-0"
+        } bg-gradient-to-b from-[var(--purple-800)] to-[var(--purple-900)] text-white transition-all duration-300 flex flex-col shadow-2xl border-r border-white/5 z-20 overflow-hidden`}
       >
-        <div className="p-4 flex items-center justify-between border-b border-purple-500">
-          {sidebarOpen && <h1 className="text-xl font-bold">Admin Panel</h1>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hover:bg-purple-700 p-2 rounded">
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        <div className="p-4 flex items-center justify-between border-b border-white/10 min-h-[64px]">
+          {sidebarOpen && <h1 className="text-lg font-bold tracking-tight">Admin Console</h1>}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hover:bg-white/10 p-2 rounded-xl transition-colors">
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
           {menuItems.map((section) => (
-            <div key={section.key}>
+            <div key={section.key} className="py-2">
               {section.children ? (
                 <>
                   {sidebarOpen && (
-                    <p className="text-xs font-semibold text-purple-200 px-4 py-2">{section.label}</p>
+                    <p className="text-[10px] font-bold text-purple-300/60 px-4 mb-2 uppercase tracking-widest">{section.label}</p>
                   )}
                   {section.children.map((item) => (
                     <button
                       key={item.key}
                       onClick={() => setActivePage(item.key)}
-                      className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
-                        activePage === item.key ? "bg-purple-500" : "hover:bg-purple-700"
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+                        activePage === item.key 
+                        ? "bg-[var(--accent-purple)] text-white shadow-lg shadow-purple-600/20" 
+                        : "hover:bg-white/5 text-purple-100/70 hover:text-white"
                       }`}
                     >
-                      {sidebarOpen && <span>{item.label}</span>}
+                      {item.icon && <span className={`${activePage === item.key ? "text-white" : "text-purple-400 group-hover:text-white"}`}>{item.icon}</span>}
+                      {sidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
                     </button>
                   ))}
                 </>
               ) : (
                 <button
                   onClick={() => setActivePage(section.key)}
-                  className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
-                    activePage === section.key ? "bg-purple-500" : "hover:bg-purple-700"
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+                    activePage === section.key 
+                    ? "bg-[var(--accent-purple)] text-white shadow-lg shadow-purple-600/20" 
+                    : "hover:bg-white/5 text-purple-100/70 hover:text-white"
                   }`}
                 >
-                  {sidebarOpen && <span>{section.label}</span>}
+                  {section.icon && <span className={`${activePage === section.key ? "text-white" : "text-purple-400 group-hover:text-white"}`}>{section.icon}</span>}
+                  {sidebarOpen && <span className="font-medium text-sm">{section.label}</span>}
                 </button>
               )}
             </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-purple-500">
+        <div className="p-4 border-t border-white/10 mb-2">
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full text-white border-white hover:bg-purple-700 bg-transparent"
+            className="w-full !text-white border-white/20 hover:bg-red-500/20 hover:border-red-500/50 !hover:text-white bg-transparent flex items-center justify-center gap-2"
           >
-            <LogOut size={16} className="mr-2" />
+            <LogOut size={16} />
             {sidebarOpen && "Logout"}
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {activePage.charAt(0).toUpperCase() + activePage.slice(1)}
-          </h2>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="bg-[var(--bg-secondary)] border-b border-[var(--card-border)] py-4 px-4 flex items-center justify-between shadow-sm z-10 transition-colors">
+          <div className="flex items-center gap-4">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-[var(--accent-purple)]"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div className="h-8 w-1 bg-[var(--accent-purple)] rounded-full" />
+            <h2 className="text-xl font-black text-[var(--page-title-text)] tracking-tight uppercase">
+              {activePage.replace(/_/g, ' ')}
+            </h2>
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-[var(--text-secondary)] text-sm font-medium">
+            <span className="opacity-50">Admin</span>
+            <span>/</span>
+            <span className="text-[var(--accent-purple)] capitalize">{activePage}</span>
+          </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+        <main className="flex-1 overflow-y-auto pl-4 pr-0 pb-8 pt-2 bg-[var(--bg-primary)] custom-scrollbar">
+          <div className="w-full">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   )

@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * LATEST VERSION - UI/UX Consistency Fix
+ * ============================================================================
+ * BUG FIXED: Tight Theme Coupling
+ * - The auth component depended on a global ThemeBackground wrapper, resulting in inherited Admin gap colors.
+ * SOLUTION:
+ * - Used a standalone wrapper (`<div className="bg-[#ddeeff]">`) to fully decouple the Auth view styling.
+ * ============================================================================
+ */
 // "use client"
 
 // import { useState } from "react"
@@ -188,7 +198,6 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "../../api/axiosConfig";
-import ThemeBackground from "../../context/ThemeBackground"; // ✅ DRY gradient wrapper
 
 export default function Login({ setUser }) {
   const [formData, setFormData] = useState({
@@ -233,7 +242,7 @@ export default function Login({ setUser }) {
   };
 
   return (
-    <ThemeBackground className="flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-[#ddeeff] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -359,6 +368,6 @@ export default function Login({ setUser }) {
           </div>
         </motion.div>
       </motion.div>
-    </ThemeBackground>
+    </div>
   );
 }

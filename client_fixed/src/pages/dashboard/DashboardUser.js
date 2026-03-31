@@ -908,8 +908,10 @@ import UserQuizzes from "./UserQuizzes"
 export default function DashboardUser() {
   const [activePage, setActivePage] = useState("dashboard")
   const [selectedCourseId, setSelectedCourseId] = useState(null)
-  const [userCourses, setUserCourses] = useState([])
-  const [loadingCourses, setLoadingCourses] = useState(true)
+  
+  // Optional: State to store the actual list of ongoing courses
+  const [userCourses] = useState([])
+  const [loadingCourses] = useState(false)
 
   const sessionMgr = usePageRefreshRecovery()
 
@@ -963,24 +965,19 @@ export default function DashboardUser() {
         // Allow viewing all assignments or course-specific assignments
         return <UserAssignments courseId={selectedCourseId} />
       case "quizzes":
-        if (!selectedCourseId) {
-          return (
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Quizzes</h2>
-              <p className="p-4 bg-yellow-50 rounded text-yellow-800">
-                Please go to "Ongoing" courses and select a course to view its quizzes.
-              </p>
-            </div>
-          )
-        }
         return <UserQuizzes courseId={selectedCourseId} />
       default:
         return <DashboardUserMetrics />
     }
   }
 
+  const handlePageChange = (page) => {
+    setActivePage(page)
+    setSelectedCourseId(null)
+  }
+
   return (
-    <UserLayout activePage={activePage} setActivePage={setActivePage} menuItems={sidebarItems}>
+    <UserLayout activePage={activePage} setActivePage={handlePageChange} menuItems={sidebarItems}>
       {renderContent()}
     </UserLayout>
   )

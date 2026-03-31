@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import axiosInstance from "../api/axiosConfig";
 
 export const useIncidentsData = () => {
   const [incidents, setIncidents] = useState([]);
@@ -7,15 +8,14 @@ export const useIncidentsData = () => {
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5001/api"}/wazuh/incidents`
-        );
-        const json = await res.json();
+        const res = await axiosInstance.get("/wazuh/incidents");
+        const json = res.data;
         // Defensive: ensure always an array
         setIncidents(Array.isArray(json.incidents) ? json.incidents : []);
       } catch (err) {
-        console.error("Failed to fetch incidents:", err);
-        setIncidents([]);
+        console.error("Failed to fetch incidents:", err.message);
+        // Maintain previous state on error
+        setIncidents(prev => prev.length ? prev : []);
       }
     };
     fetchIncidents();

@@ -52,9 +52,11 @@ import {
   fetchSecurityAlerts,
   fetchMitreAlerts,
   fetchAlertsCount,
+  fetchMitreMap,
 } from "../controllers/wazuhController.js";
 import { requireAuth } from "../middleware/auth.js"
 import { rbac } from "../middleware/auth.js"
+
 
 
 const router = Router();
@@ -72,6 +74,8 @@ router.get("/compliance", requireAuth, rbac(["admin"]), getComplianceData)
 router.get("/train-test", fetchTrainTest);
 router.get("/trending", fetchTrending);
 router.get("/threat-tags", fetchThreatTags);
+router.get("/mitre-map", fetchMitreMap);
+
 
 router.get("/agent/:name", fetchAgentDetails);
 router.get("/agent-health", fetchAgentHealth);

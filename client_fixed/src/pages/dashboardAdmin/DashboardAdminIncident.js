@@ -364,9 +364,9 @@ export default function DashboardAdminIncident() {
     });
     return [
       { name: "Critical", value: critical, color: "#DC2626" },
-      { name: "High", value: high, color: "#F97316" },
-      { name: "Medium", value: medium, color: "#FACC15" },
-      { name: "Low", value: low, color: "#4ade80" },
+      { name: "High", value: high, color: "#ef4444" },
+      { name: "Medium", value: medium, color: "#facc15" },
+      { name: "Low", value: low, color: "#22c55e" },
     ];
   }, [incidents]);
 
@@ -391,7 +391,7 @@ export default function DashboardAdminIncident() {
       let detectionTime =
         new Date(alert["@timestamp"]).getTime() -
         new Date(alert.ingestionTime || alert["@timestamp"]).getTime();
-      
+
       // If ingestionTime is missing or identical to timestamp, provide a realistic lag (10-45s)
       if (detectionTime === 0) {
         detectionTime = (Math.floor(Math.random() * 35) + 10) * 1000;
@@ -411,10 +411,10 @@ export default function DashboardAdminIncident() {
   }, [incidents]);
 
   return (
-    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-blue-900">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-[var(--text-primary)] grid-flow-row-dense">
       {/* Total Alerts */}
       <Card title="🔔 Total Alerts">
-        <div className="text-5xl font-bold text-center text-blue-600">
+        <div className="text-5xl font-bold text-center text-[var(--alert-highlight-text)]">
           {totalAlerts}
         </div>
       </Card>
@@ -426,24 +426,58 @@ export default function DashboardAdminIncident() {
         </div>
       </Card>
 
-      {/* Incidents by Severity */}
-      <Card title="🚨 Incidents by Severity">
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie
-              data={severityData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={90}
-              label
-            >
-              {severityData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+      {/* Incidents by Severity - Extended vertical span */}
+      <Card title="🚨 Incidents by Severity" className="lg:row-span-2 premium-hover-glow">
+        <div className="flex-1 flex flex-col justify-center">
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={severityData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={140}
+                innerRadius={90}
+                paddingAngle={4}
+                label={({ name, value, x, cx, y, fill }) => {
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill={fill}
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
+                      className="text-[12px] font-black drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]"
+                    >
+                      {`${name} (${value})`}
+                    </text>
+                  );
+                }}
+                labelLine={{ stroke: 'var(--text-secondary, #666)', strokeWidth: 1.5 }}
+              >
+                {severityData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: 'none',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+                  backgroundColor: 'var(--bg-secondary, #1e293b)',
+                  color: 'var(--text-primary, #f8fafc)'
+                }}
+                itemStyle={{ color: 'var(--text-primary, #f8fafc)' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex justify-around text-xs mt-4">
+            {severityData.map((s, i) => (
+              <span key={i} style={{ color: s.color }} className="font-bold uppercase tracking-wider dark:text-opacity-90">
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
       </Card>
 
       {/* Mean Time to Detect */}
@@ -460,10 +494,10 @@ export default function DashboardAdminIncident() {
         </div>
       </Card>
 
-      {/* Top 5 Alert Sources */}
-      <Card title="💻 Top 5 Alert Sources" className="md:col-span-2 lg:col-span-3">
+      {/* Top Alert Sources */}
+      <Card title="💻 Top Alert Sources" className="md:col-span-2 lg:col-span-3">
         {topSources.length === 0 ? (
-          <p className="text-blue-700">No sources available</p>
+          <p className="text-[var(--text-secondary)]">No sources available</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topSources}>
