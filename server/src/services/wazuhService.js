@@ -402,24 +402,43 @@ class WazuhService {
     }
   }
 
-  async getRiskDistribution() {
+  async getDashboardDistribution() {
     const body = {
       size: 0,
       query: {
         range: { "@timestamp": { gte: "now-24h", lte: "now" } }
       },
       aggs: {
-        levels: { terms: { field: "rule.level", size: 20 } }
+        risk_levels: {
+          range: {
+            field: "rule.level",
+            ranges: [
+              { to: 7, key: "low" },
+              { from: 7, to: 12, key: "medium" },
+              { from: 12, key: "high" }
+            ]
+          }
+        },
+        top_groups: {
+          terms: { field: "rule.groups", size: 10 }
+        }
       }
     };
     try {
       const data = await this.indexerPost(`/${this.indexPattern}/_search`, body);
       return {
-        levels: data.aggregations?.levels?.buckets || []
+        risk: data.aggregations?.risk_levels?.buckets?.reduce((acc, b) => {
+          acc[b.key] = b.doc_count;
+          return acc;
+        }, {}) || { low: 0, medium: 0, high: 0 },
+        groups: data.aggregations?.top_groups?.buckets?.map(b => ({
+          name: b.key,
+          count: b.doc_count
+        })) || []
       };
     } catch (err) {
-      logger.error(`getRiskDistribution failed: ${err.message}`);
-      return { levels: [] };
+      logger.error(`getDashboardDistribution failed: ${err.message}`);
+      return { risk: { low: 0, medium: 0, high: 0 }, groups: [] };
     }
   }
 }

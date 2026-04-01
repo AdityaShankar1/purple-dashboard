@@ -348,7 +348,7 @@ export default function DashboardAdminUserEndpoint() {
 
   if (loading) {
     return (
-      <div className="p-4 text-purple-300 text-lg font-medium">
+      <div className="p-8 text-slate-600 dark:text-slate-400 text-lg font-medium animate-pulse">
         ⏳ Loading user endpoint data...
       </div>
     );
@@ -356,26 +356,44 @@ export default function DashboardAdminUserEndpoint() {
 
   if (error) {
     return (
-      <div className="p-4 text-red-400 text-lg font-medium">
+      <div className="p-8 text-rose-500 text-lg font-medium">
         ❌ Error fetching data: {error}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="bg-[var(--bg-primary)] min-h-screen p-8 space-y-8">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-[#a855f7] rounded-xl flex items-center justify-center shadow-lg">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-[#f6e6f7] tracking-tight">User Endpoint</h1>
+        </div>
+        <p className="text-slate-600 dark:text-slate-400 font-medium ml-1">Monitor user devices and logon activity</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
       {/* User Logon Activity */}
       <Card title="👤 User Logon Activity">
         {logons.length === 0 ? (
-          <p className="text-purple-300">No logon data available</p>
+          <p className="text-[var(--text-secondary)]">No logon data available</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={logons}>
-              <XAxis dataKey="user" stroke="#aaa" />
-              <YAxis stroke="#aaa" />
-              <Tooltip />
-              <Bar dataKey="success" fill="#4ADE80" name="Success" />
-              <Bar dataKey="failure" fill="#DC2626" name="Failure" />
+              <XAxis dataKey="user" stroke="var(--text-secondary)" />
+              <YAxis stroke="var(--text-secondary)" tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  borderColor: 'var(--card-border)',
+                  color: 'var(--text-primary)'
+                }} 
+              />
+              <Bar dataKey="success" fill="#4ade80" radius={[4, 4, 0, 0]} name="Success" />
+              <Bar dataKey="failure" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Failure" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -407,7 +425,7 @@ export default function DashboardAdminUserEndpoint() {
               <span className="text-xs text-gray-500">Check CDN connection or CSP settings.</span>
             </div>
           ) : !isMapLoaded && (
-            <div className="flex items-center justify-center h-full text-purple-300 font-medium">
+            <div className="flex items-center justify-center h-full text-slate-600 dark:text-slate-400 font-medium">
               <div className="animate-pulse">Loading Map Infrastructure...</div>
             </div>
           )}
@@ -416,19 +434,20 @@ export default function DashboardAdminUserEndpoint() {
 
       {/* Endpoint Compliance */}
       <Card title="💻 Endpoint Compliance" className="md:col-span-2">
-        <div className="flex flex-col items-center">
-          <div className="text-5xl font-bold text-purple-200">{compliance}%</div>
-          <p className="text-gray-400 mt-2">
+        <div className="flex flex-col items-center py-4">
+          <div className="text-6xl font-black text-[#a855f7] drop-shadow-sm">{compliance}%</div>
+          <p className="text-slate-600 dark:text-slate-400 mt-2 font-medium tracking-wide">
             Endpoints up-to-date with security patches
           </p>
-          <div className="w-full bg-gray-700 rounded-full h-4 mt-4">
+          <div className="w-full max-w-2xl bg-slate-200 dark:bg-slate-700 rounded-full h-3 mt-6">
             <div
-              className="bg-green-500 h-4 rounded-full"
+              className="bg-[#a855f7] h-3 rounded-full transition-all duration-1000"
               style={{ width: `${compliance}%` }}
             ></div>
           </div>
         </div>
       </Card>
+      </div>
     </div>
   );
 }

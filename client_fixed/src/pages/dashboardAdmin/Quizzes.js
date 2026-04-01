@@ -644,7 +644,13 @@ export default function AdminQuizzes() {
         <div className="border border-red-300 bg-red-50 text-red-800 rounded p-3 max-w-6xl mx-auto mb-4">{error}</div>
       )}
       <section className="space-y-4 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold text-indigo-700">Quizzes</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-[#a855f7] rounded-xl flex items-center justify-center shadow-lg">
+            <span className="text-white text-2xl font-bold">Q</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-[#f6e6f7] tracking-tight">Quizzes</h1>
+        </div>
+        <p className="text-slate-600 dark:text-slate-400 font-medium ml-1">Create and manage your course assessments</p>
         <div className="grid grid-cols-1 gap-4">
           <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4 bg-white dark:bg-gray-800 shadow-sm transition-colors premium-hover-glow">
             <h2 className="font-semibold text-lg text-indigo-600">{editing ? "Edit Quiz" : "Create Quiz"}</h2>

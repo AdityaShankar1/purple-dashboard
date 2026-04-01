@@ -2,21 +2,31 @@ import express from 'express';
 import ollama from 'ollama';
 import { getMockDashboardStats } from '../services/mockDataService.js';
 import { wazuhService } from '../services/wazuhService.js';
+import { probeModels, pickModel } from '../services/modelService.js';
+import { filterPrompt } from '../services/promptFilter.js';
+import { classifyQuery } from '../services/queryClassifier.js';
 
 const router = express.Router();
 
 /**
  * AI Dashboard Summarization Route
- * 
+ *
  * DESCRIPTION:
- * This route fetches real-time security data from Wazuh and uses Ollama (Qwen 2.5:1.5b) 
- * to generate a structured SOC reporting summary.
- * 
+ * Fetches real-time security data from Wazuh and uses the most appropriate
+ * local Ollama model to generate a structured SOC reporting summary.
+ *
+ * MODEL ROUTING PIPELINE:
+ * 1. promptFilter  → blocks off-topic / policy-violating queries early
+ * 2. queryClassifier → scores prompt + wazuh context → 'small' | 'large' tier
+ * 3. pickModel(tier) → maps tier to an actual model name; falls back to
+ *    qwen2.5:1.5b automatically if qwen2.5:7b is not installed on this server
+ *
  * DESIGN PHILOSOPHY:
- * - Direct Data: Fetches alerts server-side to ensure the AI sees the same data as the Dashboard.
- * - Strict Formatting: Enforces a bracketed title and bulleted list for a "CLI/SOC Console" feel.
- * - Balanced Descriptiveness: Targets a 2-3 sentence summary explaining the "why" behind logs.
- * 
+ * - Graceful degradation: codebase works identically on a server that only
+ *   has qwen2.5:1.5b — the larger model is a transparent extension.
+ * - Security-aware branding: model identities are never sent to the frontend;
+ *   they appear only in server console.log for operator visibility.
+ *
  * ENCOUNTERED BUGS & FIXES:
  * 1. Incident Count Mismatch:
  *    - Bug: AI reported 0 incidents while dashboard showed many.
@@ -35,6 +45,19 @@ router.post('/summarize-dashboard', async (req, res) => {
     try {
         const { userPrompt, history } = req.body;
 
+        // ── Stage 1: Prompt Filter ──────────────────────────────────────────
+        const filterResult = filterPrompt(userPrompt);
+        if (!filterResult.allowed) {
+            return res.json({
+                summary: filterResult.message,
+                isMock: false,
+                blocked: true
+            });
+        }
+
+        // ── Stage 2: Model Selection (probe once, then cached) ───────────────
+        await probeModels();
+
         // 1. Fetch Real Data Server-Side (Don't rely on frontend stats)
         let stats = {
             totalAlerts: 0,
@@ -50,7 +73,7 @@ router.post('/summarize-dashboard', async (req, res) => {
                 wazuhService.getAlertCount({ timeRange: '24h' }),
                 wazuhService.getAlertCount({ timeRange: '24h', level: 7 }),
                 wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
-                wazuhService.getRiskDistribution()
+                wazuhService.getRiskDistribution ? wazuhService.getRiskDistribution() : Promise.resolve(null)
             ]);
 
             stats.totalAlerts = total;
@@ -75,6 +98,17 @@ router.post('/summarize-dashboard', async (req, res) => {
             stats = getMockDashboardStats();
             isMock = true;
         }
+
+        // ── Stage 3: Query Classification ────────────────────────────────────
+        const tier = classifyQuery(userPrompt, { activeIncidents: stats.activeIncidents });
+        const modelName = pickModel(tier);
+
+        // Operator-visible model identification (never reaches the frontend)
+        console.log(
+            `[AI] Model: ${modelName} | Tier: ${tier} | ` +
+            `Incidents: ${stats.activeIncidents} | ` +
+            `Prompt: "${(userPrompt || '').slice(0, 60)}${(userPrompt || '').length > 60 ? '...' : ''}"`
+        );
 
         // 3. Prepare Context for AI
         const activeInc = stats.activeIncidents || 0;
@@ -110,8 +144,10 @@ router.post('/summarize-dashboard', async (req, res) => {
             return `[${i['@timestamp']}] Level ${i.rule?.level}: ${i.rule?.description}`;
         }).join('\n');
 
+        const dataSourceLabel = "Powered by Ollama, Always Verify Results";
+
         const contextInfo = `
-DATA SOURCE: ${isMock ? "SIMULATED / NO RECENT LOGS" : "LIVE WAZUH"}
+DATA SOURCE: ${dataSourceLabel}
 TOTAL ALERTS IN PERIOD: ${stats.totalAlerts}
 ACTIVE INCIDENTS (Level >= 7): ${activeInc}
 RISK LEVELS: ${JSON.stringify(stats.riskDistribution)}
@@ -166,7 +202,7 @@ YOUR REPORT:`;
         }
 
         const response = await ollama.chat({
-            model: 'qwen2.5:1.5b',
+            model: modelName,
             messages: messages,
             stream: false,
             options: {

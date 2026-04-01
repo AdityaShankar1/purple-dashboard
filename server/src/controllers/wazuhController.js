@@ -29,7 +29,8 @@ export const fetchMetrics = async (_req, res, next) => {
     const count = await wazuhService.getTotalAlerts();
     const alerts = await wazuhService.getSecurityAlerts({ size: 1000, timeRange: "24h" }) || [];
     const last24hCount = await wazuhService.getTotalAlerts("24h");
-    res.status(200).json({ count, alerts, last24hCount });
+    const riskDistribution = await wazuhService.getDashboardDistribution();
+    res.status(200).json({ count, alerts, last24hCount, riskDistribution });
   } catch (err) {
     logger.error(`Failed to fetch metrics: ${err.message}`);
     next(createHttpError(500, "Failed to fetch metrics"));

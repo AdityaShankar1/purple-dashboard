@@ -234,7 +234,7 @@ export default function Navbar({ user }) {
           </div>
           <div>
             <h1 className="text-xl font-bold text-[var(--text-header)] tracking-tight">PESU SOC</h1>
-            <p className={`text-[10px] ${darkMode ? 'text-red-500' : 'text-blue-600/70'} italic font-medium`}>Where Every Alert Tells A Story</p>
+            <p className={`text-[10px] ${darkMode ? 'text-[#dd86fc]' : 'text-blue-600/70'} italic font-medium`}>Where Every Alert Tells A Story</p>
           </div>
         </div>
 
