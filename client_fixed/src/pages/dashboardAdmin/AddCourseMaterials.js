@@ -472,19 +472,15 @@ export default function AddMaterialCourse() {
     <div className="min-h-screen p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-300">
       <ToastContainer position="bottom-right" theme="colored" />
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 bg-[#a855f7] rounded-xl flex items-center justify-center shadow-lg">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-indigo-400">
-              Course Materials Manager
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 transition-colors">Add and manage materials for your courses</p>
-          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-[#f6e6f7] tracking-tight">Course Materials Manager</h1>
         </div>
+        <p className="text-slate-600 dark:text-slate-400 font-medium ml-1">Add and manage materials for your academic courses</p>
       </div>
 
       {/* Courses Grid */}
@@ -508,14 +504,14 @@ export default function AddMaterialCourse() {
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl dark:shadow-purple-900/10 transition-all overflow-hidden group border border-transparent dark:border-gray-700"
               >
                 {/* Course Header */}
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
+                <div className="bg-[#a855f7] p-6 text-white">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-xl font-bold line-clamp-2">{course.title}</h3>
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold">
+                    <h3 className="text-xl font-bold line-clamp-2 tracking-tight">{course.title}</h3>
+                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wider">
                       {course.category}
                     </span>
                   </div>
-                  <p className="text-purple-100 text-sm line-clamp-2">{course.description}</p>
+                  <p className="text-purple-100 text-sm line-clamp-2 font-medium opacity-90">{course.description}</p>
                 </div>
 
                 {/* Course Stats */}

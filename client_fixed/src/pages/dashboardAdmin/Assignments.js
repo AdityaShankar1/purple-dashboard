@@ -2943,14 +2943,14 @@ export default function AdminAssignments() {
 
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-[#a855f7] rounded-xl flex items-center justify-center shadow-lg">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-[#f6e6f7] tracking-tight">
             Assignment Management
           </h1>
         </div>
-        <p className="text-slate-400 ml-15">Create and manage course assignments</p>
+        <p className="text-slate-600 dark:text-slate-400 font-medium ml-1">Create and manage course assignments</p>
       </div>
 
       {error && (
@@ -2971,7 +2971,7 @@ export default function AdminAssignments() {
         <>
           <div className="max-w-7xl mx-auto mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Total Assignments</p>
@@ -2983,7 +2983,7 @@ export default function AdminAssignments() {
                 </div>
               </div>
 
-              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Published</p>
@@ -2995,7 +2995,7 @@ export default function AdminAssignments() {
                 </div>
               </div>
 
-              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Drafts</p>
@@ -3007,7 +3007,7 @@ export default function AdminAssignments() {
                 </div>
               </div>
 
-              <div className="bg-[#e0f2fe] dark:bg-[#2d1b1b] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Total Enrollments</p>
@@ -3248,11 +3248,11 @@ export default function AdminAssignments() {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {list.map((a) => (
-                  <div key={a._id} className="bg-[#c3eac1] rounded-2xl shadow-lg hover:shadow-xl transition-all p-6 text-slate-900">
+                  <div key={a._id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg hover:shadow-xl transition-all p-6 text-slate-900 dark:text-slate-100">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{a.title}</h3>
+                          <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-1">{a.title}</h3>
                         </div>
                         {a.isPublished ? (
                           <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">

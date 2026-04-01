@@ -918,7 +918,19 @@ export default function DashboardAdminThreatIntelligence() {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+    <div className="bg-[var(--bg-primary)] min-h-screen p-8 space-y-8">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-[#a855f7] rounded-xl flex items-center justify-center shadow-lg">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-[#f6e6f7] tracking-tight">Threat Intelligence</h1>
+        </div>
+        <p className="text-slate-600 dark:text-slate-400 font-medium ml-1">Analyze global threats and agent health</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
       {/* Global Threat Map */}
       <Card title="🌎 Global Threat Map">
         <div
@@ -1047,7 +1059,7 @@ export default function DashboardAdminThreatIntelligence() {
           <ul className="space-y-2 text-sm text-gray-300">
             {mitreTechniqueAlerts.map((alert, i) => (
               <li key={i} className="flex flex-col bg-purple-800 rounded px-4 py-2">
-                <span className="font-semibold text-blue-300">
+                <span className="font-semibold text-[#f6e6f7]">
                   {alert.rule?.description || "Unknown alert"}
                 </span>
                 <span className="text-xs text-gray-400">
@@ -1265,13 +1277,14 @@ export default function DashboardAdminThreatIntelligence() {
           <ul className="space-y-2 text-sm text-gray-300">
             {alerts.slice(0, 5).map((a, i) => (
               <li key={i} className="flex flex-col bg-purple-800 rounded px-4 py-2">
-                <span className="font-semibold text-red-300">{a.rule?.description}</span>
+                <span className="font-semibold text-[#f6e6f7]">{a.rule?.description}</span>
                 <span className="text-xs text-gray-400">{a["@timestamp"]}</span>
               </li>
             ))}
           </ul>
         )}
       </Card>
+      </div>
     </div>
   );
 }

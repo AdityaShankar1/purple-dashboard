@@ -454,8 +454,8 @@ export default function MonitoringUsers() {
     <div className="bg-white dark:bg-gray-900 min-h-screen p-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold text-blue-900 dark:text-blue-400 tracking-tight">User Monitoring</h1>
-        <p className="text-black dark:text-gray-300 font-medium">Monitor user enrollments and course progress</p>
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-[#f6e6f7] tracking-tight">User Monitoring</h1>
+        <p className="text-slate-600 dark:text-slate-400 font-medium">Monitor user enrollments and course progress</p>
       </div>
 
       {/* Stats Cards */}

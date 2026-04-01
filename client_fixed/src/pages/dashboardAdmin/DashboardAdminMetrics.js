@@ -95,40 +95,28 @@ export default function DashboardAdminMetrics() {
     [metrics.last24hCount, metrics.alerts]
   );
 
-  // Risk distribution (from last 24h alerts via backend metrics)
+  // Risk distribution (from server-side accurate breakdown)
   const riskData = useMemo(() => {
-    if (!Array.isArray(metrics.alerts)) return [];
-
-    // Wazuh Standard Severity Mapping (last 24h baseline):
-    // Low: <= 6, Medium: 7-11, High: >= 12
-    const high = metrics.alerts.filter((a) => (a.rule?.level || 0) >= 12).length;
-    const medium = metrics.alerts.filter((a) => (a.rule?.level || 0) >= 7 && (a.rule?.level || 0) <= 11).length;
-    const low = metrics.alerts.filter((a) => (a.rule?.level || 0) <= 6).length;
-
+    if (!metrics.riskDistribution?.risk) return [];
+    const { high, medium, low } = metrics.riskDistribution.risk;
     return [
       { name: "High", value: high, color: RISK_COLORS.high },
       { name: "Medium", value: medium, color: RISK_COLORS.medium },
       { name: "Low", value: low, color: RISK_COLORS.low },
     ].filter(d => d.value > 0);
-  }, [metrics.alerts]);
+  }, [metrics.riskDistribution]);
 
-  // Top 5 log views (from last 24h alerts via backend metrics)
+  // Top 5 log views (from server-side accurate breakdown)
   const logViews = useMemo(() => {
-    if (!Array.isArray(metrics.alerts)) return [];
-    const logCounts = metrics.alerts.reduce((acc, alert) => {
-      const type = alert.rule?.groups?.[0] || "unknown";
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
-    const totalLogs = metrics.alerts.length;
-    return Object.entries(logCounts)
-      .map(([name, count]) => ({
-        name,
-        value: totalLogs > 0 ? Math.round((count / totalLogs) * 100) : 0,
+    if (!metrics.riskDistribution?.groups) return [];
+    const total = Object.values(metrics.riskDistribution.risk).reduce((a, b) => a + b, 0);
+    return metrics.riskDistribution.groups
+      .map(g => ({
+        name: g.name,
+        value: total > 0 ? Math.round((g.count / total) * 100) : 0,
       }))
-      .sort((a, b) => b.value - a.value)
       .slice(0, 5);
-  }, [metrics.alerts]);
+  }, [metrics.riskDistribution]);
 
   return (
     <div className="w-full h-full grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -156,10 +144,10 @@ export default function DashboardAdminMetrics() {
             </select>
           </div>
         }
-        className="md:col-span-2 bg-gradient-to-br from-[var(--card-bg)] to-blue-500/5"
+        className="md:col-span-2"
       >
         <div className="flex flex-col items-center justify-center py-8">
-          <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600 drop-shadow-sm">
+          <div className="text-7xl font-black text-indigo-500 drop-shadow-sm">
             {timeRange === "all" ? (metrics.count || totalCount) : (filteredCount ?? "...")}
           </div>
           <div className="mt-2 text-sm font-medium text-[var(--text-secondary)] uppercase tracking-widest">
@@ -179,7 +167,7 @@ export default function DashboardAdminMetrics() {
         className="md:col-span-1 border-red-500/20"
       >
         <div className="flex flex-col items-center justify-center py-8">
-          <div className="text-6xl font-black text-red-500 drop-shadow-sm">
+          <div className="text-6xl font-black text-rose-500 drop-shadow-sm">
             {last24hAlertsCount}
           </div>
           <div className="mt-2 text-sm font-medium text-red-400 uppercase tracking-widest">
@@ -206,20 +194,7 @@ export default function DashboardAdminMetrics() {
                 dataKey="value"
                 nameKey="name"
                 outerRadius={80}
-                innerRadius={60}
-                paddingAngle={5}
-                label={({ name, percent, x, y, cx, fill }) => (
-                  <text
-                    x={x}
-                    y={y}
-                    fill={fill}
-                    textAnchor={x > cx ? 'start' : 'end'}
-                    dominantBaseline="central"
-                    className="text-[11px] font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
-                  >
-                    {`${name} ${(percent * 100).toFixed(0)}%`}
-                  </text>
-                )}
+                stroke="none"
               >
                 {riskData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />

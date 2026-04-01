@@ -370,6 +370,8 @@ export default function DashboardAdminIncident() {
     ];
   }, [incidents]);
 
+  const chartSeverityData = useMemo(() => severityData.filter(d => d.value > 0), [severityData]);
+
   const topSources = useMemo(() => {
     if (!Array.isArray(incidents)) return [];
     const sourceCounts = incidents.reduce((acc, alert) => {
@@ -414,14 +416,14 @@ export default function DashboardAdminIncident() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full text-[var(--text-primary)] grid-flow-row-dense">
       {/* Total Alerts */}
       <Card title="🔔 Total Alerts">
-        <div className="text-5xl font-bold text-center text-[var(--alert-highlight-text)]">
+        <div className="text-5xl font-bold text-center text-purple-300/90">
           {totalAlerts}
         </div>
       </Card>
 
       {/* Incident Queue */}
       <Card title="✉️ Incident Queue">
-        <div className="text-5xl font-bold text-center text-orange-400">
+        <div className="text-5xl font-bold text-center text-orange-300/90">
           {incidentQueue}
         </div>
       </Card>
@@ -432,12 +434,11 @@ export default function DashboardAdminIncident() {
           <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
-                data={severityData}
+                data={chartSeverityData}
                 dataKey="value"
                 nameKey="name"
                 outerRadius={140}
                 innerRadius={90}
-                paddingAngle={4}
                 label={({ name, value, x, cx, y, fill }) => {
                   return (
                     <text
@@ -446,15 +447,18 @@ export default function DashboardAdminIncident() {
                       fill={fill}
                       textAnchor={x > cx ? 'start' : 'end'}
                       dominantBaseline="central"
-                      className="text-[12px] font-black drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]"
+                      fontSize={13}
+                      fontWeight={900}
+                      stroke="rgba(0,0,0,0.3)"
+                      strokeWidth={0.3}
                     >
                       {`${name} (${value})`}
                     </text>
                   );
                 }}
-                labelLine={{ stroke: 'var(--text-secondary, #666)', strokeWidth: 1.5 }}
+                labelLine={{ stroke: 'var(--text-secondary, #999)', strokeWidth: 2 }}
               >
-                {severityData.map((entry, i) => (
+                {chartSeverityData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
@@ -482,14 +486,14 @@ export default function DashboardAdminIncident() {
 
       {/* Mean Time to Detect */}
       <Card title="⏱ Mean Time to Detect (MTTD)">
-        <div className="text-4xl font-bold text-center text-yellow-400">
+        <div className="text-4xl font-bold text-center text-yellow-300/90">
           {mttd} sec
         </div>
       </Card>
 
       {/* Mean Time to Respond */}
       <Card title="🛠 Mean Time to Respond (MTTR)">
-        <div className="text-4xl font-bold text-center text-green-400">
+        <div className="text-4xl font-bold text-center text-green-300/90">
           {mttr} sec
         </div>
       </Card>
