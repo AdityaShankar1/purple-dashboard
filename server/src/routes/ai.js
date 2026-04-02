@@ -173,6 +173,10 @@ ${isSimpleRequested ? "IMPORTANT: Answer in SIMPLE WORDS where possible." : "STY
 
 DATA CONTEXT (Last Recorded Dashboard Stats):
 ${contextInfo}
+(Derived Metrics for Accuracy):
+- Severity Level: ${activeInc > 0 ? baseSeverity : 'Low'}
+- Active Incidents: ${activeInc}
+- Detected MITRE Techniques: ${mitreText}
 
 1.5b PRE-PROCESSED LOG SUMMARY (USE THIS TO HELP FORMULATE YOUR ANSWER):
 ${preprocessedNotes}
