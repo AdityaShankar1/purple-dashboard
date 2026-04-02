@@ -161,13 +161,9 @@ class WazuhService {
       const extracted = Array.from(agentMap.values());
       if (extracted.length > 0) return extracted;
 
-      return [
-        { id: "001", name: "MOCK_web-server", status: "active" },
-        { id: "002", name: "MOCK_db-server", status: "active" },
-        { id: "003", name: "MOCK_app-server", status: "disconnected" }
-      ];
+      return [];
     } catch (err) {
-      return [{ id: "001", name: "MOCK_web-server", status: "active" }];
+      return [];
     }
   }
 

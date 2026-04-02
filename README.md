@@ -34,7 +34,7 @@ The Admin dashboard includes a full-featured **Purple Dash** SOC panel powered b
 - ✅ **Networking**: Network traffic monitoring, firewall alerts, malware detections, and active agent counts sourced from Wazuh
 - ✅ **User Endpoint**: Per-agent/endpoint monitoring, endpoint health and status view
 - ✅ **Compliance**: Audit log volume over time (line chart) and policy violations list sourced from Wazuh
-- ✅ **AI Assistant (Security)**: A context-aware AI chat assistant (powered by Qwen 2.5:1.5b via local Ollama) that ingests live Wazuh alert data and answers security questions; falls back to dashboard metrics or mock data when Wazuh is unavailable; chat history persisted via localStorage
+- ✅ **AI Assistant (Security)**: A context-aware AI chat assistant (powered by Qwen 2.5:1.5b via local Ollama) that ingests live Wazuh alert data and answers security questions; falls back to historical dashboard metrics when live API is unreachable; chat history persisted via localStorage
 - ✅ **Monitoring Users**: Admin-level view of all registered users and their activity/progress
 
 ## Project Structure
@@ -83,8 +83,7 @@ The Admin dashboard includes a full-featured **Purple Dash** SOC panel powered b
         ├── services/               # Business logic services
         │   ├── certificateService.js
         │   ├── notificationService.js
-        │   ├── wazuhService.js     # Wazuh Indexer API integration
-        │   ├── mockDataService.js  # Mock/fallback data when Wazuh unavailable
+        │   ├── wazuhService.js     # Wazuh Indexer API integration (Real-time & Historical)
         │   └── cache.js
         ├── utils/
         ├── wazuhStream.js          # Real-time Wazuh alert streaming via Socket.io
@@ -191,7 +190,7 @@ OLLAMA_URL=http://localhost:11434
 4. **Admin Dashboard**: Comprehensive admin panel for managing courses, users, and content
 5. **Progress Tracking**: Automatic progress calculation based on materials viewed, quizzes attempted, and assignments submitted
 6. **Role-Based Access Control**: Different views and permissions for users and admins
-7. **Wazuh Integration**: Real-time security alert streaming over Socket.io using the Wazuh Indexer REST API; graceful mock-data fallback when Wazuh is offline
+7. **Wazuh Integration**: Real-time security alert streaming over Socket.io using the Wazuh Indexer REST API
 8. **AI Security Assistant**: Contextual AI chat that reads live Wazuh alerts and dashboard metrics to answer security-related questions, powered by Qwen 2.5:1.5b via Ollama
 9. **Dark / Light Theme**: Fully theme-aware UI across all pages; theme choice persisted via localStorage
 10. **Compliance Monitoring**: Audit log volume charting and policy violation tracking sourced from Wazuh
