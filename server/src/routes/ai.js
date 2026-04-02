@@ -45,19 +45,29 @@ router.post('/summarize-dashboard', async (req, res) => {
         };
 
         try {
-            // Fetch comprehensive stats for 24h
-            const [total, incidentsCount, recentAlerts, risk] = await Promise.all([
+            // First attempt: last 24h
+            let [total, incidentsCount, recentAlerts, risk] = await Promise.all([
                 wazuhService.getAlertCount({ timeRange: '24h' }),
                 wazuhService.getAlertCount({ timeRange: '24h', level: 7 }),
                 wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
                 wazuhService.getRiskDistribution()
             ]);
 
-            stats.totalAlerts = total;
-            stats.activeIncidents = incidentsCount;
-            stats.recentIncidents = recentAlerts;
+            // If empty, try historical data (last 30 days) before mock
+            if (!total || total === 0) {
+                console.log("[AI ROUTER] No 24h data found. Searching historical records (30 days)...");
+                [total, incidentsCount, recentAlerts] = await Promise.all([
+                    wazuhService.getAlertCount({ timeRange: '30d' }),
+                    wazuhService.getAlertCount({ timeRange: '30d', level: 7 }),
+                    wazuhService.getSecurityAlerts({ size: 50, timeRange: '30d' })
+                ]);
+                stats.source = 'Historical Wazuh Data (30d)';
+            }
 
-            // Format risk distribution
+            stats.totalAlerts = total || 0;
+            stats.activeIncidents = incidentsCount || 0;
+            stats.recentIncidents = recentAlerts || [];
+
             if (risk && risk.levels) {
                 stats.riskDistribution = risk.levels.reduce((acc, curr) => {
                     acc[`Level ${curr.key}`] = curr.doc_count;
@@ -66,12 +76,12 @@ router.post('/summarize-dashboard', async (req, res) => {
             }
         } catch (err) {
             console.error("Failed to fetch real Wazuh data for AI:", err.message);
-            // Fallback naturally if stats remain zero/empty
         }
 
-        // 2. Fallback to Mock Data if no real data found
+        // 2. Fallback to Mock Data ONLY if indexer is completely empty/unreachable
         let isMock = false;
         if (stats.totalAlerts === 0 && stats.activeIncidents === 0) {
+            console.log("[AI ROUTER] No real or historical data found. Using Mock Data engine.");
             stats = getMockDashboardStats();
             isMock = true;
         }
@@ -119,67 +129,113 @@ RECENT LOG ENTRIES:
 ${recentLogs || "No recent high-level alerts found."}
 `;
 
-        // 4. Improved System Prompt (Balanced & Structured)
+        // 4. Intent Classification & Pre-processing (1.5b)
+        console.log(`\n[AI ROUTER] Initializing. User Query: "${userPrompt || "What do the logs suggest?"}"`);
+        
+        let userIntent = 'STATUS_REQUEST';
+        let preprocessedNotes = 'None (no logs to preprocess).';
+
+        try {
+            console.log(`[AI ROUTER] Classifying intent and preprocessing with qwen2.5:1.5b...`);
+            const prepPrompt = `Analyze the User Query: "${userPrompt || "What do the logs suggest?"}"
+            
+            TASK 1: Intent Classification
+            If the user is asking about the status of the logs, alerts, dashboard, or current security state/trends, classify as "STATUS_REQUEST".
+            If the user is asking a general question (e.g., "What is Wazuh?", "Who are you?", "Explain SSH"), classify as "GENERAL_QUERY".
+            
+            TASK 2: Log Summary (Only if logs exist)
+            Logs: ${recentLogs}
+            
+            Output your response in this EXACT JSON format (no other text):
+            {"intent": "STATUS_REQUEST or GENERAL_QUERY", "summary": "1-2 sentence log summary or N/A"}`;
+
+            const prepResult = await ollama.chat({
+                model: 'qwen2.5:1.5b',
+                messages: [{ role: 'user', content: prepPrompt }],
+                stream: false,
+                format: 'json',
+                options: { temperature: 0.1, num_predict: 200 }
+            });
+
+            const parsed = JSON.parse(prepResult.message.content);
+            userIntent = parsed.intent || 'STATUS_REQUEST';
+            preprocessedNotes = parsed.summary || 'N/A';
+            console.log(`[AI ROUTER] 1.5b Analysis complete. Intent: ${userIntent}`);
+        } catch(e) {
+            console.log(`[AI ROUTER] 1.5b Analysis failed or invalid JSON, defaulting to STATUS_REQUEST.`);
+        }
+
         const isSimpleRequested = (userPrompt || "").toLowerCase().includes("simple") || (userPrompt || "").toLowerCase().includes("suggest");
-
+        
         const systemPrompt = `ROLE: You are an expert SOC Security Auditor and Assistant.
-GOAL: Provide a clear, actionable security summary based on the provided logs. 
-${isSimpleRequested ? "IMPORTANT: The user wants an answer in SIMPLE WORDS. Avoid overly technical jargon where possible, but stay accurate." : "STYLE: Professional, concise, and technical."}
+GOAL: Provide clear, accurate information based on the provided logs or general knowledge.
+${isSimpleRequested ? "IMPORTANT: Answer in SIMPLE WORDS where possible." : "STYLE: Professional, concise, and technical."}
 
-DATA CONTEXT:
+DATA CONTEXT (Last Recorded Dashboard Stats):
 ${contextInfo}
 
-OUTPUT FORMAT RULES (STRICT):
-1. START with the title in brackets: [LOG ANALYSIS]: or [SECURITY STATUS]:
-2. Next line: EXACTLY 2-3 SENTENCES explaining what the logs suggest in simple, clear language.
-   - Mention the primary threat if any (e.g. "We see multiple login failures", "System files were accessed").
-   - Explain what this means for the user (e.g. "This suggests someone is trying to guess a password").
-3. EACH detail MUST be on a NEW LINE starting with a dash (-).
-4. USE THE EXACT VALUES PROVIDED BELOW for Severity, Incidents, and MITRE.
-5. NO pipes (|), NO markdown bold (**), NO horizontal lines.
+1.5b PRE-PROCESSED LOG SUMMARY (USE THIS TO HELP FORMULATE YOUR ANSWER):
+${preprocessedNotes}
 
-STRICT TEMPLATE (Use NEW LINES for every item):
-[TITLE]:
-[2-3 sentence summary in simple words]
-
-- Severity: ${baseSeverity}
-- Incidents: ${activeInc}
-- MITRE: ${mitreText}
-- Action: [Simple, clear step 1]
-- Action: [Simple, clear step 2]
-
-7. DO NOT repeat the User Query. 
-8. START directly with the Title.
+${userIntent === 'STATUS_REQUEST' ? `
+OUTPUT FORMAT RULES (NATURAL):
+1. START with the title: [SOC ASSISTANT]:
+2. Provide a 3-5 sentence paragraph summarizing your security status.
+3. Mention the specific alert counts, risk levels, and incidents naturally in the text.
+4. Don't use traditional bullet points unles it's absolutely necessary for clarity.
+` : `
+OUTPUT FORMAT RULES:
+1. START with the title: [SOC ASSISTANT]:
+2. Answer the user's question directly and naturally using your general knowledge or the dashboard stats if relevant.
+3. Use a friendly, professional tone.
+`}
 
 THE USER QUERY IS: "${userPrompt || "What do the logs suggest?"}"
-YOUR REPORT:`;
+YOUR RESPONSE:`;
 
-        // 5. Ollama Chat
+        // 5. Dual Model AI Router (Qwen 7b primary)
+        let finalResponseText = '';
+        let targetModel = 'qwen2.5:7b';
+        
+        console.log(`[AI ROUTER] Dispatching main query to ${targetModel} (Intent: ${userIntent})...`);
+        
         const messages = [
-            { role: 'system', content: "You are a robotic SOC reporting tool. Output ONLY the report. No chat." },
+            { role: 'system', content: "You are a robotic SOC reporting tool. Output ONLY the response. No chat." },
             { role: 'user', content: systemPrompt }
         ];
 
-        // Include truncated history if relevant
         if (history && history.length > 0) {
             messages.splice(1, 0, ...history.slice(-2));
         }
 
-        const response = await ollama.chat({
-            model: 'qwen2.5:1.5b',
-            messages: messages,
-            stream: false,
-            options: {
-                temperature: 0.1, // Very low for consistency
-                num_predict: 300
-            }
-        });
+        try {
+            const response = await ollama.chat({
+                model: targetModel,
+                messages: messages,
+                stream: false,
+                options: { temperature: 0.1, num_predict: 450 }
+            });
+            finalResponseText = response.message.content.trim();
+        } catch (modelError) {
+            console.log(`[AI ROUTER] Fallback to 1.5b due to connectivity: ${modelError.message}`);
+            const fallbackResponse = await ollama.chat({
+                model: 'qwen2.5:1.5b',
+                messages: messages,
+                stream: false,
+                options: { temperature: 0.1, num_predict: 450 }
+            });
+            finalResponseText = fallbackResponse.message.content.trim();
+        }
+
+        // 6. Clean-up/Format validation (1.5b) - Ensure title exists
+        if (!finalResponseText.startsWith('[SOC ASSISTANT]:')) {
+             finalResponseText = '[SOC ASSISTANT]: ' + finalResponseText;
+        }
 
         res.json({
-            summary: response.message.content.trim(),
+            summary: finalResponseText,
             isMock: isMock
         });
-
     } catch (error) {
         console.error("AI Error:", error);
         res.status(500).json({ error: "Ollama connection failed", details: error.message });
