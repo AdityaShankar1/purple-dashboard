@@ -135,17 +135,16 @@ ${recentLogs || "No recent high-level alerts found."}
 
         try {
             console.log(`[AI ROUTER] Classifying intent and preprocessing with qwen2.5:1.5b...`);
-            const prepPrompt = `Analyze the User Query: "${userPrompt || "What do the logs suggest?"}"
+            const prepPrompt = `STRICT TASK: Analyze the User Query: "${userPrompt || "What do the logs suggest?"}"
             
             TASK 1: Intent Classification
-            If the user is asking about the status of the logs, alerts, dashboard, or current security state/trends, classify as "STATUS_REQUEST".
-            If the user is asking a general question (e.g., "What is Wazuh?", "Who are you?", "Explain SSH"), classify as "GENERAL_QUERY".
+            - "STATUS_REQUEST": Asking about logs, alerts, dashboard, or security state.
+            - "GENERAL_QUERY": General security/IT questions.
             
-            TASK 2: Log Summary (Only if logs exist)
-            Logs: ${recentLogs}
+            TASK 2: Log Extraction (DO NOT ALTER DATA)
+            - Summarize these logs: ${recentLogs || "None"}
             
-            Output your response in this EXACT JSON format (no other text):
-            {"intent": "STATUS_REQUEST or GENERAL_QUERY", "summary": "1-2 sentence log summary or N/A"}`;
+            Output EXACT JSON: {"intent": "STATUS_REQUEST/GENERAL_QUERY", "summary": "brief summary or N/A"}`;
 
             const prepResult = await ollama.chat({
                 model: 'qwen2.5:1.5b',
@@ -163,11 +162,9 @@ ${recentLogs || "No recent high-level alerts found."}
             console.log(`[AI ROUTER] 1.5b Analysis failed or invalid JSON, defaulting to STATUS_REQUEST.`);
         }
 
-        const isSimpleRequested = (userPrompt || "").toLowerCase().includes("simple") || (userPrompt || "").toLowerCase().includes("suggest");
-        
         const systemPrompt = `ROLE: You are an expert SOC Security Auditor and Assistant.
 GOAL: Provide clear, accurate information based on the provided logs or general knowledge.
-${isSimpleRequested ? "IMPORTANT: Answer in SIMPLE WORDS where possible." : "STYLE: Professional, concise, and technical."}
+STYLE: Technical, structured, and extremely concise.
 
 DATA CONTEXT (Last Recorded Dashboard Stats):
 ${contextInfo}
@@ -180,16 +177,19 @@ ${contextInfo}
 ${preprocessedNotes}
 
 ${userIntent === 'STATUS_REQUEST' ? `
-OUTPUT FORMAT RULES (NATURAL):
+OUTPUT FORMAT RULES (STRICT):
 1. START with the title: [SOC ASSISTANT]:
-2. Provide a 3-5 sentence paragraph summarizing your security status.
-3. Mention the specific alert counts, risk levels, and incidents naturally in the text.
-4. Don't use traditional bullet points unles it's absolutely necessary for clarity.
+2. Use the EXACT following bulleted format:
+   - severity: ${activeInc > 0 ? baseSeverity : 'Low'}
+   - incidents: ${activeInc}
+   - mitre: ${mitreText}
+   - status: [2-3 sentence technical summary of the security state]
+3. DO NOT use paragraphs for the entire response. Use the list above.
 ` : `
 OUTPUT FORMAT RULES:
 1. START with the title: [SOC ASSISTANT]:
-2. Answer the user's question directly and naturally using your general knowledge or the dashboard stats if relevant.
-3. Use a friendly, professional tone.
+2. Answer the user's question directly and naturally.
+3. Use a structured, professional tone.
 `}
 
 THE USER QUERY IS: "${userPrompt || "What do the logs suggest?"}"
