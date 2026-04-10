@@ -50,7 +50,7 @@ router.post('/summarize-dashboard', async (req, res) => {
                 wazuhService.getAlertCount({ timeRange: '24h' }),
                 wazuhService.getAlertCount({ timeRange: '24h', level: 7 }),
                 wazuhService.getSecurityAlerts({ size: 50, timeRange: '24h' }),
-                wazuhService.getRiskDistribution()
+                wazuhService.getDashboardDistribution()
             ]);
 
             // If empty, try historical data (last 30 days) before mock
@@ -68,11 +68,8 @@ router.post('/summarize-dashboard', async (req, res) => {
             stats.activeIncidents = incidentsCount || 0;
             stats.recentIncidents = recentAlerts || [];
 
-            if (risk && risk.levels) {
-                stats.riskDistribution = risk.levels.reduce((acc, curr) => {
-                    acc[`Level ${curr.key}`] = curr.doc_count;
-                    return acc;
-                }, {});
+            if (risk && risk.risk) {
+                stats.riskDistribution = risk.risk;
             }
         } catch (err) {
             console.error("Failed to fetch real Wazuh data for AI:", err.message);
