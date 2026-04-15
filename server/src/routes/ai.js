@@ -2,6 +2,7 @@ import express from 'express';
 import ollama from 'ollama';
 
 import { wazuhService } from '../services/wazuhService.js';
+import { filterPrompt } from '../services/promptFilter.js';
 
 const router = express.Router();
 
@@ -34,6 +35,15 @@ const router = express.Router();
 router.post('/summarize-dashboard', async (req, res) => {
     try {
         const { userPrompt, history } = req.body;
+
+        // Check if prompt is allowed
+        const filterResult = filterPrompt(userPrompt);
+        if (!filterResult.allowed) {
+            return res.status(200).json({
+                blocked: true,
+                summary: filterResult.message
+            });
+        }
 
         // 1. Fetch Real Data Server-Side (Don't rely on frontend stats)
         let stats = {

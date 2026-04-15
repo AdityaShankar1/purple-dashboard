@@ -31,6 +31,7 @@ jest.unstable_mockModule('../services/wazuhService.js', () => ({
         getAlertCount: mockGetAlertCount,
         getSecurityAlerts: mockGetSecurityAlerts,
         getRiskDistribution: mockGetRiskDistribution,
+        getDashboardDistribution: jest.fn().mockResolvedValue({ risk: { low: 1, medium: 2, high: 3 }, groups: [] }),
     }
 }));
 
@@ -92,8 +93,8 @@ describe('promptFilter', () => {
         test.each(blockedQueries)('blocks: "%s"', (prompt) => {
             const result = filterPrompt(prompt);
             expect(result.allowed).toBe(false);
-            expect(result.message).toContain('Purple SOC');
-            expect(result.message).toContain('Ollama Engine');
+            expect(result.message).toContain('Security Operations Center (SOC)');
+            expect(result.message).toContain('Ollama');
             expect(result.message).toContain('ACCESS RESTRICTED');
         });
     });
@@ -258,11 +259,11 @@ describe('POST /api/ai/summarize-dashboard (route integration)', () => {
 
         const aiLog = consoleSpy.mock.calls
             .map(args => args.join(' '))
-            .find(l => l.includes('[AI] Model:'));
+            .find(l => l.includes('[AI ROUTER] Dispatching main query to'));
 
         expect(aiLog).toBeDefined();
-        // On a single-model server the small model must be logged
-        expect(aiLog).toContain('qwen2.5:1.5b');
+        // On a single-model server the large model is used
+        expect(aiLog).toContain('qwen2.5:7b');
         consoleSpy.mockRestore();
     });
 });
