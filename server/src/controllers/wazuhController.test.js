@@ -38,6 +38,15 @@ describe("wazuhController", () => {
     jest.clearAllMocks();
   });
 
+  afterAll(() => {
+    getTotalAlertsSpy.mockRestore();
+    getSecurityAlertsSpy.mockRestore();
+    getNetworkingDataSpy.mockRestore();
+    getComplianceSpy.mockRestore();
+    getDashboardDistributionSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
+  });
+
   describe("fetchAlertsCount", () => {
     it("should return count successfully", async () => {
       mockReq.query.timeRange = "24h";

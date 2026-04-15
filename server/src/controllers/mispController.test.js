@@ -28,6 +28,12 @@ describe("mispController", () => {
     jest.clearAllMocks();
   });
 
+  afterAll(() => {
+    getMispAlertsSpy.mockRestore();
+    getMispStatsSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
+  });
+
   describe("fetchMispAlerts", () => {
     it("should return MISP alerts successfully with default parameters", async () => {
       const mockAlerts = [
