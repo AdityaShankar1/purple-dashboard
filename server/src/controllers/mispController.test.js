@@ -3,12 +3,10 @@ import { fetchMispAlerts, fetchMispStats } from "./mispController.js";
 import { wazuhService } from "../services/wazuhService.js";
 import { logger } from "../config/logger.js";
 
-// Spies for wazuhService
-const getMispAlertsSpy = jest.spyOn(wazuhService, "getMispAlerts");
-const getMispStatsSpy = jest.spyOn(wazuhService, "getMispStats");
-
-// Spy for logger
-const loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => { });
+// Spy variables for wazuhService
+let getMispAlertsSpy;
+let getMispStatsSpy;
+let loggerErrorSpy;
 
 describe("mispController", () => {
   let mockReq;
@@ -25,13 +23,15 @@ describe("mispController", () => {
       status: jest.fn().mockReturnThis(),
     };
     mockNext = jest.fn();
-    jest.clearAllMocks();
+
+    getMispAlertsSpy = jest.spyOn(wazuhService, "getMispAlerts");
+    getMispStatsSpy = jest.spyOn(wazuhService, "getMispStats");
+    loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => {});
   });
 
-  afterAll(() => {
-    getMispAlertsSpy.mockRestore();
-    getMispStatsSpy.mockRestore();
-    loggerErrorSpy.mockRestore();
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe("fetchMispAlerts", () => {

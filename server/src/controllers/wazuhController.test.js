@@ -10,15 +10,13 @@ import {
 import { wazuhService } from "../services/wazuhService.js";
 import { logger } from "../config/logger.js";
 
-// Spies for wazuhService
-const getTotalAlertsSpy = jest.spyOn(wazuhService, "getTotalAlerts");
-const getSecurityAlertsSpy = jest.spyOn(wazuhService, "getSecurityAlerts");
-const getNetworkingDataSpy = jest.spyOn(wazuhService, "getNetworkingData");
-const getComplianceSpy = jest.spyOn(wazuhService, "getCompliance");
-const getDashboardDistributionSpy = jest.spyOn(wazuhService, "getDashboardDistribution");
-
-// Spy for logger
-const loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => { });
+// Spy variables for wazuhService
+let getTotalAlertsSpy;
+let getSecurityAlertsSpy;
+let getNetworkingDataSpy;
+let getComplianceSpy;
+let getDashboardDistributionSpy;
+let loggerErrorSpy;
 
 describe("wazuhController", () => {
   let mockReq;
@@ -35,16 +33,18 @@ describe("wazuhController", () => {
       status: jest.fn().mockReturnThis(),
     };
     mockNext = jest.fn();
-    jest.clearAllMocks();
+
+    getTotalAlertsSpy = jest.spyOn(wazuhService, "getTotalAlerts");
+    getSecurityAlertsSpy = jest.spyOn(wazuhService, "getSecurityAlerts");
+    getNetworkingDataSpy = jest.spyOn(wazuhService, "getNetworkingData");
+    getComplianceSpy = jest.spyOn(wazuhService, "getCompliance");
+    getDashboardDistributionSpy = jest.spyOn(wazuhService, "getDashboardDistribution");
+    loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => {});
   });
 
-  afterAll(() => {
-    getTotalAlertsSpy.mockRestore();
-    getSecurityAlertsSpy.mockRestore();
-    getNetworkingDataSpy.mockRestore();
-    getComplianceSpy.mockRestore();
-    getDashboardDistributionSpy.mockRestore();
-    loggerErrorSpy.mockRestore();
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe("fetchAlertsCount", () => {
