@@ -54,6 +54,10 @@ import {
   fetchAlertsCount,
   fetchMitreMap,
 } from "../controllers/wazuhController.js";
+import {
+  fetchMispAlerts,
+  fetchMispStats,
+} from "../controllers/mispController.js";
 import { requireAuth } from "../middleware/auth.js"
 import { rbac } from "../middleware/auth.js"
 
@@ -86,6 +90,10 @@ router.get("/agents", fetchAgentList);
 router.get("/alerts/count", fetchAlertsCount);
 router.get("/alerts/:agent", fetchSecurityAlerts);
 router.get("/alerts", fetchMitreAlerts);
+
+// MISP Threat Intelligence routes
+router.get("/misp-alerts", fetchMispAlerts);
+router.get("/misp-stats", fetchMispStats);
 
 
 export default router;

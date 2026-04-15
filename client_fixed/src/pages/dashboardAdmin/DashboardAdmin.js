@@ -16,8 +16,9 @@ import MonitoringUsers from "./MonitoringUsers"
 import Assignments from "./Assignments"
 
 import Quizzes from "./Quizzes"
-import DashboardAdminAI from "./DashboardAdminAI" // Import the new AI component
-import { Bot } from "lucide-react" // Import icon
+import DashboardAdminAI from "./DashboardAdminAI"
+import DashboardAdminMisp from "./DashboardAdminMisp"
+import { Bot, Shield } from "lucide-react"
 
 export default function DashboardAdmin() {
   const [activePage, setActivePage] = useState("dashboard") // default to Dashboard Overview
@@ -35,7 +36,8 @@ export default function DashboardAdmin() {
         { key: "userendpoint", label: "User Endpoint" },
 
         { key: "compliance", label: "Compliance" },
-        { key: "ai_assistant", label: "AI Assistant", icon: <Bot size={18} /> }, // Added AI Assistant
+        { key: "misp_alerts", label: "MISP Alerts", icon: <Shield size={18} /> },
+        { key: "ai_assistant", label: "AI Assistant", icon: <Bot size={18} /> },
       ],
     },
     {
@@ -68,6 +70,7 @@ export default function DashboardAdmin() {
       {activePage === "userendpoint" && <DashboardAdminUserEndpoint />}
 
       {activePage === "compliance" && <DashboardAdminCompliance />}
+      {activePage === "misp_alerts" && <DashboardAdminMisp />}
       {activePage === "ai_assistant" && <DashboardAdminAI />}
 
       {/* Standalone */}
