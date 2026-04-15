@@ -437,6 +437,119 @@ class WazuhService {
       return { risk: { low: 0, medium: 0, high: 0 }, groups: [] };
     }
   }
+
+  // -------- MISP Alerts --------
+  async getMispAlerts({ size = 200, from = 0, timeRange = "7d" } = {}) {
+    const body = {
+      size,
+      from,
+      sort: [{ "@timestamp": { order: "desc" } }],
+      query: {
+        bool: {
+          must: [
+            { range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } },
+            {
+              bool: {
+                should: [
+                  { term: { "rule.id": "100550" } },
+                  { match: { "rule.groups": "localmisp" } }
+                ],
+                minimum_should_match: 1
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    try {
+      const data = await this.indexerPost(`/${this.indexPattern}/_search`, body);
+      return (data.hits?.hits || []).map(h => h._source || h);
+    } catch (err) {
+      logger.error(`getMispAlerts failed: ${err.message}`);
+      return [];
+    }
+  }
+
+  async getMispStats({ timeRange = "7d" } = {}) {
+    const body = {
+      size: 0,
+      query: {
+        bool: {
+          must: [
+            { range: { "@timestamp": { gte: `now-${timeRange}`, lte: "now" } } },
+            {
+              bool: {
+                should: [
+                  { term: { "rule.id": "100550" } },
+                  { match: { "rule.groups": "localmisp" } }
+                ],
+                minimum_should_match: 1
+              }
+            }
+          ]
+        }
+      },
+      aggs: {
+        alerts_over_time: {
+          date_histogram: {
+            field: "@timestamp",
+            fixed_interval: "1h",
+            min_doc_count: 0,
+            extended_bounds: {
+              min: `now-${timeRange}`,
+              max: "now"
+            }
+          }
+        },
+        alerts_per_day: {
+          date_histogram: {
+            field: "@timestamp",
+            calendar_interval: "1d",
+            min_doc_count: 0,
+            extended_bounds: {
+              min: `now-${timeRange}`,
+              max: "now"
+            }
+          }
+        },
+        top_source_ips: {
+          terms: {
+            field: "data.srcip",
+            size: 10
+          }
+        }
+      }
+    };
+
+    try {
+      const data = await this.indexerPost(`/${this.indexPattern}/_search`, body);
+      const aggs = data.aggregations || {};
+
+      const timeline = (aggs.alerts_over_time?.buckets || []).map(b => ({
+        time: b.key_as_string,
+        count: b.doc_count
+      }));
+
+      const dailyCounts = (aggs.alerts_per_day?.buckets || []).map(b => ({
+        date: b.key_as_string,
+        count: b.doc_count
+      }));
+
+      // Use structured field if available (top IPs from data.srcip)
+      const topIps = (aggs.top_source_ips?.buckets || []).map(b => ({
+        ip: b.key,
+        count: b.doc_count
+      }));
+
+      const totalCount = data.hits?.total?.value || 0;
+
+      return { timeline, dailyCounts, topIps, totalCount };
+    } catch (err) {
+      logger.error(`getMispStats failed: ${err.message}`);
+      return { timeline: [], dailyCounts: [], topIps: [], totalCount: 0 };
+    }
+  }
 }
 
 export const wazuhService = new WazuhService();
