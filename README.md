@@ -34,6 +34,7 @@ The Admin dashboard includes a full-featured **Purple Dash** SOC panel powered b
 - ✅ **Networking**: Network traffic monitoring, firewall alerts, malware detections, and active agent counts sourced from Wazuh
 - ✅ **User Endpoint**: Per-agent/endpoint monitoring, endpoint health and status view
 - ✅ **Compliance**: Audit log volume over time (line chart) and policy violations list sourced from Wazuh
+- ✅ **MISP Integration**: Real-time MISP (Malware Information Sharing Platform) alert monitoring, including IOC matches, threat indicators, and MISP-specific statistics sourced from Wazuh
 - ✅ **AI Assistant (Security)**: A context-aware AI chat assistant (powered by Qwen 2.5:1.5b via local Ollama) that ingests live Wazuh alert data and answers security questions; falls back to historical dashboard metrics when live API is unreachable; chat history persisted via localStorage
 - ✅ **Monitoring Users**: Admin-level view of all registered users and their activity/progress
 
@@ -179,6 +180,10 @@ OLLAMA_URL=http://localhost:11434
 - `GET /api/wazuh/networking` - Network traffic and firewall data
 - `GET /api/wazuh/incident` - Incident-level alert data
 
+### MISP (Malware Information Sharing Platform)
+- `GET /api/misp/alerts` - Get MISP alerts with IOC matches and threat indicators
+- `GET /api/misp/stats` - Get MISP statistics including alert trends and top source IPs
+
 ### AI
 - `POST /api/ai/summarize-dashboard` - Send security context + user prompt to the AI assistant (backed by Ollama/Qwen)
 
@@ -191,9 +196,10 @@ OLLAMA_URL=http://localhost:11434
 5. **Progress Tracking**: Automatic progress calculation based on materials viewed, quizzes attempted, and assignments submitted
 6. **Role-Based Access Control**: Different views and permissions for users and admins
 7. **Wazuh Integration**: Real-time security alert streaming over Socket.io using the Wazuh Indexer REST API
-8. **AI Security Assistant**: Contextual AI chat that reads live Wazuh alerts and dashboard metrics to answer security-related questions, powered by Qwen 2.5:1.5b via Ollama
-9. **Dark / Light Theme**: Fully theme-aware UI across all pages; theme choice persisted via localStorage
-10. **Compliance Monitoring**: Audit log volume charting and policy violation tracking sourced from Wazuh
+8. **MISP Integration**: Real-time monitoring of MISP alerts and threat indicators sourced from Wazuh
+9. **AI Security Assistant**: Contextual AI chat that reads live Wazuh alerts and dashboard metrics to answer security-related questions, powered by Qwen 2.5:1.5b via Ollama
+10. **Dark / Light Theme**: Fully theme-aware UI across all pages; theme choice persisted via localStorage
+11. **Compliance Monitoring**: Audit log volume charting and policy violation tracking sourced from Wazuh
 
 ## Testing
 
