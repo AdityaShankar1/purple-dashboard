@@ -213,6 +213,10 @@ OLLAMA_URL=http://localhost:11434
 
 <img width="1405" height="818" alt="image" src="https://github.com/user-attachments/assets/e5e1b93b-4efc-441f-8144-0fa092446041" />
 
+### MISP Intelligence:
+
+<img width="1436" height="834" alt="image" src="https://github.com/user-attachments/assets/9197e5b2-ceba-41b5-bae1-39233ce518d3" />
+
 ## Deployment
 
 ### Frontend (Vercel)
