@@ -91,6 +91,43 @@ The Admin dashboard includes a full-featured **Purple Dash** SOC panel powered b
         └── scripts/                # Utility scripts (e.g., publish quizzes, wazuh group tests)
 ```
 
+### Architecture Diagram
+
+```mermaid
+graph TD
+    Root["purple-dashboard-main"]
+    
+    Client["client_fixed/"]
+    Server["server/"]
+
+    Root --> Client
+    Root --> Server
+
+    subgraph Frontend["Frontend (React)"]
+        Client_Src["src/"]
+        Client_Public["public/"]
+        Client --> Client_Public
+        Client --> Client_Src
+
+        Client_Src --> Pages["pages/"]
+        Client_Src --> Components["components/"]
+        Client_Src --> Hooks["hooks/"]
+        Client_Src --> Context["context/"]
+        Client_Src --> Api["api/"]
+    end
+
+    subgraph Backend["Backend (Node.js/Express)"]
+        Server_Src["src/"]
+        Server --> Server_Src
+
+        Server_Src --> Controllers["controllers/"]
+        Server_Src --> Models["models/"]
+        Server_Src --> Routes["routes/"]
+        Server_Src --> Services["services/"]
+        Server_Src --> Middleware["middleware/"]
+    end
+```
+
 ## Installation
 
 ### Frontend
