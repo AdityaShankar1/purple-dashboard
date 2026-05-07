@@ -1,3 +1,12 @@
+[![SOC Operations](https://img.shields.io/badge/SOC-Wazuh_Integrated-00A9E0?style=flat-square&logo=wazuh&logoColor=white)](https://wazuh.com/)
+[![Threat Intel](https://img.shields.io/badge/Threat_Intel-MISP-8b0000?style=flat-square&logo=misp&logoColor=white)](https://www.misp-project.org/)
+
+[![Local AI](https://img.shields.io/badge/AI-Ollama_%2F_Qwen-white?style=flat-square&logo=ollama&logoColor=black)](https://ollama.com/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+
+[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+
 # Learning Management System (LMS) + Purple Dash Security Dashboard
 
 A comprehensive Learning Management System combined with a Purple Dash SOC (Security Operations Center) dashboard, built with React (Create React App), Node.js/Express, MongoDB, and Wazuh.
