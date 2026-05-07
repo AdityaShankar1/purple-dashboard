@@ -2,6 +2,8 @@
 
 A comprehensive Learning Management System combined with a Purple Dash SOC (Security Operations Center) dashboard, built with React (Create React App), Node.js/Express, MongoDB, and Wazuh.
 
+<img width="611" height="866" alt="image" src="https://github.com/user-attachments/assets/6ffb501f-14fa-4815-ae34-636d1b916d6f" />
+
 ## Features
 
 ### User Features
